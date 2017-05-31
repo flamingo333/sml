@@ -7,7 +7,7 @@ import org.hw.sml.support.ioc.annotation.Val;
 @Bean("hwld")
 public class Helloworld {
 	
-	@Val("CFG_DEFAULT_DIALECT")
+	@Val(value="CFG_DEFAULT_DIALECT1",required=false)
 	private String name;
 	
 	@Val("CFG_JDBC_SQL")

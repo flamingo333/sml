@@ -232,9 +232,10 @@ public class Https {
 						int i=0;
 						for(Map.Entry<String,String> entry:this.paramer.params.entrySet()){
 							ds.writeBytes("--"+boundary+"\r\n");
-							ds.writeBytes("Content-Disposition: form-data; name=\""+this.paramer.params.get(entry.getKey())+"\"\r\n");
+							ds.writeBytes("Content-Disposition: form-data; name=\""+entry.getKey()+"\"\r\n");
 							ds.writeBytes("\r\n");
 							ds.write(entry.getValue().getBytes(this.header.requestCharset));
+							ds.writeBytes("\r\n");
 						}
 						for(UpFile uf:((UpFile[])body)){
 							ds.writeBytes("--"+boundary+"\r\n");
@@ -245,6 +246,7 @@ public class Https {
 							while((dst=uf.is.read(bytes))!=-1){
 								ds.write(bytes,0,dst);
 							}
+							ds.writeBytes("\r\n");
 							ds.flush();
 						}
 						ds.writeBytes("--"+boundary+"--\r\n");

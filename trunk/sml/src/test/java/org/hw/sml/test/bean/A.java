@@ -127,7 +127,7 @@ public class A {
 		//"".equals(anObject)
 		Boolean flag=new Object().getClass().isAssignableFrom(Integer.class);
 		System.out.println(flag);
-		System.out.println(BeanHelper.evelV("#{schedulerPanner.getTaskMapStatus().put(('anno-aBean.test'),false)}"));
+		System.out.println(BeanHelper.evelV("#{schedulerPanner.getTaskMapStatus().put('anno-aBean.test',false)}"));
 		System.out.println(BeanHelper.evelV("#{schedulerPanner.getTaskMapStatus()}"));
 		Map<String,String> m=new HashMap<String,String>();
 		String key=m.put("a","b");

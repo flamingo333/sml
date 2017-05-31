@@ -177,7 +177,9 @@ public class BeanHelper {
 						if(injectStrings.isEmpty())	injectName=new Strings(filed.getType().getSimpleName()).toLowerCaseFirst();
 						filed.setAccessible(true);
 						Object v= beanMap.get(injectName)==null?beanMap.get(filed.getName()):beanMap.get(injectName);
+						if(inject.required())
 						Assert.notNull(v, "beanName:["+beanName+"-"+bean.getClass()+"],field inject ["+filed.getName()+"] v is null");
+						if(v!=null)
 						filed.set(beanMap.get(beanName),v.equals("")?null:v);
 					}
 					//方法注入方式
@@ -216,7 +218,9 @@ public class BeanHelper {
 						String configName=config.value();
 						Assert.notNull(configName, "beanName:"+beanName+"-"+bean.getClass()+",field config "+filed.getName()+" is null");
 						filed.setAccessible(true);
+						if(config.required())
 						Assert.notNull(getValue(configName), "beanName:["+beanName+"-"+bean.getClass()+"],field value "+filed.getName()+" is null");
+						if(getValue(configName)!=null)
 						filed.set(beanMap.get(beanName),ClassUtil.convertValueToRequiredType(getValue(configName,config.isEvel()),filed.getType()));
 					}
 					//方法注入方式
@@ -300,7 +304,8 @@ public class BeanHelper {
 			e.printStackTrace();
 			System.exit(0);
 		} 
-		if(getBean(SchedulerPanner.class)==null){
+		boolean externalSchedulerPanner=getBean(SchedulerPanner.class)==null;
+		if(externalSchedulerPanner){
 			SchedulerPanner schedulerPanner=new SchedulerPanner();
 			schedulerPanner.setConsumerThreadSize(MapUtils.getInt(propertiesHelper.getValues(),"sml.server.scheduler.consumerThreadSize",2));
 			schedulerPanner.setDepth(MapUtils.getInt(propertiesHelper.getValues(),"sml.server.scheduler.depth",10000));
@@ -319,6 +324,7 @@ public class BeanHelper {
 				schedulerPanner.getTaskMapContain().put("anno-"+beans.getKey()+"."+method.getName(),MapUtils.getString(propertiesHelper.getValues(),scheduler.value(),scheduler.value()));
 			}
 		}
+		if(externalSchedulerPanner)
 		schedulerPanner.init();
 		LoggerHelper.info(BeanHelper.class,"bean initd--->"+beanMap.keySet());
 	}

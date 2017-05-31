@@ -8,5 +8,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Val {
 	 String value();
+	 boolean required() default true;
 	 boolean isEvel() default false;
 }
