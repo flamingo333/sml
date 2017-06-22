@@ -2,7 +2,7 @@ package org.hw.sml.core.resolver;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -58,10 +58,10 @@ public class ParamTypeResolver implements SqlResolver{
 							if(value.getClass().isArray()){
 								Object[] tos=(Object[])value;
 								for(int i=0;i<tos.length;i++){
-									tos[i]=JsEngine.evel(content.replace("@value",String.valueOf(tos[i])));
+									tos[i]=JsEngine.evel(content.replace("@value",getValue((tos[i]))));
 								}
 							}else{
-								sp.setValue(JsEngine.evel(content.replace("@value",String.valueOf(value))));
+								sp.setValue(JsEngine.evel(content.replace("@value",getValue((value)))));
 							}
 						}
 					}
@@ -102,6 +102,17 @@ public class ParamTypeResolver implements SqlResolver{
 		}
 		return new Rst(temp);
 	}
+	private String getValue(Object v){
+		if(v==null){
+			return null;
+		}else{
+			if(v instanceof Date){
+				return String.valueOf(((Date)v).getTime());
+			}else{
+				return String.valueOf(v);
+			}
+		}
+	}
 	private Class[] getClassPath(String sss){
 		Class[] c=new Class[sss.split(",").length];
 		for(int i=0;i<c.length;i++){
@@ -110,11 +121,5 @@ public class ParamTypeResolver implements SqlResolver{
 		return c;
 	}
 	public void setEl(El el) {
-	}
-	public static void main(String[] args) {
-		String temp="<import id=\"time\" classpath=\"org.hw.sml.Sml\"/>"
-				+ "select * from table_${time.add(hour,1,yyyyMMdd-HH:mm:ss)}   ";
-		String tt=	new ParamTypeResolver().resolve(null, temp, new SMLParams()).getSqlString();
-		System.out.println(tt);
 	}
 }

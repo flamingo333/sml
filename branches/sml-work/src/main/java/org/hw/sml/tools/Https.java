@@ -65,7 +65,7 @@ public class Https {
 	private String method=METHOD_GET;
 	private String charset="utf-8";
 	private String url;
-	private Header header=new Header("*/*","*/*");
+	private Header header=new Header("application/json","*/*");
 	private Object body;
 	private int connectTimeout;
 	private boolean isUpload=false;
@@ -123,23 +123,34 @@ public class Https {
 	
 	public class Paramer{
 		private String queryParamStr;
-		private Map<String,String> params=MapUtils.newLinkedHashMap();
+		private Map<String,Object> params=MapUtils.newLinkedHashMap();
 		public Paramer(){}
 		public Paramer(String queryParamStr){this.queryParamStr=queryParamStr;}
 		public Paramer param(String queryParamStr){this.queryParamStr=queryParamStr;return this;}
 		public Paramer add(String name,String value){
-			params.put(name,value);
+			return add1(name,value);
+		}
+		public Paramer add(String name,String[] value){
+			return add1(name,value);
+		}
+		private Paramer add1(String name,Object value){
+			if(value!=null)
+				params.put(name,value);
 			return this;
 		}
 		public String builder(String charset){
 			if(queryParamStr==null&&params.size()>0){
 				StringBuilder sb=new StringBuilder();
 				int i=0;
-				for(Map.Entry<String,String> entry:params.entrySet()){
-					if(i>0)
-					sb.append("&");
+				for(Map.Entry<String,Object> entry:params.entrySet()){
 					try {
-						sb.append(entry.getKey()+"="+URLEncoder.encode(entry.getValue(),charset));
+						if(!entry.getValue().getClass().isArray())
+							sb.append((sb.lastIndexOf("&")==sb.length()-1?"":"&")+entry.getKey()+"="+URLEncoder.encode(entry.getValue().toString(),charset));
+						else{
+							String[] ps=(String[]) entry.getValue();
+							for(String p:ps)
+							sb.append((sb.lastIndexOf("&")==sb.length()-1?"":"&")+entry.getKey()+"="+URLEncoder.encode(p,charset));
+						}
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
 					}
@@ -203,10 +214,13 @@ public class Https {
 	public String getResponseMessage(){
 		return responseMessage;
 	}
-	
+	public Https buildUrl(String qps){
+		if(qps!=null&&(this.method.equals(METHOD_GET)||body!=null)) url+=(url.contains("?")?"&":"?")+qps;
+		return this;
+	}
 	public byte[] query() throws IOException{
 		String qps=this.paramer.builder(header.requestCharset);
-		if(qps!=null&&(this.method.equals(METHOD_GET)||body!=null)) url+=(url.contains("?")?"&":"?")+qps;
+		buildUrl(qps);
 		URL realUrl = new URL(url);
 		HttpURLConnection conn = (HttpURLConnection) (proxy==null?realUrl.openConnection():realUrl.openConnection(proxy));
 		for(Map.Entry<String,String> entry:header.header.entrySet())
@@ -230,11 +244,11 @@ public class Https {
 					else if(isUpload&&body.getClass().isArray()&&Array.get(body,0) instanceof UpFile){
 						ds=new DataOutputStream(out);
 						int i=0;
-						for(Map.Entry<String,String> entry:this.paramer.params.entrySet()){
+						for(Map.Entry<String,Object> entry:this.paramer.params.entrySet()){
 							ds.writeBytes("--"+boundary+"\r\n");
 							ds.writeBytes("Content-Disposition: form-data; name=\""+entry.getKey()+"\"\r\n");
 							ds.writeBytes("\r\n");
-							ds.write(entry.getValue().getBytes(this.header.requestCharset));
+							ds.write(entry.getValue().toString().getBytes(this.header.requestCharset));
 							ds.writeBytes("\r\n");
 						}
 						for(UpFile uf:((UpFile[])body)){
@@ -258,7 +272,14 @@ public class Https {
 				}
 				out.flush();
 			}
-			is=conn.getInputStream();
+			conn.connect();
+			if(conn.getResponseCode()==200)
+				is=conn.getInputStream();
+			else
+				is=conn.getErrorStream();
+			if(is==null){
+				is=conn.getInputStream();
+			}
 			int temp=-1;
 			while((temp=is.read(bytes))!=-1){
 				bos.write(bytes,0,temp);

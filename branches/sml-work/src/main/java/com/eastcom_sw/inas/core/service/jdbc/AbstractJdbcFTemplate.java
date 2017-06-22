@@ -72,7 +72,7 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 			return (List<Map<String,Object>>) getCacheManager().get(key);
 		}
 		if(isLogger&&(st.getSqlParamMap().getSqlParam("igLog")==null||st.getSqlParamMap().getSqlParam("igLog").getValue().equals("false")))
-			LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getSqlString()+"],params"+paramsObject.toString()+",sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
+			LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
 		Assert.isTrue(rst.getSqlString()!=null&&rst.getSqlString().length()>0, "querySql config error parser is null");
 		List<Map<String,Object>> result= getJdbc(st.getDbid()).queryForList(rst.getSqlString(),paramsObject.toArray(new Object[]{}));
 		if(st.getIsCache()==1)
@@ -138,7 +138,7 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 		String sqlString=rst.getSqlString();
 		List<Object> paramsObject=rst.getParamObjects();
 		if(isLogger&&(st.getSqlParamMap().getSqlParam("igLog")==null||st.getSqlParamMap().getSqlParam("igLog").getValue().equals("false")))
-		LoggerHelper.info(getClass(),"sql["+rst.getSqlString()+"],params"+paramsObject.toString());
+		LoggerHelper.info(getClass(),"sql["+rst.getPrettySqlString()+"]");
 		return getJdbc(st.getDbid()).query(sqlString,paramsObject.toArray(new Object[]{}), new Rset());
 	}
 	public Rslt queryRslt(String dbid,String sql,Map<String,String> params){

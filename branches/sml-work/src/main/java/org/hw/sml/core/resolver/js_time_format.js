@@ -29,7 +29,9 @@ return true;
 }  
 return false;  
 } 
-
+Array.prototype.contains=function(e){
+	return this.in_array(e);
+}
 function parseDate(dateStr){
 	var leng=dateStr.length;
 	var resultDate;

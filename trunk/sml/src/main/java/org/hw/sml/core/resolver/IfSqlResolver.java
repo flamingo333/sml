@@ -26,6 +26,25 @@ public class IfSqlResolver implements SqlResolver{
 		List<String> mathers=null;
 		Map<String,Boolean> tempMap=MapUtils.newHashMap();
 		Map<String,Object> mapParam=sqlParamMaps.getMap();
+		if(temp.contains("<smlParam")){
+			mathers=RegexUtils.matchGroup("<smlParam name=\"\\w+\" value=\"[\\w|:]+\"/>",temp);
+			for(String mather:mathers){
+				String tmt=mather;
+				if(!temp.contains(tmt)){
+					continue;
+				}
+				String name=RegexUtils.subString(tmt, "name=\"", "\" value=");
+				String value=RegexUtils.subString(tmt, "value=\"","\"/>");
+				if(value.startsWith("ref:")){
+					value=value.replaceFirst("ref:","");
+					sqlParamMaps.add(name,MapUtils.getString(sqlParamMaps.getMap(),value));
+				}else{
+					sqlParamMaps.add(name, value);
+				}
+				temp=temp.replace(tmt,"");
+			}
+			sqlParamMaps.reinit();
+		}
 		if(temp.contains("<isNotEmpty")){
 		//非空函数   \\d*用于嵌套
 			mathers=RegexUtils.matchGroup("<isNotEmpty\\d* property=\"\\w+\">",temp);

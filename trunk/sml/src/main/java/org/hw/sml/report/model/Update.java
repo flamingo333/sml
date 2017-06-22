@@ -117,7 +117,7 @@ public class Update extends Criteria {
 	}
 	public String isExistSql(){
 		StringBuffer sb=new StringBuffer();
-		sb.append("select count(1) from "+tableName+" where 1=1 ");
+		sb.append("select count(1) from "+tableName+" where 1=1");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
 			//参数绑定
 			String field=entry.getKey();
@@ -127,7 +127,7 @@ public class Update extends Criteria {
 				sb.append(" and "+ft+"=?");
 			}
 		}
-		return sb.toString();
+		return sb.toString().replace("where 1=1 and", "where");
 	}
 	public Object[] getExistParams(){
 		List<Object> object=new ArrayList<Object>();

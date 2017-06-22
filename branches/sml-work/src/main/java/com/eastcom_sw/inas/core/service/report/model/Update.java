@@ -1,7 +1,6 @@
 package com.eastcom_sw.inas.core.service.report.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +118,7 @@ public class Update extends Criteria {
 	}
 	public String isExistSql(){
 		StringBuffer sb=new StringBuffer();
-		sb.append("select count(1) from "+tableName+" where 1=1 ");
+		sb.append("select count(1) from "+tableName+" where 1=1");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
 			//参数绑定
 			String field=entry.getKey();

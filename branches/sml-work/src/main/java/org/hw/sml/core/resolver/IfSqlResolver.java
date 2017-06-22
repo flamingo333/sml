@@ -1,9 +1,11 @@
 package org.hw.sml.core.resolver;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
 import org.hw.sml.support.el.El;
+import org.hw.sml.tools.DateTools;
 import org.hw.sml.tools.MapUtils;
 
 import com.eastcom_sw.inas.core.service.jdbc.SqlParam;
@@ -25,6 +27,27 @@ public class IfSqlResolver implements SqlResolver{
 		List<String> mathers=null;
 		Map<String,Boolean> tempMap=MapUtils.newHashMap();
 		Map<String,Object> mapParam=sqlParamMaps.getMap();
+		if(temp.contains("<smlParam")){
+			mathers=RegexUtils.matchGroup("<smlParam name=\"\\w+\" value=\"\\S*\"/>",temp);
+			for(String mather:mathers){
+				String tmt=mather;
+				if(!temp.contains(tmt)){
+					continue;
+				}
+				String name=RegexUtils.subString(tmt, "name=\"", "\" value=");
+				String value=RegexUtils.subString(tmt, "value=\"","\"/>");
+				if(value.startsWith("ref:")){
+					value=value.replaceFirst("ref:","");
+					String[] vs=value.split("\\|");
+					sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(sqlParamMaps.getMap(),vs[0]),vs));
+					
+				}else{
+					sqlParamMaps.add(name, value);
+				}
+				temp=temp.replace(tmt,"");
+			}
+			sqlParamMaps.reinit();
+		}
 		if(temp.contains("<isNotEmpty")){
 		//非空函数   \\d*用于嵌套
 			mathers=RegexUtils.matchGroup("<isNotEmpty\\d* property=\"\\w+\">",temp);
@@ -158,6 +181,29 @@ public class IfSqlResolver implements SqlResolver{
 		return new Rst(temp);
 	}
 
+	private String getRefFormatValue(String value, String[] vs) {
+		if(vs.length==2){
+			String vs1=vs[1];
+			vs1.split("-");
+			if(vs1.startsWith("date@")){
+				vs1=vs1.substring(7,vs1.length()-2);
+				value=parseDate(value.substring(0,vs1.length()),vs1);
+			}else if(vs1.startsWith("dates@")){
+				vs1=vs1.substring(8,vs1.length()-2);
+				StringBuffer sb=new StringBuffer();
+				for(String v:value.split(",")){
+					System.out.println(v.substring(0,vs1.length()));
+					sb.append(parseDate(v.substring(0,vs1.length()),vs1)).append(",");
+				}
+				value=sb.deleteCharAt(sb.length()-1).toString();
+			}
+		}
+		return value;
+	}
+	private String parseDate(String time,String pattern){
+		return new SimpleDateFormat("yyyyMMddHHmmss").format(DateTools.getFormatTime(time, pattern));
+	}
+
 	public El getEl() {
 		return el;
 	}
@@ -165,6 +211,9 @@ public class IfSqlResolver implements SqlResolver{
 	public void setEl(El el) {
 		this.el = el;
 	}
-
+	
+	public static void main(String[] args) {
+		//System.out.println(MapUtils.ValueHelper.rebuildMpHandlerValue(key, value));
+	}
 
 }

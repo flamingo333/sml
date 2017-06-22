@@ -1,5 +1,7 @@
 package org.hw.sml.core.resolver;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +27,13 @@ public class Rst{
 		this.sqlString = sqlString;
 		this.paramObjects = paramObjects;
 	}
-
+	public String getPrettySqlString(){
+		String prettySql=sqlString;
+		for(Object obj:paramObjects){
+			prettySql=prettySql.replaceFirst("\\?",obj==null?null:(obj instanceof Date?("to_date('"+(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date)obj))+"','yyyy-mm-dd hh24:mi:ss')"):("'"+String.valueOf(obj)+"'")));
+		}
+		return prettySql;
+	}
 	public String getSqlString() {
 		return sqlString;
 	}

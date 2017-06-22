@@ -2,6 +2,7 @@ package org.hw.sml.core.resolver;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class ParamTypeResolver implements SqlResolver{
 				}
 				
 				if(tmt.endsWith("/>")){
-					String name=RegexUtils.subString(tmt, "name=\"", "\" type=\"");
+					String name=RegexUtils.subString(tmt,"name=\"", "\" type=\"");
 					String type=RegexUtils.subString(tmt,"type=\"","\"/>");
 					SqlParam sp=sqlParamMaps.getSqlParam(name);
 					if(sp!=null){
@@ -41,7 +42,9 @@ public class ParamTypeResolver implements SqlResolver{
 						if((sp.getValue()==null||sp.getValue().toString().length()==0))
 						    sp.setValue(null);
 						else{
-							sp.handlerValue(String.valueOf(sp.getValue()));
+							if(!sp.getValue().getClass().isArray()){
+								sp.handlerValue(String.valueOf(sp.getValue()));
+							}
 						}
 					}
 					temp=temp.replace(tmt,"");
@@ -67,10 +70,10 @@ public class ParamTypeResolver implements SqlResolver{
 							if(value.getClass().isArray()){
 								Object[] tos=(Object[])value;
 								for(int i=0;i<tos.length;i++){
-									tos[i]=JsEngine.evel(content.replace("@value",String.valueOf(tos[i])));
+									tos[i]=JsEngine.evel(content.replace("@value",getValue(tos[i])));
 								}
 							}else{
-								sp.setValue(JsEngine.evel(content.replace("@value",String.valueOf(value))));
+								sp.setValue(JsEngine.evel(content.replace("@value",getValue(value))));
 							}
 						}
 					}
@@ -111,6 +114,17 @@ public class ParamTypeResolver implements SqlResolver{
 		}
 		return new Rst(temp);
 	}
+	private String getValue(Object v){
+		if(v==null){
+			return null;
+		}else{
+			if(v instanceof Date){
+				return String.valueOf(((Date)v).getTime());
+			}else{
+				return String.valueOf(v);
+			}
+		}
+	}
 	private Class[] getClassPath(String sss){
 		Class[] c=new Class[sss.split(",").length];
 		for(int i=0;i<c.length;i++){
@@ -122,5 +136,11 @@ public class ParamTypeResolver implements SqlResolver{
 	public void setEl(El el) {
 		
 	}
-
+	public static void main(String[] args) {
+		String v="201501010000";
+		//<smlParam name="oldtime" value="ref:time"/>
+		String jsElp="var v='201501010000';var dateV=parseDate(v);var dateLV= dateV.getTime()-24*60*60*1000;new Date(dateLV).format('yyyyMMddhhmmss')";
+		System.out.println(JsEngine.evel(jsElp));
+		
+	}
 }
