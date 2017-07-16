@@ -1,7 +1,9 @@
 package org.hw.sml.support;
 
-public abstract class ManagedThread extends Thread {
 
+public abstract class ManagedThread extends Thread {
+	
+	protected  long counts;
 
 	protected boolean stopFlag = false;
 
@@ -69,4 +71,13 @@ public abstract class ManagedThread extends Thread {
 			waitLock.notifyAll();
 		}
 	}
+
+	public long getCounts() {
+		return counts;
+	}
+
+	public void setCounts(long counts) {
+		this.counts = counts;
+	}
+	
 }

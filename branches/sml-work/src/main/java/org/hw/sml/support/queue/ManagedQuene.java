@@ -109,6 +109,7 @@ public class ManagedQuene<T extends Task> {
 			Future<Integer> future=null;
 			try {
 				task=queue.take();
+				super.counts++;
 				final Task t=task;
 				if(timeout<=0)
 					task.execute();

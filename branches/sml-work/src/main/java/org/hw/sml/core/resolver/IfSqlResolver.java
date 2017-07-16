@@ -23,7 +23,7 @@ import com.eastcom_sw.inas.core.service.tools.RegexUtils;
 public class IfSqlResolver implements SqlResolver{
 	
 	private El el;
-	public Rst resolve(String dialect, String temp,SqlParams sqlParamMaps) {
+	public synchronized Rst resolve(String dialect, String temp,SqlParams sqlParamMaps) {
 		List<String> mathers=null;
 		Map<String,Boolean> tempMap=MapUtils.newHashMap();
 		Map<String,Object> mapParam=sqlParamMaps.getMap();

@@ -26,6 +26,11 @@ public class Https {
 	public static final String METHOD_POST="POST";
 	byte[] bytes=new byte[512];
 	private boolean keepAlive=false;
+	private int readTimeout;
+	public Https withReadTimeout(int readTimeout){
+		this.readTimeout=readTimeout;
+		return this;
+	}
 	private Https(String url){
 		this.url=url;
 	}
@@ -141,7 +146,6 @@ public class Https {
 		public String builder(String charset){
 			if(queryParamStr==null&&params.size()>0){
 				StringBuilder sb=new StringBuilder();
-				int i=0;
 				for(Map.Entry<String,Object> entry:params.entrySet()){
 					try {
 						if(!entry.getValue().getClass().isArray())
@@ -154,7 +158,6 @@ public class Https {
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
 					}
-					i++;
 				}
 				this.queryParamStr=sb.toString();
 			}
@@ -227,6 +230,9 @@ public class Https {
 			conn.addRequestProperty(entry.getKey(),entry.getValue());
 		if(connectTimeout!=0)
 			conn.setConnectTimeout(connectTimeout);
+		if(readTimeout>0){
+			conn.setReadTimeout(readTimeout);
+		}
 		//
 		conn.setDoOutput(true);
 		conn.setRequestMethod(this.method);
@@ -277,6 +283,9 @@ public class Https {
 				is=conn.getInputStream();
 			else
 				is=conn.getErrorStream();
+			if(is==null){
+				is=conn.getInputStream();
+			}
 			int temp=-1;
 			while((temp=is.read(bytes))!=-1){
 				bos.write(bytes,0,temp);

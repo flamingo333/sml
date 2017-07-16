@@ -12,7 +12,6 @@ import javax.sql.DataSource;
 
 import org.hw.sml.jdbc.BatchPreparedStatementSetter;
 import org.hw.sml.jdbc.Callback;
-import org.hw.sml.jdbc.DataSourceUtils;
 import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.jdbc.ResultSetExtractor;
 import org.hw.sml.jdbc.RowMapper;
@@ -40,6 +39,7 @@ public class DefaultJdbcTemplate extends JdbcTemplate  {
 			int result=0;
 			try{
 				con =getDataSource().getConnection();
+				con.setAutoCommit(false);
 				pst = con.prepareStatement(sql);
 				if(params!=null){
 					for(int i=0;i<params.length;i++){
@@ -47,7 +47,13 @@ public class DefaultJdbcTemplate extends JdbcTemplate  {
 					}
 				}
 				result=pst.executeUpdate();
+				con.commit();
 			}catch(SQLException  e){
+				try {
+					con.rollback();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
 				e.printStackTrace();
 				Assert.isTrue(false, e.getMessage()+",sql["+sql+"]");
 			}finally{

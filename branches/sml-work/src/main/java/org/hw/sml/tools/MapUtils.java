@@ -1498,6 +1498,10 @@ public class MapUtils {
 						value=(V)(Object)Math.ceil(Double.parseDouble(String.valueOf(value)));
 					}else if(mark.equalsIgnoreCase("floor")){
 						value=(V)(Object)Math.floor(Double.parseDouble(String.valueOf(value)));
+					}else if(mark.equalsIgnoreCase("int")){
+						value=(V)(Integer)Math.round(Float.parseFloat(String.valueOf(value)));
+					}else if(mark.equalsIgnoreCase("long")){
+						value=(V)(Long)Math.round(Double.parseDouble(String.valueOf(value)));
 					}
 	    		}catch(Throwable t){}
 	    	return value;
@@ -1596,5 +1600,4 @@ public class MapUtils {
 		    	return flag;
 		    }
 	}
-	
 }

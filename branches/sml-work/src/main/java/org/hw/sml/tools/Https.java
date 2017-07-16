@@ -22,10 +22,20 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class Https {
 	
+	public static interface Prepared{
+		public void prepare(HttpURLConnection urlConn);
+	}
+	
 	public static final String METHOD_GET="GET";
 	public static final String METHOD_POST="POST";
 	byte[] bytes=new byte[512];
 	private boolean keepAlive=false;
+	private int readTimeout;
+	private Prepared prepared;
+	public Https withReadTimeout(int readTimeout){
+		this.readTimeout=readTimeout;
+		return this;
+	}
 	private Https(String url){
 		this.url=url;
 	}
@@ -40,6 +50,10 @@ public class Https {
 		Https https= new Https(url).method(METHOD_POST);
 		https.getHeader().put("Content-Type","application/json");
 		return https;
+	}
+	public Https preapared(Prepared prepared){
+		this.prepared=prepared;
+		return this;
 	}
 	public Https keepAlive(boolean ka){
 		this.keepAlive=ka;
@@ -141,7 +155,6 @@ public class Https {
 		public String builder(String charset){
 			if(queryParamStr==null&&params.size()>0){
 				StringBuilder sb=new StringBuilder();
-				int i=0;
 				for(Map.Entry<String,Object> entry:params.entrySet()){
 					try {
 						if(!entry.getValue().getClass().isArray())
@@ -154,7 +167,6 @@ public class Https {
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
 					}
-					i++;
 				}
 				this.queryParamStr=sb.toString();
 			}
@@ -227,6 +239,12 @@ public class Https {
 			conn.addRequestProperty(entry.getKey(),entry.getValue());
 		if(connectTimeout!=0)
 			conn.setConnectTimeout(connectTimeout);
+		if(readTimeout>0){
+			conn.setReadTimeout(readTimeout);
+		}
+		if(prepared!=null){
+			prepared.prepare(conn);
+		}
 		//
 		conn.setDoOutput(true);
 		conn.setRequestMethod(this.method);

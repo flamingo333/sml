@@ -50,7 +50,7 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 			SqlResolvers sqlResolvers=new SqlResolvers(getEl());
 			sqlResolvers.init();
 			this.sqlResolvers=sqlResolvers;
-			LoggerHelper.warn(getClass(),"sqlResolvers start... has resolvers ["+(this.sqlResolvers.getSqlResolvers().size())+"]");
+			LoggerHelper.info(getClass(),"sqlResolvers start... has resolvers ["+(this.sqlResolvers.getSqlResolvers().size())+"]");
 		}
 		if(this.cacheManager==null){
 			super.cacheManager=getCacheManager();
