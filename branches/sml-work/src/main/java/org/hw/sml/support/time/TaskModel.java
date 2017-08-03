@@ -13,17 +13,17 @@ import java.util.Date;
 public class TaskModel implements Serializable{
 	private static final long serialVersionUID = -7035741153143372300L;
 	
-	private String elp;
+	private String elp;//crontab  0 0 10,14,16 * * ?
 	
 	private String timeType;
 	/**
 	 * 调度分钟点，0-59，多个‘,’分隔
 	 */
-	private String timeInvokePoint;
+	private String timeInvokePoint="00";
 	/**
 	 * 调度时间集，根据timeType枚举hour:0-59,day,0-24,week0-7
 	 */
-	private String timePoint;
+	private String timePoint="00";
 	/**
 	 * 是否启用
 	 */
@@ -124,6 +124,7 @@ public class TaskModel implements Serializable{
 			return month_hour;
 		}
 		private String getWeekDay(){
+			@SuppressWarnings("deprecation")
 			String week_day=lpad(String.valueOf(new Date().getDay()));
 			if(week_day.equals("00")){
 				return "07";

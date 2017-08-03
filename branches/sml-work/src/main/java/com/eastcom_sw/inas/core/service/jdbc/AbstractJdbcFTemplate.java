@@ -71,7 +71,7 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 		if(getCacheManager().get(key)!=null){
 			return (List<Map<String,Object>>) getCacheManager().get(key);
 		}
-		if(isLogger&&(st.getSqlParamMap().getSqlParam("igLog")==null||st.getSqlParamMap().getSqlParam("igLog").getValue().equals("false")))
+		if(isLogger&&(st.getSqlParamMap().getSqlParam("igLog")==null||st.getSqlParamMap().getSqlParam(FrameworkConstant.PARAM_IGLOG).getValue().equals("false")))
 			LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
 		Assert.isTrue(rst.getSqlString()!=null&&rst.getSqlString().length()>0, "querySql config error parser is null");
 		List<Map<String,Object>> result= getJdbc(st.getDbid()).queryForList(rst.getSqlString(),paramsObject.toArray(new Object[]{}));

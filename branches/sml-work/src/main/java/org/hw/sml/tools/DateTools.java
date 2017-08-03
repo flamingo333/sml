@@ -274,6 +274,10 @@ public class DateTools {
 			return parse(mathers.get(index));
 		}
 	}
+
+	public static DateTools newInstance() {
+		return new DateTools();
+	}
 	
 	
 }

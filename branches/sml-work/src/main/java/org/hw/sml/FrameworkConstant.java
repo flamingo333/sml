@@ -22,7 +22,7 @@ public class FrameworkConstant {
 	public static String CFG_DEFAULT_BUILDER_CLASS="com.eastcom_sw.inas.core.service.jdbc.build.lmaps";
 	public static final String PARAM_TOLOWERCASEFORKEY="toLowerCaseForKey";
 	public static final String PARAM_SQLFORMAT="formatSql";
-	public static final String PARAM_IGLOG="iglog";
+	public static final String PARAM_IGLOG="igLog";
 	public static final String PARAM_QUERYTYPE="queryType";
 	public static final String PARAM_FLUSHCACHE="FLUSHCACHE";
 	public static final String PARAM_OPLINKS="opLinks";

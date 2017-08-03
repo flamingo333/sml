@@ -1600,4 +1600,11 @@ public class MapUtils {
 		    	return flag;
 		    }
 	}
+	public static <V> Boolean getBoolean(Map<String, V> values, String key,
+			boolean b) {
+		return Boolean.valueOf(values.get(key)==null?String.valueOf(b):values.get(key).toString());
+	}
+	public static MapUtils newInstance() {
+		return new MapUtils();
+	}
 }

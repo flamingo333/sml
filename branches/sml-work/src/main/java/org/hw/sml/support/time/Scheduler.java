@@ -2,6 +2,8 @@ package org.hw.sml.support.time;
 
 import java.util.Date;
 import java.util.Timer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.hw.sml.plugin.Plugin;
 import org.hw.sml.tools.DateTools;
@@ -16,30 +18,29 @@ public class Scheduler implements Plugin{
 	
 	private Date firstTime;
 	
+	private Date nextTime;
+	
 	private boolean fixedRate=false;
+	
+	private ScheduledExecutorService executor;//= Executors.newScheduledThreadPool(1);  
 	
 	
 	public Scheduler(){
-		this.timer=new Timer();
+		executor = Executors.newScheduledThreadPool(1);  
 		if(firstTime==null){
 			firstTime=DateTools.trunc(DateTools.addMinutes(new Date(),1),1000);
 		}
 	}
 	
 	public void cancel(){
-		this.timer.cancel();
+		executor.shutdown();
 	}
 
 	public void init() {
 		if(task==null){
 			return;
 		}
-		
 		task.setScheduler(this);
-		if(!fixedRate)
-			this.timer.schedule(task,firstTime,delay*1000);
-		else
-			this.timer.schedule(task, firstTime, delay*1000);
 	}
 	
 	public void destroy() {
@@ -87,5 +88,17 @@ public class Scheduler implements Plugin{
 		this.fixedRate = fixedRate;
 	}
 
+	public ScheduledExecutorService getExecutor() {
+		return executor;
+	}
+
+	public Date getNextTime() {
+		return nextTime;
+	}
+
+	public void setNextTime(Date nextTime) {
+		this.nextTime = nextTime;
+	}
+	
 	
 }

@@ -104,7 +104,7 @@ public class IfSqlResolver implements SqlResolver{
 					flag=sp==null?true:(sp.getValue()==null||String.valueOf(sp.getValue()).length()==0);
 					tempMap.put(tmt,flag);
 				}else{
-					flag=tempMap.get(flag);
+					flag=tempMap.get(tmt);
 				}
 				String content=RegexUtils.subString(tm,">",("</"+mark+">"));
 				Assert.notRpeatMark(content,mark);

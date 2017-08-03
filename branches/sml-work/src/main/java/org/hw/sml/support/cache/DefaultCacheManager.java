@@ -20,7 +20,7 @@ public class DefaultCacheManager extends ManagedThread implements CacheManager {
 		this.setName("defaultCacheManagerThread");
 		init();
 	}
-	public static DefaultCacheManager newInstance(){
+	public synchronized static DefaultCacheManager newInstance(){
 		if(cm==null){
 			cm=new DefaultCacheManager();
 		}

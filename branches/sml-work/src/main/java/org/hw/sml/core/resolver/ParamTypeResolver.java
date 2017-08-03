@@ -99,7 +99,7 @@ public class ParamTypeResolver implements SqlResolver{
 				Method m;
 				try {
 					m = bean.getClass().getMethod(sss[1],getClassPath(sss[2]));
-					String result=(String) m.invoke(bean,sss[2].split(","));
+					String result=(String) m.invoke(bean,toObjs(sss[2].split(",")));
 					temp=temp.replace(mather,result);
 				} catch (NoSuchMethodException e) {
 					Assert.isTrue(false,sss[0]+"-"+sss[1]+" method not find!");
@@ -114,6 +114,13 @@ public class ParamTypeResolver implements SqlResolver{
 		}
 		return new Rst(temp);
 	}
+	private Object[] toObjs(String[] args){
+		Object[] objs=new Object[args.length];
+		for(int i=0;i<args.length;i++){
+			objs[i]=args[i];
+		}
+		return objs;
+	}
 	private String getValue(Object v){
 		if(v==null){
 			return null;
@@ -125,8 +132,8 @@ public class ParamTypeResolver implements SqlResolver{
 			}
 		}
 	}
-	private Class[] getClassPath(String sss){
-		Class[] c=new Class[sss.split(",").length];
+	private Class<?>[] getClassPath(String sss){
+		Class<?>[] c=new Class[sss.split(",").length];
 		for(int i=0;i<c.length;i++){
 			c[i]=String.class;
 		}
@@ -134,13 +141,6 @@ public class ParamTypeResolver implements SqlResolver{
 	}
 	@Override
 	public void setEl(El el) {
-		
-	}
-	public static void main(String[] args) {
-		String v="201501010000";
-		//<smlParam name="oldtime" value="ref:time"/>
-		String jsElp="var v='201501010000';var dateV=parseDate(v);var dateLV= dateV.getTime()-24*60*60*1000;new Date(dateLV).format('yyyyMMddhhmmss')";
-		System.out.println(JsEngine.evel(jsElp));
 		
 	}
 }

@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 
 import org.apache.commons.io.IOUtils;
 import org.hw.sml.core.SqlMarkupTemplate;
+import org.hw.sml.core.resolver.JsEngine;
 import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.jdbc.impl.DefaultDataSource;
 import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
@@ -43,8 +44,10 @@ public class SqlMarkupAbstractTemplateDemo {
 		JdbcTemplate jdbcTemplate=new DefaultJdbcTemplate();
 		jdbcTemplate.setDataSource(dataSource2);
 		SqlMarkupTemplate st=new SqlMarkupTemplate();
+		JsEngine.evel("'a'");
 		st.setDss(dss);
 		st.init();
+		System.out.println(st.getSmlContextUtils().query("area-pm",""));
 		st.getSmlContextUtils().query("defJt","select 1 from dual where 1=1  <if test=\" '@a'=='1' \">and 1<2</if>",new Maps<String,String>().put("a","1").getMap());
 	}
 	public static void main(String[] args) throws SQLException, InterruptedException, FileNotFoundException, IOException {
