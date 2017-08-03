@@ -1,6 +1,6 @@
 # sml
 小、可配置维护的、灵活的一套java 类库，框架（200kb+），易开发可配置扩展程序。
-## features
+## features 
 
  * 无依赖：无三方jar包依赖，可独立使用
  
@@ -8,7 +8,7 @@
  
  * jdbc: 对jdbc进行轻量级封装达到快速访问数据库，参考spring-jdbc实现
  
- * sml: sql标记语言，基于一套标签语法（参考ibatis,mybatis）为动态sql提供执行引擎，可动态开发接口服务
+ * sml: sql标记语言，基于一套标签语法（参考ibatis,mybatis）为动态sql提供执行引擎，可扩展动态开发接口服务
  
  * el : sml表达示语言，方法对象操作访问
  
@@ -84,7 +84,7 @@
 	el.evel(${person.age})//return properties.[person.age] return 25
 	el.evel(#{person})//return beanMap.[person] person bean
 	el.evel(#{person.setAge(25i)})//给person  对象属性age进行赋值
-	el.evel(#{person.infos.contains('已婚')})// 人物标签是否包含'已婚'
+	el.evel(#{person.infos.contains('成功')})// 人物标签是否包含'成功'
 	//复杂的表达示 如果为一个对象跟参数或者同类有冲突可能过`()`进行重新定义
 	el.evel(#{({a:1,b:({c:2,d:3})}).get('a')})
 	//#{}默认为beanMap中查询bean,如果带`()`刚把已带内容当成一个对象处理
@@ -181,11 +181,11 @@ result
 	//下载，将请求返回二进制流写入bos 本地流
 	Https.newGetHttps("http://www.baidu.com").bos(new FileOutputStream("/tempfile")).execute();
 	//上传，可提交多个文件和多个formparam  body(UpFile) upFile对象可填多个
-	Https https=Https.newPostHttps("http://test/helloworld/import").upFile().body(Https.newUpFile("t.xlsx",new 	FileInputStream("D:/temp/t.xlsx")));
+	Https https=Https.newPostHttps("http://test/helloworld/import").upFile().body(Https.newUpFile("t.xlsx",new FileInputStream("D:/temp/t.xlsx")));
 	https.getParamer().add("a","参数1");
 	https.getParamer().add("b","参数2");
 	https.execute();
 ```
    
  ## ext-httpServer功能  50kb
-      提供内置httpServer，为微服务体系提供基础。
+      提供内置httpServer，为微服务体系提供基础。sml-module 提供一套接口rest开发功能，开发注解类配置类rest风格接口，整体不到1m依赖。
