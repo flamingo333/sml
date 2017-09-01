@@ -166,6 +166,9 @@ public class DefaultJdbcTemplate extends JdbcTemplate  {
 		public int[] batchUpdate(String sql,List<Object[]> objs){
 			Connection con=null;
 			PreparedStatement pst = null;
+			if(objs.size()==1){
+				return new int[]{update(sql,objs.get(0))};
+			}
 			try {
 				con=getDataSource().getConnection();
 				con.setAutoCommit(false);

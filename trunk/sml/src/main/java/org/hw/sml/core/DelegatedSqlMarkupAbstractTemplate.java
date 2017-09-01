@@ -37,8 +37,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setType(Constants.TYPE_INSERT);
 		update.init();
 		LoggerHelper.debug(getClass(),"executeSql add:["+update.getUpateSql()+"]");
-		int flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects()).length;
-		return flag;
+		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
+		return affectRecord(flag);
 	}
 	/**
 	 * 更新数据
@@ -52,8 +52,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setType(Constants.TYPE_UPDATE);
 		update.init();
 		LoggerHelper.debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
-		int flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects()).length;
-		return flag;
+		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
+		return affectRecord(flag);
 	}
 	/**
 	 * 删除数据
@@ -67,8 +67,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setType(Constants.TYPE_DELETE);
 		update.init();
 		LoggerHelper.debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
-		int flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects()).length;
-		return flag;
+		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
+		return affectRecord(flag);
 	}
 	/**
 	 * 存在更新，不存在新加数据
@@ -154,7 +154,12 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	public void registDataSource(String dbid,DataSource dataSource){
 		 sqlMarkupAbstractTemplate.getSmlContextUtils().registDataSource(dbid, dataSource);
 	}
-	
+	private int affectRecord(int[] rc){
+		if(rc.length==1){
+			return rc[0];
+		}else
+			return rc.length;
+	}
 
 
 	public String getMark() {
