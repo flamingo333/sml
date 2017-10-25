@@ -32,7 +32,7 @@ public class PageDataBuilder extends AbstractDataBuilder {
 				if(rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)!=null&&rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY).equals("true"))
 					data=MapUtils.toLowerCaseForKey(data);
 				if(oriFields!=null&&newFields!=null){
-					data=MapUtils.rebuildMp(data, oriFields,newFields);
+					data=MapUtils.rebuildMp(data,oriFields,newFields,Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER)));
 				}
 				result.setDatas(data);
 			}else{
@@ -40,13 +40,10 @@ public class PageDataBuilder extends AbstractDataBuilder {
 			}
 		}else{
 			if(oriFields!=null&&newFields!=null){
-				datas=MapUtils.rebuildMp(datas, oriFields,newFields);
+				datas=MapUtils.rebuildMp(datas,oriFields,newFields,Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER)));
 			}
 			result.setDatas(datas);
 			int size=datas.size();
-			//
-			
-			//
 			if(size<limit&&page==1){
 				result.setCount(Long.valueOf(size));
 			}else{

@@ -219,7 +219,32 @@ public class MapUtils {
     * @param renames
     * @return
     */
-    
+    public static <K,V> Map<K,V> rebuildMp(Map<K,V> oriData,K[] names,K[] renames,boolean isHis){
+    	if(isHis){
+    		if(names==null||names.length==0||renames==null||renames.length!=names.length){
+    			return oriData;
+    		}else{
+    			for(int i=0;i<names.length;i++){
+    				K name=names[i];
+    				K key=renames[i];
+    				V v=oriData.remove(name);
+    				if(key!=null&&(key instanceof String)){
+    	    			String k=((String)key);
+    	    			if(k.indexOf("@")>-1){
+    	    				String[] ks=k.split("@");
+    	    				if(ks.length>=2){
+    	    					key=(K)ks[0];
+    	    					oriData.put(key,ValueHelper.rebuildMpHandlerValue(ks[1],v));
+    	    				}
+    	    			}
+    	    		}
+    			}
+    			return oriData;
+    		}
+    	}else{
+    		return rebuildMp(oriData,names,renames);
+    	}
+    }
     @SuppressWarnings("unchecked")
 	public static <K,V> Map<K,V> rebuildMp(Map<K,V> oriData,K[] names,K[] renames){
     	Map<K,V> result=newLinkedHashMap();
@@ -285,15 +310,18 @@ public class MapUtils {
     	Map<String,String> rt=transMapFromStr(format);
     	return rebuildMp(oriData, rt.keySet().toArray(new String[]{}),rt.values().toArray(new String[]{}));
     }
-    public static <K,V> List<Map<K,V>> rebuildMp(List<Map<K,V>> oriDatas,K[] names,K[] renames){
+    public static <K,V> List<Map<K,V>> rebuildMp(List<Map<K,V>> oriDatas,K[] names,K[] renames,boolean isHis){
     	List<Map<K,V>> result=newArrayList();
     	if(oriDatas==null){
     		return result;
     	}
     	for(Map<K,V> oriData:oriDatas){
-    		result.add(rebuildMp(oriData, names, renames));
+    		result.add(rebuildMp(oriData, names, renames,isHis));
     	}
     	return result;
+    }
+    public static <K,V> List<Map<K,V>> rebuildMp(List<Map<K,V>> oriDatas,K[] names,K[] renames){
+    	return rebuildMp(oriDatas, names, renames,false);
     }
     public static <K,V> List<Map<K,V>> rebuildMp(List<Map<K,V>> oriDatas){
     	//
@@ -1291,6 +1319,7 @@ public class MapUtils {
 		    	return flag;
 		    }
 	}
+
 	
 	
 }

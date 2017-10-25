@@ -18,6 +18,7 @@ public class LoggerHelper {
 			}
 		}
 		logger=ClassUtil.newInstance(classPath);
+		info(LoggerHelper.class,classPath);
 	}
 	public static  void debug(Class<?> c,String msg){
 		logger.debug(c,msg);

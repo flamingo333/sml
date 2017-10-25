@@ -15,12 +15,14 @@ import java.util.concurrent.TimeoutException;
 
 import org.hw.sml.support.LoggerHelper;
 import org.hw.sml.support.ManagedThread;
+import org.hw.sml.tools.MapUtils;
 /**
  * quene managed
  * @author wen
  *
  */
 public class ManagedQuene<T extends Task> {
+	
 	/**
 	 * 队列管理名称
 	 */
@@ -34,6 +36,9 @@ public class ManagedQuene<T extends Task> {
 	 * 消费者数量
 	 */
 	private int consumerThreadSize=1;
+	
+	private Map<String,Status> stats=MapUtils.newHashMap();
+	
 	
 	/**
 	 * 线程名称
@@ -74,7 +79,9 @@ public class ManagedQuene<T extends Task> {
 		for(int i=1;i<=consumerThreadSize;i++){
 			Execute execute=new Execute();
 			execute.setDaemon(true);
-			execute.setName(getThreadNamePre()+"-"+i);
+			String threadName=getThreadNamePre()+"-"+i;
+			execute.setName(threadName);
+			stats.put(threadName,new Status());
 			executes.add(execute);
 			execute.start();
 		}
@@ -134,15 +141,18 @@ public class ManagedQuene<T extends Task> {
 					future=exec.submit(call);
 					future.get(timeout, TimeUnit.SECONDS);
 				}
+				stats.get(Thread.currentThread().getName()).success();
 			}  catch (TimeoutException e) {
 				LoggerHelper.info(getClass(),"task["+task.toString()+"] timeout!");
 				if(future!=null&&!timeoutRunning)
 					future.cancel(true);
 				else
 					executingMap.put(task.toString(),false);
+				stats.get(Thread.currentThread().getName()).fail();
 			}catch (Exception e) {
 				e.printStackTrace();
 				LoggerHelper.error(getClass(),String.format(getErrorMsg(),e.getMessage()));
+				stats.get(Thread.currentThread().getName()).fail();
 			}finally{
 				executingMap.remove(task.toString());
 				if(exec!=null){
@@ -290,7 +300,60 @@ public class ManagedQuene<T extends Task> {
 		this.executingMap = executingMap;
 	}
 	
-	
-	
+	class Status{
+		private long lastExecuteTime;
+		private long lastExecuteErrorTime;
+		private int executiveIncrementTimes;
+		private int executiveIncrementErrorTimes;
+		private long d;
+		private long h;
+		private int lastExecuteIncrementDay;
+		private int lastExecuteIncrementHour;
+		public Status(){
+			this.d=System.currentTimeMillis();
+			this.h=System.currentTimeMillis();
+		}
+		public void success(){
+			run();
+			this.lastExecuteTime=System.currentTimeMillis();
+			this.executiveIncrementTimes++;
+		}
+		public void fail(){
+			run();
+			this.lastExecuteErrorTime=System.currentTimeMillis();
+			this.executiveIncrementErrorTimes++;
+		}
+		public void run(){
+			if(d>System.currentTimeMillis()-1000*60*60*24){
+				d=System.currentTimeMillis();
+				lastExecuteIncrementDay=0;
+			}
+			if(h>System.currentTimeMillis()-1000*60*60){
+				h=System.currentTimeMillis();
+				lastExecuteIncrementHour=0;
+			}
+			lastExecuteIncrementDay++;
+			lastExecuteIncrementHour++;
+		}
+		public long getLastExecuteTime() {
+			return lastExecuteTime;
+		}
+		public long getLastExecuteErrorTime() {
+			return lastExecuteErrorTime;
+		}
+		public int getExecutiveIncrementTimes() {
+			return executiveIncrementTimes;
+		}
+		public int getExecutiveIncrementErrorTimes() {
+			return executiveIncrementErrorTimes;
+		}
+		public int getLastExecuteIncrementDay() {
+			return lastExecuteIncrementDay;
+		}
+		public int getLastExecuteIncrementHour() {
+			return lastExecuteIncrementHour;
+		}
+		
+	}
 	
 }

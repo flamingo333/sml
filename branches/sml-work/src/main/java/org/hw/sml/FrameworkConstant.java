@@ -27,6 +27,7 @@ public class FrameworkConstant {
 	public static final String PARAM_FLUSHCACHE="FLUSHCACHE";
 	public static final String PARAM_OPLINKS="opLinks";
 	public static final String PARAM_ISREMOTEPRAMS="isRemoteParams";
+	public static final String PARAM_FIELDFILTER="igFieldFilter";
 	public static boolean isExit=false;
 	public static String getSupportKey(String frameworkMark,Type type){
 		if(type.equals(Type.FRAMEWORK_CFG_JDBC_SQL)){

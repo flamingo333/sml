@@ -71,8 +71,8 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		if(getCacheManager().get(key)!=null){
 			return (List<Map<String,Object>>) getCacheManager().get(key);
 		}
-		if(isLogger&&(st.getSmlParams().getSmlParam("igLog")==null||st.getSmlParams().getSmlParam("igLog").getValue().equals("false")))
-		LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getSqlString()+"],params"+paramsObject.toString()+",sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
+		if(isLogger&&(st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG)==null||st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG).getValue().equals("false")))
+		LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
 		Assert.isTrue(rst.getSqlString()!=null&&rst.getSqlString().length()>0, "querySql config error parser is null");
 		List<Map<String,Object>> result= getJdbc(st.getDbid()).queryForList(rst.getSqlString(),paramsObject.toArray(new Object[]{}));
 		if(st.getIsCache()==1)
@@ -140,7 +140,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		Rst rst=sqlResolvers.resolverLinks(st.getMainSql(), st.getSmlParams());
 		String sqlString=rst.getSqlString();
 		List<Object> paramsObject=rst.getParamObjects();
-		if(isLogger&&(st.getSmlParams().getSmlParam("igLog")==null||st.getSmlParams().getSmlParam("igLog").getValue().equals("false")))
+		if(isLogger&&(st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG)==null||st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG).getValue().equals("false")))
 		LoggerHelper.info(getClass(),"sql["+rst.getSqlString()+"],params"+paramsObject.toString());
 		return getJdbc(st.getDbid()).query(sqlString,paramsObject.toArray(new Object[]{}), new Rset());
 	}

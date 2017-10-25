@@ -75,8 +75,4 @@ public class CyptoUtils {
 		}
         return b2;
     }
-   public static void main(String[] args) {
-	   System.out.println(encode("huangwen","20210303"));
-   }
-
 }

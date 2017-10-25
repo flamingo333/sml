@@ -6,7 +6,6 @@ import java.util.Map;
 import org.hw.sml.tools.MapUtils;
 
 public class MapDataBuilder extends AbstractDataBuilder{
-
 	@Override
 	public Object build(List<Map<String, Object>> datas) {
 		datas=MapUtils.rebuildMp(datas,rebuildParam.getOriFields(),rebuildParam.getNewFields());

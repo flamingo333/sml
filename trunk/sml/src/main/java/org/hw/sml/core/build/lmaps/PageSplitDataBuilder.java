@@ -7,9 +7,7 @@ import org.hw.sml.tools.MapUtils;
 
 public class PageSplitDataBuilder extends AbstractDataBuilder {
 	public Object build(List<Map<String, Object>> datas) {
-		String[] oriFields=rebuildParam.getOriFields();
-		String[] newFields=rebuildParam.getNewFields();
-		return MapUtils.rebuildMp(datas, oriFields,newFields);
+		return MapUtils.rebuildMp(datas, rebuildParam.getOriFields(),rebuildParam.getNewFields());
 	}
 
 }

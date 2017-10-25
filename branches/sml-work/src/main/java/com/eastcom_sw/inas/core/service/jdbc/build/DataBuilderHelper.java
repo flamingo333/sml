@@ -61,8 +61,10 @@ public class DataBuilderHelper {
 				e.printStackTrace();
 			}
 		}
-		if(rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)!=null&&rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY).equals("true"))
+		if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)))
 			datas=MapUtils.toLowerCaseForKey(datas);
+		if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER)))
+			datas=MapUtils.rebuildMp(datas,rebuildParam.getOriFields(),rebuildParam.getNewFields(), true);
 		adm.setRebuildParam(rebuildParam);
 		adm.setJfContextUtils(jfContextUtils);
 		adm.setSqlTemplate(sqlTemplate);

@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.support.Calculator;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
@@ -25,10 +26,12 @@ public  class SmlElContext extends ElContext{
 				value= getValue(elp);
 			}else if(elp.startsWith("#{")&&elp.endsWith("}")){
 					String keyElp=elp.substring(2,elp.length()-1);
-				if(elp.contains("."))
+				if(keyElp.matches("[0-9|\\.|+|\\-|\\*|/|\\(|\\)]{2,}")){
+						value=new Calculator().calculate(keyElp);
+				}else if(elp.contains("."))
 					value=loopElp(keyElp);
 				else if(keyElp.startsWith("(")&&keyElp.endsWith(")")){
-					value=evel(keyElp);
+						value=evel(keyElp);
 				}else if(keyElp.contains("[")&&keyElp.endsWith("]")){
 					String elps[]=keyElp.split("\\[");
 					String bn=elps[0];int index=Integer.parseInt(elps[1].substring(0,elps[1].length()-1));

@@ -6,7 +6,6 @@ import java.util.Map;
 import org.hw.sml.tools.MapUtils;
 
 public class SingleDataBuilder extends AbstractDataBuilder{
-
 	public Object build(List<Map<String, Object>> datas) {
 		Map<String,Object> map=MapUtils.newLinkedHashMap();
 		int size=datas.size();

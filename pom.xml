@@ -7,6 +7,9 @@
 	<packaging>pom</packaging>
 	<name>parent</name>
 	<description>parent pom</description>
+	<properties>
+		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>

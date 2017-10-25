@@ -19,7 +19,7 @@ public class SmlAppContextUtils {
 			ObjectName name = new ObjectName("org.hw.sml.support.jmx:type=SmlAgent");
 			ManagementFactory.getPlatformMBeanServer().registerMBean(sml, name);
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} 
 	}
 	public static Map<String,AbstractJdbcFTemplate> sqlMarkupAbstractTemplates=new HashMap<String, AbstractJdbcFTemplate>();
