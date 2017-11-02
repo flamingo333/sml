@@ -201,7 +201,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		this.sqlMarkupAbstractTemplate = sqlMarkupAbstractTemplate;
 	}
 	
-	private SmlContextUtils getSmlContextUtils(){
+	public SmlContextUtils getSmlContextUtils(){
 		if(this.smlContextUtils==null){
 			smlContextUtils=new SmlContextUtils(sqlMarkupAbstractTemplate);
 		}

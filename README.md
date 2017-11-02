@@ -6,13 +6,15 @@
  
  * IOC：本身为容器，对象生命周期，依赖管理
  
+ * AOP: 引入切面概念，默认jdk动态代理，也可引入cglib包实现类高级代理，可简单实现日志记录，事务，其它统计类服务。
+ 
  * jdbc: 对jdbc进行轻量级封装达到快速访问数据库，参考spring-jdbc实现
  
  * sml: sql标记语言，基于一套标签语法（参考ibatis,mybatis）为动态sql提供执行引擎，可扩展动态开发接口服务
  
- * el : sml表达示语言，方法对象操作访问
+ * el : sml表达示语言，方便方法、对象操作访问
  
- * tools:提供常用工具类：MapUtils,Https,CallableHelper,ClassHelper,QueueManaged,ThreadManaged...
+ * tools:提供常用工具类：MapUtils,Https,CallableHelper,ClassHelper,QueueManaged,ThreadManaged,MethodProxyFactory...
  
  * 报表支持：有一块基于模型驱动报表引擎，封装对报表模型增删改查操作，可替代mybatis-generator功能，获取更高效的开发，可维护性
  
