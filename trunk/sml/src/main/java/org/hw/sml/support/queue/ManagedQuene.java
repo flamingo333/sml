@@ -151,7 +151,7 @@ public class ManagedQuene<T extends Task> {
 				stats.get(Thread.currentThread().getName()).fail();
 			}catch (Exception e) {
 				e.printStackTrace();
-				LoggerHelper.error(getClass(),String.format(getErrorMsg(),e.getMessage()));
+				LoggerHelper.error(getClass(),String.format(getErrorMsg(),task.toString(),e.getMessage()));
 				stats.get(Thread.currentThread().getName()).fail();
 			}finally{
 				executingMap.remove(task.toString());
@@ -222,7 +222,7 @@ public class ManagedQuene<T extends Task> {
 
 	public String getErrorMsg() {
 		if(errorMsg==null){
-			errorMsg=getManageName()+" of manageName has Error msg like [%s]!";
+			errorMsg=getManageName()+" of manageName has Error taskid:[%s] msg like [%s]!";
 		}
 		return errorMsg;
 	}

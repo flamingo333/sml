@@ -6,8 +6,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.jdbc.ResultSetExtractor;
+import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
 
 public class Rset implements ResultSetExtractor<Rslt>{
 	
@@ -27,7 +27,7 @@ public class Rset implements ResultSetExtractor<Rslt>{
 	          List<Object> data = new ArrayList<Object>();
 	          for (int i = 1; i <= iterNum; i++)
 	          {
-	            data.add(JdbcTemplate.getResultSetValue(rs,i));
+	            data.add(DefaultJdbcTemplate.getResultSetValue(rs,i));
 	          }
 	          listData.add(data);
 	        }

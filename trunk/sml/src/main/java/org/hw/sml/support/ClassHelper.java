@@ -47,7 +47,6 @@ public class ClassHelper {
      */
     public static  List<Class<?>> getClassListByAnnotation(String packageName, Class<? extends Annotation> annotationClass){
     	 return new AnnotationClassTemplate(packageName, annotationClass) {
-             @Override
              public boolean checkAddClass(Class<?> cls) {
                  return cls.isAnnotationPresent(annotationClass);
              }

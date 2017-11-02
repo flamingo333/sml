@@ -34,7 +34,9 @@ public abstract class ClassTemplate {
 	                    String protocol = url.getProtocol();
 	                    if (protocol.equals("file")) {
 	                        String packagePath = url.getPath().replaceAll("%20", " ");
+	                        try{
 	                        addClass(classList, packagePath, packageName);
+	                        }catch(Throwable e){}
 	                    } else if (protocol.equals("jar")) {
 	                        JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
 	                        JarFile jarFile = jarURLConnection.getJarFile();
@@ -91,12 +93,15 @@ public abstract class ClassTemplate {
 	   
 		private void doAddClass(List<Class<?>> classList, String className) {
 	        // 加载类
-	        Class<?> cls = ClassUtil.loadClass(className, false);
-	        // 判断是否可以添加类
-	        if (checkAddClass(cls)) {
-	            // 添加类
-	            classList.add(cls);
-	        }
+			try{
+				Class<?> cls = ClassUtil.loadClass(className, false);
+				// 判断是否可以添加类
+				if (checkAddClass(cls)) {
+					// 添加类
+					classList.add(cls);
+				}
+			}catch(Throwable e){
+			}
 	    }
 
 	    /**

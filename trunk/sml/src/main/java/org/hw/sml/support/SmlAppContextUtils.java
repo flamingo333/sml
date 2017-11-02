@@ -47,9 +47,9 @@ public class SmlAppContextUtils {
 		return temp;
 	}
 	public static  SmlContextUtils getSmlContextUtils(String key){
-		return getSqlMarkupAbstractTemplate(key).getSmlContextUtils();
+		return new SmlContextUtils(getSqlMarkupAbstractTemplate(key));
 	}
 	public static SmlContextUtils getSmlContextUtils(){
-		return getSqlMarkupAbstractTemplate().getSmlContextUtils();
+		return new SmlContextUtils(getSqlMarkupAbstractTemplate());
 	}
 }

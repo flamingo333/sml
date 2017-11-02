@@ -3,12 +3,15 @@ package org.hw.sml.support.ioc;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.hw.sml.FrameworkConstant;
 import org.hw.sml.support.ClassHelper;
 import org.hw.sml.support.LoggerHelper;
+import org.hw.sml.support.aop.AbstractAspect;
+import org.hw.sml.support.aop.MethodProxyFactory;
 import org.hw.sml.support.el.BeanType;
 import org.hw.sml.support.el.ElContext;
 import org.hw.sml.support.el.ElException;
@@ -100,6 +103,25 @@ public class BeanHelper {
 						beanName=new Strings(clazz.getSimpleName()).toLowerCaseFirst();
 					}
 					beanMap.put(beanName,clazz.newInstance());
+				}
+			}
+			if(Boolean.valueOf(getValue("sml.aop.status"))){
+				//aop切面编程-1找出切面bean
+				List<AbstractAspect> aspects=MapUtils.newArrayList();
+				for(Map.Entry<String,Object> beans:beanMap.entrySet()){
+					Object bean=beans.getValue();
+					if(bean instanceof AbstractAspect){
+						aspects.add((AbstractAspect)bean);
+					}
+				}
+				//排序
+				Collections.sort(aspects);
+				for(Map.Entry<String,Object> beans:beanMap.entrySet()){
+					Object bean=beans.getValue();
+					if(!(bean instanceof AbstractAspect)){
+						bean=MethodProxyFactory.newProxyInstance(bean, aspects.toArray(new AbstractAspect[]{}));
+						beans.setValue(bean);
+					}
 				}
 			}
 			//初始化属性值

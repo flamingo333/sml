@@ -36,11 +36,9 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 	
 	protected SqlResolvers sqlResolvers;
 
-	protected SmlContextUtils smlContextUtils;
 	
 	public void init(){
 		super.init();
-		this.smlContextUtils=new SmlContextUtils(this);
 		SmlAppContextUtils.put(frameworkMark,this);
 		if(this.jsonMapper==null){
 			LoggerHelper.warn(getClass(),"not dependency json mapper, can't used json config!");
@@ -132,7 +130,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 			}
 	}
 	public Object builder(SqlTemplate sqlTemplate){
-		return DataBuilderHelper.build(sqlTemplate.getRebuildParam(),querySql(sqlTemplate),smlContextUtils,sqlTemplate);
+		return DataBuilderHelper.build(sqlTemplate.getRebuildParam(),querySql(sqlTemplate),new SmlContextUtils(this),sqlTemplate);
 	}
 	
 	public Rslt queryRslt(SqlTemplate st){
@@ -190,17 +188,4 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 	public void setIsLogger(boolean isLogger) {
 		this.isLogger = isLogger;
 	}
-
-
-	public SmlContextUtils getSmlContextUtils() {
-		return smlContextUtils;
-	}
-
-
-	public void setSmlContextUtils(SmlContextUtils smlContextUtils) {
-		this.smlContextUtils = smlContextUtils;
-	}
-	
-	
-
 }

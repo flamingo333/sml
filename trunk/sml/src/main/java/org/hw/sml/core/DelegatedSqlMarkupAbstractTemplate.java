@@ -6,6 +6,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.hw.sml.context.SmlContextUtils;
 import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.model.Result;
 import org.hw.sml.report.model.Constants;
@@ -17,6 +18,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	
 	@Inject
 	protected SqlMarkupAbstractTemplate sqlMarkupAbstractTemplate;
+	
+	protected SmlContextUtils smlContextUtils;
 	
 	protected String mark="";
 	
@@ -96,7 +99,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		if(ifId==null){
 		   ifId=mapper.get("queryById")==null?(getClassName()+"-"+"queryById"):mapper.get("queryById");
 		}
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().query(ifId,params);
+		return getSmlContextUtils().query(ifId,params);
 	}
 	/**
 	 * 根据查询条件查多条记录
@@ -108,7 +111,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		if(ifId==null){
 		   ifId=mapper.get("query")==null?(getClassName()+"-"+"query"):mapper.get("query");
 		}
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().query(ifId,params);
+		return getSmlContextUtils().query(ifId,params);
 	}
 	/**
 	 * 查询返回任意配置返回值
@@ -119,7 +122,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		return query(params.get("ifId"),params);
 	}
 	public <T> T query(String ifId,Map<String,String> params){
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().query(ifId,params);
+		return getSmlContextUtils().query(ifId,params);
 	}
 	/**
 	 * 分页查询
@@ -131,7 +134,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		if(ifId==null){
 			ifId=mapper.get("page")==null?(getClassName()+"-"+"page"):mapper.get("page");
 		}
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().query(ifId,params);
+		return getSmlContextUtils().query(ifId,params);
 	}
 	/**
 	 * 配置更新
@@ -140,10 +143,10 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	 * @return
 	 */
 	public int update(String ifId,Map<String,String> params){
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().update(ifId, params);
+		return getSmlContextUtils().update(ifId, params);
 	}
 	public int update(Map<String,String> params){
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().update(params);
+		return getSmlContextUtils().update(params);
 	}
 	public Rslt queryRslt(String dbid,String sql,Map<String,String> params){
 		return sqlMarkupAbstractTemplate.queryRslt(dbid, sql, params);
@@ -152,7 +155,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		return sqlMarkupAbstractTemplate.querySql(dbid, sql, params);
 	}
 	public void registDataSource(String dbid,DataSource dataSource){
-		 sqlMarkupAbstractTemplate.getSmlContextUtils().registDataSource(dbid, dataSource);
+		 getSmlContextUtils().registDataSource(dbid, dataSource);
 	}
 	private int affectRecord(int[] rc){
 		if(rc.length==1){
@@ -188,7 +191,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	}
 	
 	public int clear(String parameter) {
-		return sqlMarkupAbstractTemplate.getSmlContextUtils().clear(parameter);
+		return getSmlContextUtils().clear(parameter);
 	}
 	public SqlMarkupAbstractTemplate getSqlMarkupAbstractTemplate() {
 		return sqlMarkupAbstractTemplate;
@@ -196,6 +199,13 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	public void setSqlMarkupAbstractTemplate(
 			SqlMarkupAbstractTemplate sqlMarkupAbstractTemplate) {
 		this.sqlMarkupAbstractTemplate = sqlMarkupAbstractTemplate;
+	}
+	
+	private SmlContextUtils getSmlContextUtils(){
+		if(this.smlContextUtils==null){
+			smlContextUtils=new SmlContextUtils(sqlMarkupAbstractTemplate);
+		}
+		return smlContextUtils;
 	}
 	
 }

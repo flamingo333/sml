@@ -23,6 +23,18 @@ public class ClassUtil {
     public static Class<?> loadClass(String className) {
         return loadClass(className, true);
     }
+    public static Class<?>[] getInterfaces(Class<?> targetClass){
+    	if(targetClass.getInterfaces().length==0){
+    		Class<?> superC=targetClass.getSuperclass();
+    		if(superC==null){
+    			return targetClass.getInterfaces();
+    		}else{
+    			return getInterfaces(superC);
+    		}
+    	}else{
+    		return targetClass.getInterfaces();
+    	}
+    }
     @SuppressWarnings("unchecked")
 	public static <T> T newInstance(Class<T> t,Class<?>[] parameterTypes,Object[] paramsValues) throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException{
     	@SuppressWarnings("rawtypes")

@@ -11,20 +11,14 @@ import org.hw.sml.support.cache.CacheManager;
 
 
 public interface  SqlMarkup extends Plugin{
-
 	 static final String CACHE_PRE="jdbc";
-	
-	 JdbcTemplate getJdbc(String dbid);
-	
-	 SqlTemplate getSqlTemplate(String id);
-	
-	 List<Map<String,Object>> querySql(SqlTemplate st);
-	
-	 Object builder(SqlTemplate st);
-	
 	 CacheManager getCacheManager();
-	
+	 JdbcTemplate getJdbc(String dbid);
+	 SqlTemplate getSqlTemplate(String id);
+	 List<Map<String,Object>> querySql(SqlTemplate st);
+	 Object builder(SqlTemplate st);
 	 Rslt queryRslt(SqlTemplate st);
-	 
+	 public List<Map<String,Object>> querySql(String dbid,String sql,Map<String,String> params);
 	 int update(SqlTemplate st);
+	 Rslt queryRslt(String dbid,String sql,Map<String,String> params);
 }
