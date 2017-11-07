@@ -1,5 +1,8 @@
 package org.hw.sml.jdbc;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -61,6 +64,8 @@ public abstract class JdbcAccessor {
 			if ("java.sql.Timestamp".equals(rs.getMetaData().getColumnClassName(index))) {
 				obj = rs.getTimestamp(index);
 			}
+		}else if(obj!=null&&obj instanceof java.sql.Array){
+			obj=((java.sql.Array)obj).getArray();
 		}
 		return obj;
 	}
@@ -75,7 +80,11 @@ public abstract class JdbcAccessor {
 		if(inValue==null){
 			ps.setNull(paramIndex,Types.NULL);
 		}else if (isStringValue(inValue.getClass())) {
-			ps.setString(paramIndex, inValue.toString());
+			String v=inValue.toString();
+			if(v.length()<4000)
+				ps.setString(paramIndex, v);
+			else
+				ps.setClob(paramIndex,new StringReader(v));
 		}
 		else if (isDateValue(inValue.getClass())) {
 			ps.setTimestamp(paramIndex, new java.sql.Timestamp(((java.util.Date) inValue).getTime()));
@@ -83,6 +92,10 @@ public abstract class JdbcAccessor {
 		else if (inValue instanceof Calendar) {
 			Calendar cal = (Calendar) inValue;
 			ps.setTimestamp(paramIndex, new java.sql.Timestamp(cal.getTime().getTime()), cal);
+		}else if(inValue instanceof InputStream){
+			ps.setBlob(paramIndex,(InputStream)inValue);
+		}else if(inValue instanceof byte[]){
+			ps.setBlob(paramIndex,new ByteArrayInputStream((byte[])inValue));
 		}
 		else {
 			ps.setObject(paramIndex, inValue);

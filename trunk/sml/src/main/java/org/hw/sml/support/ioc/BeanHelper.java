@@ -48,6 +48,7 @@ public class BeanHelper {
 			String packageName=getValue(IOC_BEAN_SCAN);
 			List<Class<?>> classes=MapUtils.newArrayList();
 			boolean isAnnotationScan=packageName!=null&&packageName.trim().length()>0;
+			boolean isAopOpened=Boolean.valueOf(getValue("sml.aop.status"));
 			if(isAnnotationScan){
 				for(String pn:packageName.split(",| ")){
 					List<Class<?>> cls=ClassHelper.getClassListByAnnotation(pn, Bean.class);
@@ -105,7 +106,7 @@ public class BeanHelper {
 					beanMap.put(beanName,clazz.newInstance());
 				}
 			}
-			if(Boolean.valueOf(getValue("sml.aop.status"))){
+			if(isAopOpened){
 				//aop切面编程-1找出切面bean
 				List<AbstractAspect> aspects=MapUtils.newArrayList();
 				for(Map.Entry<String,Object> beans:beanMap.entrySet()){

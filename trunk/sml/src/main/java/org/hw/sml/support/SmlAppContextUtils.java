@@ -4,10 +4,6 @@ import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
 import org.hw.sml.context.SmlContextUtils;
@@ -21,16 +17,7 @@ public class SmlAppContextUtils {
 			SmlAgent sml=new SmlAgent();
 			ObjectName name = new ObjectName("org.hw.sml.support.jmx:type=SmlAgent");
 			ManagementFactory.getPlatformMBeanServer().registerMBean(sml, name);
-		} catch (MalformedObjectNameException e) {
-			e.printStackTrace();
-		} catch (NullPointerException e) {
-			e.printStackTrace();
-		} catch (InstanceAlreadyExistsException e) {
-			e.printStackTrace();
-		} catch (MBeanRegistrationException e) {
-			e.printStackTrace();
-		} catch (NotCompliantMBeanException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
 		}   
 	}
 	public static Map<String,SqlMarkupAbstractTemplate> sqlMarkupAbstractTemplates=new HashMap<String, SqlMarkupAbstractTemplate>();

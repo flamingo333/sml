@@ -24,7 +24,7 @@
  
  * 服务频繁更新
  
- * 低配置环境下的服务开发
+ * 低配置环境下的服务开发(仅需要分配3m内存即可启动sml-server服务发布rest接口服务)
 
 ##Getting started
 ###Add the maven dependency
