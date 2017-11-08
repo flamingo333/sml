@@ -113,7 +113,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 						st.setConditionInfo(st.getConditionInfo().replace("\"sqlParams\"", "\"smlParams\""));
 					}
 					if(jsonMapper!=null){
-						st.setSmlParams(jsonMapper.toObj(st.getConditionInfo(),SMLParams.class));
+						st.setSmlParams(jsonMapper.toObj(st.getConditionInfo(),SMLParams.class).reinit());
 					}
 				}else{
 					st.setSmlParams(SmlTools.toSplParams(st.getConditionInfo()));

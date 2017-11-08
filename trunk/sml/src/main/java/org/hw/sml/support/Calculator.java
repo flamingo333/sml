@@ -113,11 +113,7 @@ public class Calculator {
     }
 }
 class ArithHelper {
-
-    // 默认除法运算精度
     private static final int DEF_DIV_SCALE = 16;
-
-    // 这个类不能实例化
     private ArithHelper() {
     }
     public static double add(String v1, String v2) {

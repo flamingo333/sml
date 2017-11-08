@@ -9,8 +9,8 @@ public class MapListDataBuilder extends AbstractDataBuilder{
 	public Object build(List<Map<String, Object>> datas) {
 		Map<String,List<Object>> result=new LinkedHashMap<String, List<Object>>();
 		for(Map<String,Object> data :datas){
-			String key=rebuildParam.getExtMap().get("key")==null?"key":rebuildParam.getExtMap().get("key");
-			String value=rebuildParam.getExtMap().get("value")==null?"value":rebuildParam.getExtMap().get("value");
+			String key=rebuildParam.get("key")==null?"key":rebuildParam.get("key");
+			String value=rebuildParam.get("value")==null?"value":rebuildParam.get("value");
 			if(!result.containsKey(key)){
 				result.put(key,new ArrayList<Object>());
 			}

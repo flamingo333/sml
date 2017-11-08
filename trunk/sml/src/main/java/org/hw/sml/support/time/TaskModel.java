@@ -123,6 +123,7 @@ public class TaskModel implements Serializable{
 			String month_hour=new SimpleDateFormat("dd_HH").format(new Date());
 			return month_hour;
 		}
+		@SuppressWarnings("deprecation")
 		private String getWeekDay(){
 			String week_day=lpad(String.valueOf(new Date().getDay()));
 			if(week_day.equals("00")){
@@ -131,6 +132,7 @@ public class TaskModel implements Serializable{
 			return week_day;
 		}
 		
+		@SuppressWarnings("unused")
 		private String getMonthDay(){
 			String month_day=new SimpleDateFormat("dd").format(new Date());
 			return month_day;

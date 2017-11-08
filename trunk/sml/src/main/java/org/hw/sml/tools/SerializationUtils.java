@@ -2,7 +2,6 @@ package org.hw.sml.tools;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -15,22 +14,14 @@ public class SerializationUtils {
 	}
 
 	public static void serialize(Serializable obj, OutputStream outputStream) {
-		if (outputStream == null) {
-			throw new IllegalArgumentException(
-					"The OutputStream must not be null");
-		}
+		Assert.notNull(obj, "The OutputStream must not be null");
 		ObjectOutputStream out = null;
 		try {
 			out = new ObjectOutputStream(outputStream);
 			out.writeObject(obj);
 		} catch (Exception ex) {
-
 		} finally {
-			try {
-				if (out != null)
-					out.close();
-			} catch (IOException ex) {
-			}
+			IOUtils.safeClose(obj);
 		}
 	}
 
@@ -41,32 +32,21 @@ public class SerializationUtils {
 	}
 
 	public static Object deserialize(InputStream inputStream) {
-		if (inputStream == null) {
-			throw new IllegalArgumentException(
-					"The InputStream must not be null");
-		}
+		Assert.notNull(inputStream, "The InputStream must not be null");
 		ObjectInputStream in = null;
 		try {
 			in = new ObjectInputStream(inputStream);
 			return in.readObject();
-		} catch (ClassNotFoundException ex) {
-
-		} catch (IOException e) {
+		}catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			try {
-				if (in != null)
-					in.close();
-			} catch (IOException ex) {
-			}
+			IOUtils.safeClose(in);
 		}
-		return in;
+		return null;
 	}
 
 	public static Object deserialize(byte[] objectData) {
-		if (objectData == null) {
-			throw new IllegalArgumentException("The byte[] must not be null");
-		}
+		Assert.notNull(objectData, "The byte[] must not be null");
 		ByteArrayInputStream bais = new ByteArrayInputStream(objectData);
 		return deserialize(bais);
 	}

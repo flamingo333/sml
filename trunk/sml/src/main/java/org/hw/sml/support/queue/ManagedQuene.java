@@ -141,18 +141,18 @@ public class ManagedQuene<T extends Task> {
 					future=exec.submit(call);
 					future.get(timeout, TimeUnit.SECONDS);
 				}
-				stats.get(Thread.currentThread().getName()).success();
+				stats.get(Thread.currentThread().getName()).success().info(task);
 			}  catch (TimeoutException e) {
 				LoggerHelper.info(getClass(),"task["+task.toString()+"] timeout!");
 				if(future!=null&&!timeoutRunning)
 					future.cancel(true);
 				else
 					executingMap.put(task.toString(),false);
-				stats.get(Thread.currentThread().getName()).fail();
+				stats.get(Thread.currentThread().getName()).fail().failInfo(task, e.getMessage());
 			}catch (Exception e) {
 				e.printStackTrace();
 				LoggerHelper.error(getClass(),String.format(getErrorMsg(),task.toString(),e.getMessage()));
-				stats.get(Thread.currentThread().getName()).fail();
+				stats.get(Thread.currentThread().getName()).fail().failInfo(task, e.getMessage());
 			}finally{
 				executingMap.remove(task.toString());
 				if(exec!=null){
@@ -309,19 +309,33 @@ public class ManagedQuene<T extends Task> {
 		private long h;
 		private int lastExecuteIncrementDay;
 		private int lastExecuteIncrementHour;
+		private String lastExecuteErrorInfo;
+		private String lastExecuteTaskInfo;
+		private String lastExecuteTaskErrorInfo;
 		public Status(){
 			this.d=System.currentTimeMillis();
 			this.h=System.currentTimeMillis();
 		}
-		public void success(){
+		public Status success(){
 			run();
 			this.lastExecuteTime=System.currentTimeMillis();
 			this.executiveIncrementTimes++;
+			return this;
 		}
-		public void fail(){
+		public Status failInfo(Task task,String error){
+			this.lastExecuteTaskErrorInfo=task.toString();
+			this.lastExecuteErrorInfo=error;
+			return this;
+		}
+		public Status info(Task task){
+			this.lastExecuteTaskInfo=task.toString();
+			return this;
+		}
+		public Status fail(){
 			run();
 			this.lastExecuteErrorTime=System.currentTimeMillis();
 			this.executiveIncrementErrorTimes++;
+			return this;
 		}
 		public void run(){
 			if(d>System.currentTimeMillis()-1000*60*60*24){
@@ -352,6 +366,15 @@ public class ManagedQuene<T extends Task> {
 		}
 		public int getLastExecuteIncrementHour() {
 			return lastExecuteIncrementHour;
+		}
+		public String getLastExecuteErrorInfo() {
+			return lastExecuteErrorInfo;
+		}
+		public String getLastExecuteTaskInfo() {
+			return lastExecuteTaskInfo;
+		}
+		public String getLastExecuteTaskErrorInfo() {
+			return lastExecuteTaskErrorInfo;
 		}
 		
 	}

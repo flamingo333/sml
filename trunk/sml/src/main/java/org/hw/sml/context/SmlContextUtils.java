@@ -178,7 +178,7 @@ public class SmlContextUtils {
 		return https.head(https.getHeader().put("Content-Type",contentType).put("Accept",accept)).body(requestBody).execute();
 	}
 	public static String queryFromUrl(String url,byte[] requestBody) throws IOException{
-		return queryFromUrl("application/json;charset=UTF-8", "application/json;charset=UTF-8", url, requestBody);
+		return queryFromUrl("application/json; charset=UTF-8", "application/json; charset=UTF-8", url, requestBody);
 	}
 	public static String queryFromUrl(String url,String requestBody) throws IOException{
 		Charset charset=Charset.forName("utf-8");

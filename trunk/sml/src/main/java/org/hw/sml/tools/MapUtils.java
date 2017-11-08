@@ -219,7 +219,8 @@ public class MapUtils {
     * @param renames
     * @return
     */
-    public static <K,V> Map<K,V> rebuildMp(Map<K,V> oriData,K[] names,K[] renames,boolean isHis){
+    @SuppressWarnings("unchecked")
+	public static <K,V> Map<K,V> rebuildMp(Map<K,V> oriData,K[] names,K[] renames,boolean isHis){
     	if(isHis){
     		if(names==null||names.length==0||renames==null||renames.length!=names.length){
     			return oriData;
@@ -236,6 +237,8 @@ public class MapUtils {
     	    					key=(K)ks[0];
     	    					oriData.put(key,ValueHelper.rebuildMpHandlerValue(ks[1],v));
     	    				}
+    	    			}else{
+    	    				oriData.put(key,v);
     	    			}
     	    		}
     			}
@@ -891,33 +894,21 @@ public class MapUtils {
 	}
 	public static <V> String getString(Map<String,V> data,String k,String defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return String.valueOf(v);
-		}
+		return v==null?defaultValue:String.valueOf(v);
 	}
 	public static <V> Integer getInt(Map<String,V> data,String k){
 		return getInt(data, k,null);
 	}
 	public static <V> Integer getInt(Map<String,V> data,String k,Integer defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return Integer.parseInt(String.valueOf(v));
-		}
+		return v==null?defaultValue:Integer.parseInt(String.valueOf(v));
 	}
 	public static <V> Long getLong(Map<String,V> data,String k){
 		return getLong(data, k,null);
 	}
 	public static <V> Long getLong(Map<String,V> data,String k,Long defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return Long.parseLong(String.valueOf(v));
-		}
+		return v==null?defaultValue:Long.parseLong(String.valueOf(v));
 	}
 	
 	public static interface Builder<T>{
@@ -928,11 +919,7 @@ public class MapUtils {
 	}
 	public static <V> Float getFloat(Map<String,V> data,String k,Float defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return Float.parseFloat(String.valueOf(v));
-		}
+		return v==null?defaultValue:Float.parseFloat(String.valueOf(v));
 	}
 	public static <V> Boolean getBoolean(Map<String, V> values, String key,
 			boolean b) {
@@ -1319,7 +1306,5 @@ public class MapUtils {
 		    	return flag;
 		    }
 	}
-
-	
 	
 }

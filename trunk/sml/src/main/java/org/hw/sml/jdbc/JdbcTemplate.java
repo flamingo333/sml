@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 
 
 public interface JdbcTemplate{
+	public <T> T execute(ConnectionCallback<T> connectionCallback);
 	public abstract void execute(String sql);
 	public abstract void execute(String sql,Object[] params);
 	public abstract int update(String sql,Object... params);
@@ -38,6 +39,5 @@ public interface JdbcTemplate{
 	public abstract <T> List<T> queryForList(String sql,Object[] params,Class<T> clazz);
 	public abstract <T> List<T> queryForList(String sql,Class<T> clazz,Object... params);
 	public abstract <T> List<T> queryForList(String sql,Class<T> clazz);
-	public abstract void setDataSource(DataSource dataSource);
-	
+	public abstract void setDataSource(DataSource dataSource);	
 }

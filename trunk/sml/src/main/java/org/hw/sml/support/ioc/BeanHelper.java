@@ -155,9 +155,9 @@ public class BeanHelper {
 							field.setAccessible(true);
 							if(fieldType==null||fieldType.equals("v")||fieldType.equals("b")){
 								Assert.notNull(getValue(fieldType,et.getValue()),beanName+"-property["+et.getValue()+"] is not configed!");
-								Assert.notNull(field, "bean["+beanName+"-"+bean.getClass()+"] has not field["+fieldName+"]");
+								Assert.notNull(field, "bean["+beanName+"-"+bean.getClass()+"] has no field["+fieldName+"]");
 								Object value=ClassUtil.convertValueToRequiredType(getValue(fieldType,et.getValue()), field.getType());
-								Assert.notNull(value, "bean["+beanName+"-"+bean.getClass()+"] has not field "+fieldType+"["+et.getValue()+"]");
+								Assert.notNull(value, "bean["+beanName+"-"+bean.getClass()+"] has no field "+fieldType+"["+et.getValue()+"]");
 								field.set(bean,value.equals("")?null:value);
 							}else if(fieldType.equals("m")||fieldType.equals("mv")||fieldType.equals("mb")){
 								String methodName="set"+new Strings(fieldName).toUpperCaseFirst();
@@ -176,7 +176,7 @@ public class BeanHelper {
 						String methodName=ktoken[1];
 						String methodType=ktoken[2];
 						Method method=ClassUtil.getMethod(bean.getClass(),methodName);
-						Assert.notNull(method, "bean["+beanName+"-"+bean.getClass()+"] has not method["+methodName+"]!");
+						Assert.notNull(method, "bean["+beanName+"-"+bean.getClass()+"] has no method["+methodName+"]!");
 						Object value=ClassUtil.convertValueToRequiredType(getValue(methodType,et.getValue()),method.getGenericParameterTypes()[0].getClass());
 						Assert.notNull(value,"bean["+beanName+"-"+bean.getClass()+"] method ["+methodName+"] for params "+methodType+"["+et.getValue()+"]");
 						method.invoke(bean, value.equals("")?null:value);
@@ -396,6 +396,17 @@ public class BeanHelper {
 				return (T)val;
 		}
 		return null;
+	}
+	public static <T> List<T> getBeans(Class<T> t){
+		List<T> result=MapUtils.newArrayList();
+		for(Map.Entry<String,Object> entry:beanMap.entrySet()){
+			Object val=entry.getValue();
+			if(val.getClass().equals(t))
+				result.add((T)val);
+			else if(t.isInstance(val))
+				result.add((T)val);
+		}
+		return result;
 	}
 	public static String getValue(String key){
 		return propertiesHelper.getValue(key);

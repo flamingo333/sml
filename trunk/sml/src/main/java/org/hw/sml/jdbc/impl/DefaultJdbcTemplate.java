@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import javax.sql.DataSource;
 
 import org.hw.sml.jdbc.BatchPreparedStatementSetter;
 import org.hw.sml.jdbc.Callback;
+import org.hw.sml.jdbc.ConnectionCallback;
 import org.hw.sml.jdbc.DataSourceUtils;
 import org.hw.sml.jdbc.JdbcAccessor;
 import org.hw.sml.jdbc.JdbcTemplate;
@@ -20,7 +23,6 @@ import org.hw.sml.jdbc.RowMapper;
 import org.hw.sml.jdbc.exception.SqlException;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
-import org.hw.sml.tools.MapUtils;
 
 public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		public DefaultJdbcTemplate(){}
@@ -36,169 +38,135 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		public int update(String sql){
 			return update(sql,new Object[]{});
 		}
-		public int update(String sql,Object... params){
-			Connection con=null;
-			PreparedStatement pst = null;
-			int result=0;
-			try{
-				con=open();
-				pst = con.prepareStatement(sql);
-				if(params!=null){
-					for(int i=0;i<params.length;i++){
-						setPreparedState(pst, i+1,params[i]);
+		public int update(final String sql,final Object... params){
+			return execute(new ConnectionCallback<Integer>() {
+				public Integer doInConnection(Connection con) {
+					PreparedStatement pst = null;
+					try {
+						pst = con.prepareStatement(sql);
+						if(params!=null){
+							for(int i=0;i<params.length;i++){
+								setPreparedState(pst, i+1,params[i]);
+							}
+						}
+						return pst.executeUpdate();
+					} catch (SQLException e) {
+						throw new SqlException(e,sql);
+					}finally{
+						safeClose(pst);
 					}
 				}
-				result=pst.executeUpdate();
-				commit();
-			}catch(SQLException  e){
-				rollback();
-				throw new SqlException(e.getMessage());
-			}finally{
-				try{
-					if(pst!=null){
-						pst.close();
-					}
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-				close();
-			}
-			return result;
+			});
 		}
 		public int update(List<String> sqls){
 			return update(sqls,null);
 		}
-		public int update(String[] sqls, List<Object[]>... objs) {
-			Connection con=null;
-			PreparedStatement pst = null;
+		public int update(final String[] sqls,final List<Object[]>... objs) {
 			if(objs!=null)
 			Assert.isTrue(sqls.length==objs.length,"sqls size["+sqls.length+"] != objs size["+objs.length+"]");
-			int result=0;
-			try {
-				con=open();
-				for(int i=0;i<sqls.length;i++){
-					String sql=sqls[i];
-					pst=con.prepareStatement(sql);
-					for(int j=0;j<objs[i].size();j++){
-						Object[] params=objs[i].get(j);
-						for(int m=0;m<params.length;m++){
-							setPreparedState(pst, m+1, params[m]);
+			return execute(new ConnectionCallback<Integer>() {
+				public Integer doInConnection(Connection con) {
+					int result=0;
+					PreparedStatement pst = null;
+					try {
+						for(int i=0;i<sqls.length;i++){
+							String sql=sqls[i];
+							pst=con.prepareStatement(sql);
+							for(int j=0;j<objs[i].size();j++){
+								Object[] params=objs[i].get(j);
+								for(int m=0;m<params.length;m++){
+									setPreparedState(pst, m+1, params[m]);
+								}
+								pst.addBatch();
+							}
+							result+=pst.executeBatch().length;
 						}
-						pst.addBatch();
+						return result;
+					}catch (SQLException e) {
+						throw new SqlException(e);
+					}finally{
+						safeClose(pst);
 					}
-					result+=pst.executeBatch().length;
 				}
-				commit();
-				return result;
-			}catch(Exception e){
-				rollback();
-				throw new SqlException(e.getMessage());
-			}finally{
-				try {
-					if(pst!=null){
-						pst.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-				close();
-			}
+			});
 		}
-		public int update(List<String> sqls, List<Object[]> objs) {
-			Connection con=null;
-			PreparedStatement pst = null;
+		public int update(final List<String> sqls,final List<Object[]> objs) {
 			if(objs!=null)
 			Assert.isTrue(sqls.size()==objs.size(),"sqls size["+sqls.size()+"] != objs size["+objs.size()+"]");
-			int result=0;
-			try {
-				con=open();
-				for(int i=0;i<sqls.size();i++){
-					pst=con.prepareStatement(sqls.get(i));
-					if(objs!=null){
-						Object[] params=objs.get(i);
-						if(params!=null){
-							for(int j=0;j<params.length;j++){
-								setPreparedState(pst,j+1,params[j]);
+			return execute(new ConnectionCallback<Integer>() {
+				public Integer doInConnection(Connection conn) {
+					int result=0;
+					PreparedStatement pst=null;
+					try {
+						for(int i=0;i<sqls.size();i++){
+							pst=conn.prepareStatement(sqls.get(i));
+							if(objs!=null){
+								Object[] params=objs.get(i);
+								if(params!=null){
+									for(int j=0;j<params.length;j++){
+										setPreparedState(pst,j+1,params[j]);
+									}
+								}
 							}
+							result+=pst.executeUpdate();
 						}
+						return result;
+					} catch (SQLException e) {
+						throw new SqlException(e);
+					}finally{
+						safeClose(pst);
 					}
-					result+=pst.executeUpdate();
 				}
-				commit();
-				return result;
-			}catch(Exception e){
-				rollback();
-				throw new SqlException(e.getMessage());
-			}finally{
-				try {
-					if(pst!=null){
-						pst.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-				close();
-			}
+			});	
 		}
-		public int[] batchUpdate(String sql,List<Object[]> objs){
-			Connection con=null;
-			PreparedStatement pst = null;
+		public int[] batchUpdate(final String sql,final List<Object[]> objs){
 			if(objs.size()==1){
 				return new int[]{update(sql,objs.get(0))};
 			}
-			try {
-				con=open();
-				pst=con.prepareStatement(sql);
-				for(int i=0;i<objs.size();i++){
-					Object[] params=objs.get(i);
-					for(int j=0;j<params.length;j++){
-						setPreparedState(pst,j+1,params[j]);
-  					}
-					pst.addBatch();
+			return execute(new ConnectionCallback<int[]>() {
+				public int[] doInConnection(Connection conn) {
+					PreparedStatement pst = null;
+					try {
+						pst=conn.prepareStatement(sql);
+						for(int i=0;i<objs.size();i++){
+							Object[] params=objs.get(i);
+							for(int j=0;j<params.length;j++){
+								setPreparedState(pst,j+1,params[j]);
+		  					}
+							pst.addBatch();
+						}
+						return pst.executeBatch();
+					} catch (SQLException e) {
+						throw new SqlException(e,sql);
+					}finally{
+						safeClose(pst);
+					}
+					
 				}
-				int[] result=pst.executeBatch();
-				commit();
-				return result;
-			} catch (Exception e) {
-				rollback();
-				throw new SqlException(e.getMessage());
-			}finally{
-				try{
-					if(pst!=null)
-						pst.close();
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-				close();
-			}
+			});
 		}
-		public <T> T query(String sql, Object[] params, ResultSetExtractor<T> rset) {
-			Connection con=null;
-			PreparedStatement pst = null;
-			ResultSet rs=null;
-			try {
-				con=open();
-				pst = con.prepareStatement(sql);
-				if(params!=null){
-					for(int i=0;i<params.length;i++){
-						setPreparedState(pst, i+1,params[i]);
+		public <T> T query(final String sql,final Object[] params,final ResultSetExtractor<T> rset) {
+			return execute(new ConnectionCallback<T>(){
+				public T doInConnection(Connection conn) {
+					PreparedStatement pst = null;
+					ResultSet rs=null;
+					try {
+						pst = conn.prepareStatement(sql);
+						if(params!=null){
+							for(int i=0;i<params.length;i++){
+								setPreparedState(pst, i+1,params[i]);
+							}
+						}
+						rs=pst.executeQuery();
+						return rset.extractData(rs);
+					} catch (SQLException e) {
+						throw new SqlException(e,sql);
+					}finally{
+						safeClose(rs);
+						safeClose(pst);
 					}
 				}
-				rs=pst.executeQuery();
-				return rset.extractData(rs);
-			} catch (SQLException e) {
-				throw new SqlException(e.getMessage());
-			}finally{
-				try{
-					if(rs!=null)
-					rs.close();
-					if(pst!=null)
-					pst.close();
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-				close();
-			}
+			}, false);
 		}
 		
 		public <T> T queryForObject(String sql,Object[] params,RowMapper<T> rowMapper){
@@ -231,120 +199,92 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		@SuppressWarnings("unchecked")
 		public <T> List<T> queryForList(String sql,Object[] params,Class<T> clazz){
 			List<Map<String,Object>> trs=queryForList(sql, params);
-			List<T> result=MapUtils.newArrayList();
+			List<T> result=new ArrayList<T>();
 			for(Map<String,Object> tr:trs){
 				result.add((T)ClassUtil.convertValueToRequiredType(tr.get(tr.keySet().iterator().next()),clazz));
 			}
 			return result;
 		}
-		public void queryForCallback(String sql, Object[] params,
-				Callback callback) {
-			Connection con = null;
-			PreparedStatement stmt = null;
-			ResultSet rs=null;
-			try{
-				con=open();
-				stmt=con.prepareStatement(sql);
-				if(params!=null){
-					for(int i=0;i<params.length;i++){
-						setPreparedState(stmt, i+1,params[i]);
+		public void queryForCallback(final String sql,final Object[] params,
+				final Callback callback) {
+			execute(new ConnectionCallback<Object>(){
+				public Object doInConnection(Connection conn) {
+					PreparedStatement stmt = null;
+					ResultSet rs=null;
+					try {
+						stmt=conn.prepareStatement(sql);
+						if(params!=null){
+							for(int i=0;i<params.length;i++){
+								setPreparedState(stmt, i+1,params[i]);
+							}
+						}
+						rs=stmt.executeQuery();
+						int i=0;
+						while(rs.next()){
+							callback.call(rs, i++);
+						}
+						return null;
+					} catch (SQLException e) {
+						throw new SqlException(e,sql);
+					}finally{
+						safeClose(rs);
+						safeClose(stmt);
 					}
 				}
-				rs=stmt.executeQuery();
-				int i=0;
-				while(rs.next()){
-					callback.call(rs, i++);
-				}
-			}catch(Exception e){
-				throw new SqlException(e.getMessage());
-			}finally{
-				try{
-					if(rs!=null)
-						rs.close();
-					if(stmt!=null)
-						stmt.close();
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-				close();
-			}
+				
+			},false);
 		}
 		public void queryForCallback(String sql, Callback callback) {
 			queryForCallback(sql,null, callback);
 		}
-		public <T> List<T> query(String sql,Object[] params,RowMapper<T> rowMapper){
-			Connection con = null;
-			PreparedStatement stmt = null;
-			ResultSet rs=null;
-			List<T> result=MapUtils.newArrayList();
-			try{
-				con =DataSourceUtils.getConnection(dataSource);
-				stmt=con.prepareStatement(sql);
-				if(params!=null){
-					for(int i=0;i<params.length;i++){
-						setPreparedState(stmt, i+1,params[i]);
+		public <T> List<T> query(final String sql,final Object[] params,final RowMapper<T> rowMapper){
+			return execute(new ConnectionCallback<List<T>>(){
+				public List<T> doInConnection(Connection con) {
+					PreparedStatement stmt = null;
+					ResultSet rs=null;
+					List<T> result=new ArrayList<T>();
+					try {
+						stmt=con.prepareStatement(sql);
+						if(params!=null){
+							for(int i=0;i<params.length;i++){
+								setPreparedState(stmt, i+1,params[i]);
+							}
+						}
+						rs=stmt.executeQuery();
+						int i=0;
+						while(rs.next()){
+							T t=rowMapper.mapRow(rs,i++);
+							result.add(t);
+						}
+						return result;
+					} catch (SQLException e) {
+						throw new SqlException(e,sql);
+					}finally{
+						safeClose(stmt);
+						safeClose(rs);
 					}
 				}
-				rs=stmt.executeQuery();
-				int i=0;
-				while(rs.next()){
-					T t=rowMapper.mapRow(rs,i++);
-					result.add(t);
-				}
-				return result;
-			}catch(Exception e){
-				throw new SqlException(e.getMessage());
-			}finally{
-				try{
-					if(rs!=null)
-						rs.close();
-					if(stmt!=null)
-						stmt.close();
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-				close();
-			}
+			},false);
 		}
-		class MapRowMapper implements  RowMapper<Map<String,Object>> {
-			public Map<String, Object> mapRow(ResultSet rs, int rowNum)
-					throws SQLException {
-				ResultSetMetaData rsmd = rs.getMetaData();
-				int columnCount = rsmd.getColumnCount();
-				Map<String, Object> mapOfColValues = MapUtils.newLinkedHashMap();
-				for (int i = 1; i <= columnCount; i++) {
-					String key = lookupColumnName(rsmd, i);
-					Object obj = getResultSetValue(rs, i);
-					mapOfColValues.put(key, obj);
+		public int[] batchUpdate(final String sql,final BatchPreparedStatementSetter bs) {
+			return execute(new ConnectionCallback<int[]>(){
+				public int[] doInConnection(Connection con) {
+					PreparedStatement pst = null;
+					try {
+						pst=con.prepareStatement(sql);
+						for(int i=0;i<bs.getBatchSize();i++){
+							bs.setValues(pst, i);
+							pst.addBatch();
+						}
+						int[] result=pst.executeBatch();
+						return result;
+					} catch (SQLException e) {
+						throw new SqlException(e,sql);
+					}finally{
+						safeClose(pst);
+					}
 				}
-				return mapOfColValues;
-			}
-		}
-		public int[] batchUpdate(String sql, BatchPreparedStatementSetter bs) {
-			Connection con=null;
-			PreparedStatement pst = null;
-			try {
-				con=open();
-				pst=con.prepareStatement(sql);
-				for(int i=0;i<bs.getBatchSize();i++){
-					bs.setValues(pst, i);
-					pst.addBatch();
-				}
-				int[] result=pst.executeBatch();
-				commit();
-				return result;
-			} catch (Exception e) {
-				rollback();
-				throw new SqlException(e.getMessage());
-			}finally{
-				try{
-					if(pst!=null)
-						pst.close();
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-				close();
-			}
+			});
 		}
 		public int queryForInt(String sql) {
 			return queryForInt(sql,new Object[]{});
@@ -385,16 +325,40 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				Object... params) {
 			return queryForList(sql, params, clazz);
 		}
-		private Connection open() throws SQLException{
-			return DataSourceUtils.getConnection(dataSource);
+		private void safeClose(Object  close){
+			DataSourceUtils.safeClose(close);
 		}
-		private void commit(){
-			DataSourceUtils.commit(dataSource);
+		public <T> T execute(ConnectionCallback<T> connectionCallback){
+			return execute(connectionCallback,true);
 		}
-		private void rollback(){
-			DataSourceUtils.rollback(dataSource);
+		public <T> T execute(ConnectionCallback<T> connectionCallback,boolean updatetype) {
+			Connection con=null;
+			try{
+				con=DataSourceUtils.getConnection(dataSource);
+				T t= connectionCallback.doInConnection(con);
+				if(updatetype)
+					DataSourceUtils.commit(dataSource);
+				return t;
+			}catch(Exception  e){
+				if(updatetype)
+					DataSourceUtils.rollback(dataSource);
+				throw new SqlException(e.getMessage());
+			}finally{
+				DataSourceUtils.releaseConnection(dataSource);
+			}
 		}
-		private void close(){
-			DataSourceUtils.releaseConnection(dataSource );
+		class MapRowMapper implements  RowMapper<Map<String,Object>> {
+			public Map<String, Object> mapRow(ResultSet rs, int rowNum)
+					throws SQLException {
+				ResultSetMetaData rsmd = rs.getMetaData();
+				int columnCount = rsmd.getColumnCount();
+				Map<String, Object> mapOfColValues = new LinkedHashMap<String, Object>();
+				for (int i = 1; i <= columnCount; i++) {
+					String key = lookupColumnName(rsmd, i);
+					Object obj = getResultSetValue(rs, i);
+					mapOfColValues.put(key, obj);
+				}
+				return mapOfColValues;
+			}
 		}
 }

@@ -136,10 +136,6 @@ public class SqlTemplate   implements Cloneable,Serializable{
 	public void setSmlParams(SMLParams smlParams) {
 		SmlParams = smlParams;
 	}
-
-	/**
-	 * 用于缓存中的参数克隆，不用原始类，有必要做后续深度序列化克隆
-	 */
 	public SqlTemplate clone() {
 		return (SqlTemplate) SerializationUtils.clone(this);
 	}

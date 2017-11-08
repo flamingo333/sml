@@ -11,10 +11,8 @@ public abstract class NumberUtils {
 	@SuppressWarnings("unchecked")
 	public static <T extends Number> T convertNumberToTargetClass(Number number, Class<T> targetClass)
 			throws IllegalArgumentException {
-
 		Assert.notNull(number, "Number must not be null");
 		Assert.notNull(targetClass, "Target class must not be null");
-
 		if (targetClass.isInstance(number)) {
 			return (T) number;
 		}
@@ -65,7 +63,7 @@ public abstract class NumberUtils {
 		}
 	}
 
-	private static void raiseOverflowException(Number number, Class targetClass) {
+	private static void raiseOverflowException(Number number, Class<?> targetClass) {
 		throw new IllegalArgumentException("Could not convert number [" + number + "] of type [" +
 				number.getClass().getName() + "] to target class [" + targetClass.getName() + "]: overflow");
 	}
@@ -147,12 +145,10 @@ public abstract class NumberUtils {
 		int radix = 10;
 		int index = 0;
 		boolean negative = false;
-
 		if (value.startsWith("-")) {
 			negative = true;
 			index++;
 		}
-
 		if (value.startsWith("0x", index) || value.startsWith("0X", index)) {
 			index += 2;
 			radix = 16;
@@ -165,7 +161,6 @@ public abstract class NumberUtils {
 			index++;
 			radix = 8;
 		}
-
 		BigInteger result = new BigInteger(value.substring(index), radix);
 		return (negative ? result.negate() : result);
 	}

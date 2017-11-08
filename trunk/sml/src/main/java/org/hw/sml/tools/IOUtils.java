@@ -1,6 +1,7 @@
 package org.hw.sml.tools;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,5 +26,16 @@ public class IOUtils {
 	}
 	public static String toString(String filePath,String charset) throws FileNotFoundException, IOException{
 		return toString(new File(filePath), charset);
+	}
+	public static void safeClose(Object obj){
+		if(obj!=null){
+			try {
+			if(obj instanceof Closeable){
+					((Closeable)obj).close();
+			}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

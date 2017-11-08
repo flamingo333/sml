@@ -1,13 +1,16 @@
 package org.hw.sml.jdbc;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.hw.sml.jdbc.exception.SqlException;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.MapUtils;
 
@@ -19,6 +22,12 @@ public class DataSourceUtils {
 			return new HashMap<String,Connection>();
 		}
 	};
+	public static void configIsSqlLog(boolean flag){
+		SqlException.isSqlLog=flag;
+	}
+	static{
+		configIsSqlLog(Boolean.valueOf(System.getProperty("sml.vm.jdbc.sql.error.log")));
+	}
 	//对事务-连接关闭的datasource注册到此集合中
 	private static List<String> transactionManagerKeys=MapUtils.newArrayList();
 	public static void registTransactionManager(String dataSourceKey){
@@ -61,13 +70,27 @@ public class DataSourceUtils {
 			if(map.containsKey(key)&&!transactionManagerKeys.contains(key)){
 				Connection con=map.remove(key);
 				if(con!=null&&!con.isClosed()){
-					con.close();
+					safeClose(con);
 				}
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
-	
+	public static void safeClose(Object  close){
+		try {
+			if(close!=null){
+				if(close instanceof Statement)
+					((Statement)close).close();
+				else if(close instanceof ResultSet)
+					((ResultSet)close).close();
+				else if(close instanceof Connection){
+					((Connection)close).close();
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 
 }

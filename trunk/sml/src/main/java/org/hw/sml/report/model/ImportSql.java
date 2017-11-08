@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.hw.sml.tools.MapUtils;
 /**
  * 
  */
@@ -131,7 +133,7 @@ public class ImportSql implements Serializable{
 	public void setPiTableDetails(List<PiTableDetail> piTableDetails) {
 		this.piTableDetails = piTableDetails;
 	}
-	private  boolean isNotNullContent(Map<String, Object> obj) {
+	public static  boolean isNotNullContent(Map<String, Object> obj) {
 		boolean flag=false;
 		for(Map.Entry<String,Object> entry:obj.entrySet()){
 			flag=entry.getValue()!=null&&String.valueOf(entry.getValue()).trim().length()>0;

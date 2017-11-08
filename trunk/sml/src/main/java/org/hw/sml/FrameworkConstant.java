@@ -58,6 +58,7 @@ public class FrameworkConstant {
 					LoggerHelper.info(FrameworkConstant.class,"load properties--->"+name);
 				}
 			}
+			sysenv();
 		}catch(Exception e){
 		}
 	}
@@ -68,6 +69,14 @@ public class FrameworkConstant {
 				continue;
 			smlCfgs.put(key, value);
 			LoggerHelper.info(FrameworkConstant.class,key+" is  reset used it --->["+value+"]");
+		}
+	}
+	static void sysenv(){
+		for(Map.Entry<Object,Object> entry:otherProperties.entrySet()){
+			String key=entry.getKey().toString();
+			if(key.startsWith("sml.vm.")){
+				System.setProperty(key.toString(),entry.getValue().toString());
+			}
 		}
 	}
 	private static String getProperty(String key){
