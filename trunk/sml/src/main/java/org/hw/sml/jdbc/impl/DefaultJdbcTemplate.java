@@ -25,6 +25,7 @@ import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
 
 public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
+		private boolean transactionInversion;
 		public DefaultJdbcTemplate(){}
 		public DefaultJdbcTemplate(DataSource dataSource){
 			super(dataSource);
@@ -172,10 +173,10 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		public <T> T queryForObject(String sql,Object[] params,RowMapper<T> rowMapper){
 			List<T> result=query(sql, params, rowMapper);
 			if(result.size()==0){
-				throw new SqlException("not exists objects");
+				throw new SqlException(new Exception("not exists objects"),sql);
 			}
 			if(result.size()>1){
-				throw new SqlException("has more objects");
+				throw new SqlException(new Exception("has more objects"),sql);
 			}
 			return result.get(0);
 		}
@@ -260,8 +261,8 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 					} catch (SQLException e) {
 						throw new SqlException(e,sql);
 					}finally{
-						safeClose(stmt);
 						safeClose(rs);
+						safeClose(stmt);
 					}
 				}
 			},false);
@@ -332,6 +333,13 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 			return execute(connectionCallback,true);
 		}
 		public <T> T execute(ConnectionCallback<T> connectionCallback,boolean updatetype) {
+			if(!transactionInversion){
+				return execute1(connectionCallback, updatetype);
+			}else{
+				return execute2(connectionCallback, updatetype);
+			}
+		}
+		private <T> T execute2(ConnectionCallback<T> connectionCallback,boolean updatetype) {
 			Connection con=null;
 			try{
 				con=DataSourceUtils.getConnection(dataSource);
@@ -345,6 +353,28 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				throw new SqlException(e.getMessage());
 			}finally{
 				DataSourceUtils.releaseConnection(dataSource);
+			}
+		}
+		private  <T> T execute1(ConnectionCallback<T> connectionCallback,boolean updatetype) {
+			Connection con=null;
+			try{
+				con=dataSource.getConnection();
+				if(updatetype)
+				con.setAutoCommit(false);
+				T t= connectionCallback.doInConnection(con);
+				if(updatetype)
+					con.commit();
+				return t;
+			}catch(Exception  e){
+				if(updatetype)
+					try {
+						con.rollback();
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				throw new SqlException(e.getMessage());
+			}finally{
+				DataSourceUtils.safeClose(con);
 			}
 		}
 		class MapRowMapper implements  RowMapper<Map<String,Object>> {

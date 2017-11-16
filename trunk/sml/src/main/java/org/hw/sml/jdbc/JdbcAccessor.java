@@ -2,7 +2,6 @@ package org.hw.sml.jdbc;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -81,10 +80,10 @@ public abstract class JdbcAccessor {
 			ps.setNull(paramIndex,Types.NULL);
 		}else if (isStringValue(inValue.getClass())) {
 			String v=inValue.toString();
-			if(v.length()<4000)
-				ps.setString(paramIndex, v);
-			else
-				ps.setClob(paramIndex,new StringReader(v));
+			//if(v.length()<4000)
+				ps.setString(paramIndex,v);
+			//else
+			//	ps.setClob(paramIndex,new StringReader(v));
 		}
 		else if (isDateValue(inValue.getClass())) {
 			ps.setTimestamp(paramIndex, new java.sql.Timestamp(((java.util.Date) inValue).getTime()));

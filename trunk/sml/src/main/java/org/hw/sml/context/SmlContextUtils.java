@@ -2,6 +2,7 @@ package org.hw.sml.context;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import javax.sql.DataSource;
 import org.hw.sml.FrameworkConstant;
 import org.hw.sml.core.Rslt;
 import org.hw.sml.core.SqlMarkupAbstractTemplate;
+import org.hw.sml.core.resolver.Rst;
 import org.hw.sml.core.resolver.SqlResolver;
 import org.hw.sml.core.resolver.SqlResolvers;
 import org.hw.sml.jdbc.JdbcTemplate;
@@ -99,6 +101,13 @@ public class SmlContextUtils {
 	public Rslt queryRslt(String dbid,String sql,Map<String,String> params){
 		return sqlMarkupAbstractTemplate.queryRslt(dbid, sql, params);
 	}
+	public Rst queryRst(String ifId,Map<String,String> params){
+		if(params==null){params=new HashMap<String,String>();}
+		params.put(FrameworkConstant.PARAM_SHOWSQL,"true");
+		SqlTemplate st=sqlMarkupAbstractTemplate.getSqlTemplate(ifId);
+		reInitSqlParam(st, getJdbc(st.getDbid()), params);
+		return sqlMarkupAbstractTemplate.getSqlResolvers().resolverLinks(st.getMainSql(), st.getSmlParams());
+	}
 	public int update(String ifId,Map<String,String> params){
 		if(Boolean.valueOf(params.get(FrameworkConstant.PARAM_FLUSHCACHE))){
 			clear(ifId);
@@ -160,7 +169,8 @@ public class SmlContextUtils {
 				if(isNotBlank(value)){
 					sp.handlerValue(value);
 				}else{
-					sp.handlerValue(sp.getDefaultValue());
+					boolean showsql=Boolean.valueOf(params.get(FrameworkConstant.PARAM_SHOWSQL));
+					sp.handlerValue(sp.getDefaultValue()==null?(showsql?MapUtils.get(params,FrameworkConstant.PARAM_SHOWSQL_DEFAULTV,"1"):null):sp.getDefaultValue());
 				}
 			}
 			st.getSmlParams().reinit();
