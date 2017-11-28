@@ -41,7 +41,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		super.init();
 		SmlAppContextUtils.put(frameworkMark,this);
 		if(this.jsonMapper==null){
-			LoggerHelper.warn(getClass(),"not dependency json mapper, can't used json config!");
+			LoggerHelper.getLogger().warn(getClass(),"not dependency json mapper, can't used json config!");
 		}
 		if(el==null){
 			el=new JsEl();
@@ -50,7 +50,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 			SqlResolvers sqlResolvers=new SqlResolvers(getEl());
 			sqlResolvers.init();
 			this.sqlResolvers=sqlResolvers;
-			LoggerHelper.info(getClass(),"sqlResolvers start... has resolvers ["+(this.sqlResolvers.getSqlResolvers().size())+"]");
+			LoggerHelper.getLogger().info(getClass(),"sqlResolvers start... has resolvers ["+(this.sqlResolvers.getSqlResolvers().size())+"]");
 		}
 		if(this.cacheManager==null){
 			super.cacheManager=getCacheManager();
@@ -70,7 +70,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 			return (List<Map<String,Object>>) getCacheManager().get(key);
 		}
 		if(isLogger&&(st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG)==null||st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG).getValue().equals("false")))
-		LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
+		LoggerHelper.getLogger().info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
 		Assert.isTrue(rst.getSqlString()!=null&&rst.getSqlString().length()>0, "querySql config error parser is null");
 		List<Map<String,Object>> result= getJdbc(st.getDbid()).queryForList(rst.getSqlString(),paramsObject.toArray(new Object[]{}));
 		if(st.getIsCache()==1)
@@ -87,7 +87,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		if(!isLinks){
 			Rst rst=sqlResolvers.resolverLinks(st.getMainSql(), st.getSmlParams());
 			List<Object> paramsObject=rst.getParamObjects();
-			LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getSqlString()+"],params"+paramsObject.toString()+"]");
+			LoggerHelper.getLogger().info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getSqlString()+"],params"+paramsObject.toString()+"]");
 			result=getJdbc(st.getDbid()).update(rst.getSqlString(),paramsObject.toArray(new Object[]{}));
 		}else{
 			//links oparator
@@ -97,7 +97,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 			for(String link:links){
 				st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_OPLINKS).setValue(link);
 				Rst rst=sqlResolvers.resolverLinks(st.getMainSql(), st.getSmlParams());
-				LoggerHelper.info(getClass(),"ifId["+st.getId()+"]-links["+link+"]-sql["+rst.getSqlString()+"],params"+rst.getParamObjects().toString()+"]");
+				LoggerHelper.getLogger().info(getClass(),"ifId["+st.getId()+"]-links["+link+"]-sql["+rst.getSqlString()+"],params"+rst.getParamObjects().toString()+"]");
 				linkSqls.add(rst.getSqlString());
 				linkParams.add(rst.getParamObjects().toArray(new Object[]{}));
 			}
@@ -139,7 +139,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		String sqlString=rst.getSqlString();
 		List<Object> paramsObject=rst.getParamObjects();
 		if(isLogger&&(st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG)==null||st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_IGLOG).getValue().equals("false")))
-		LoggerHelper.info(getClass(),"sql["+rst.getSqlString()+"],params"+paramsObject.toString());
+		LoggerHelper.getLogger().info(getClass(),"sql["+rst.getSqlString()+"],params"+paramsObject.toString());
 		return getJdbc(st.getDbid()).query(sqlString,paramsObject.toArray(new Object[]{}), new Rset());
 	}
 

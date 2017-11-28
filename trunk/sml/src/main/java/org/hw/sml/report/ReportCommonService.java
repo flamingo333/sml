@@ -78,7 +78,7 @@ public class ReportCommonService extends Source{
 	//----原始操作---开始
 	public List<Map<String, Object>> query(String dbid,String sql, Object[] array,boolean inLog) {
 		if(!inLog)
-		LoggerHelper.debug(getClass(),"query for sql["+sql+"],params["+((array==null||array.length==0)?"":Arrays.asList(array).toString())+"]");
+		LoggerHelper.getLogger().debug(getClass(),"query for sql["+sql+"],params["+((array==null||array.length==0)?"":Arrays.asList(array).toString())+"]");
 		return getJdbc(dbid).queryForList(sql,array);
 	}
 	
@@ -97,7 +97,7 @@ public class ReportCommonService extends Source{
 	}
 	public int update(String dbid,String sql, Object[] array,boolean inLog) {
 		if(!inLog)
-		LoggerHelper.info(getClass(),"update for sql["+sql+"],params["+((array==null||array.length==0)?"":Arrays.asList(array).toString())+"]");
+		LoggerHelper.getLogger().info(getClass(),"update for sql["+sql+"],params["+((array==null||array.length==0)?"":Arrays.asList(array).toString())+"]");
 		return getJdbc(dbid).update(sql,array);
 	}
 	public int update(String dbid,String sql, Object[] array) {
@@ -105,7 +105,7 @@ public class ReportCommonService extends Source{
 	}
 	
 	public int updates(String dbid,final String sql,final List<Object[]> arrays){
-		LoggerHelper.info(getClass(),"updates for sql["+sql+"] sizes="+arrays.size());
+		LoggerHelper.getLogger().info(getClass(),"updates for sql["+sql+"] sizes="+arrays.size());
 		final int total=arrays.size();
 		int count=0;
 		int perOneSize=10000;
@@ -118,7 +118,7 @@ public class ReportCommonService extends Source{
 			for(int i:is){
 				count+=i;
 			}
-			LoggerHelper.debug(getClass(),"updates for sql["+sql+"] start["+start+"]-----end["+end+"]");
+			LoggerHelper.getLogger().debug(getClass(),"updates for sql["+sql+"] start["+start+"]-----end["+end+"]");
 		}
 		return count;
 	}

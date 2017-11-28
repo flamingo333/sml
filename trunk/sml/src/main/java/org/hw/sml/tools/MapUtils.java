@@ -860,20 +860,7 @@ public class MapUtils {
     	}
     	return result;
     }
-    //根时间相关操作
-    public static List<Map<String,String>> buildTimeLst(String startTime,String endTime,String format,int minutes,String name){
-    	return buildTimeLst(DateTools.parse(startTime),DateTools.parse(endTime),format, minutes, name);
-    }
-    public static List<Map<String,String>> buildTimeLst(Date startTime,Date endTime,String format,int minutes,String name){
-    	List<Map<String,String>> result=newArrayList();
-    	List<String> times=DateTools.buildTime(startTime, endTime, format, minutes);
-    	for(String time:times){
-    		Map<String,String> rt=newLinkedHashMap();
-    		rt.put(name,time);
-    		result.add(rt);
-    	}
-    	return result;
-    }
+   
     //get操作
 	public static <V> V get(Map<String,V> data,String k,V defaultValue){
     	return data.get(k)==null?defaultValue:data.get(k);
@@ -984,14 +971,7 @@ public class MapUtils {
 		}
 		return val;
 	}
-	
-	public static String getBiaoShi(String[] strs,int[] match){
-		String temp="";
-		for(int i:match){
-			temp+=strs[i];
-		}
-		return temp;
-	}
+
 	
 	public static List<String[]> trans2Array(List<Map<String, Object>> datas,
 			String[] clumnFields) {

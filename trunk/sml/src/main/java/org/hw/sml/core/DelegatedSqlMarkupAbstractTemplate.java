@@ -39,7 +39,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_INSERT);
 		update.init();
-		LoggerHelper.debug(getClass(),"executeSql add:["+update.getUpateSql()+"]");
+		LoggerHelper.getLogger().debug(getClass(),"executeSql add:["+update.getUpateSql()+"]");
 		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
 	}
@@ -54,7 +54,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_UPDATE);
 		update.init();
-		LoggerHelper.debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
+		LoggerHelper.getLogger().debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
 		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
 	}
@@ -69,7 +69,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_DELETE);
 		update.init();
-		LoggerHelper.debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
+		LoggerHelper.getLogger().debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
 		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
 	}
@@ -85,7 +85,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setType(Constants.TYPE_ADU);
 		update.init();
 		boolean exists=sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).queryForInt(update.isExistSql(), update.getExistParams())>0;
-		LoggerHelper.debug(getClass(),"executeSql adu:["+update.getUpdateSqlForAdu(exists)+"]");
+		LoggerHelper.getLogger().debug(getClass(),"executeSql adu:["+update.getUpdateSqlForAdu(exists)+"]");
 		int flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).update(update.getUpdateSqlForAdu(exists),update.getObjectForAdu(exists));
 		return flag;
 	}

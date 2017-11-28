@@ -19,13 +19,13 @@ public class SchedulerPanner extends ManagedQuene<Task>{
 			if(key.startsWith("task-")&&key.contains("-")){
 				String beanMethod=key.replaceFirst("task-","");
 				if(beanMethod.split("\\.").length==1){
-					LoggerHelper.warn(getClass(),key+" is error!");
+					LoggerHelper.getLogger().warn(getClass(),key+" is error!");
 					continue;
 				}
 				taskMapContain.put(beanMethod,entry.getValue());
 			}
 		}
-		LoggerHelper.info(getClass(),"task["+taskMapContain+"]");
+		LoggerHelper.getLogger().info(getClass(),"task["+taskMapContain+"]");
 		if(taskMapContain.size()>0){
 			for(String key:taskMapContain.keySet())
 			taskMapStatus.put(key,true);

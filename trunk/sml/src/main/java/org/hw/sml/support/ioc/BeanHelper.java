@@ -61,7 +61,7 @@ public class BeanHelper {
 				Map<String,String> beanKeyValue=getBeanKeyValue(entry.getKey());
 				String classpath=beanKeyValue.get("class");
 				Assert.notNull(classpath,"bean["+beanName+"] class is null!");
-				Assert.isTrue(!beanMap.containsKey(beanName),"bean["+beanName+"] name is conflict!");
+				Assert.isTrue(!beanMap.containsKey(beanName),"bean["+beanName+"] name is conflict! ["+classpath+"]-["+beanMap.get(beanName).getClass().getName()+"]");
 				Object bean=null;
 				if(classpath.startsWith("[")&&classpath.endsWith("]")){
 					classpath=classpath.substring(1,classpath.length()-1);
@@ -276,7 +276,7 @@ public class BeanHelper {
 						Assert.notNull(method, "bean["+beanName+"-"+bean.getClass()+"] has not init-method["+methodName+"]");
 						method.setAccessible(true);
 						boolean isDelay=Boolean.valueOf(pvs.get("isDelay"));
-						LoggerHelper.info(BeanHelper.class,"beanName["+beanName+"] init-method["+methodName+"] isDelay["+(isDelay?MapUtils.getString(pvs,"sleep","0")+"s":"false")+"]...");
+						LoggerHelper.getLogger().info(BeanHelper.class,"beanName["+beanName+"] init-method["+methodName+"] isDelay["+(isDelay?MapUtils.getString(pvs,"sleep","0")+"s":"false")+"]...");
 						methodInvoke(bean, method, Boolean.valueOf(pvs.get("igErr")), isDelay,Long.parseLong(MapUtils.getString(pvs,"sleep","0")));
 					}else if(k.equals("stop-method")||k.equals("destroy-method")){
 						final Method method=ClassUtil.getMethod(bean.getClass(),methodName);
@@ -349,7 +349,7 @@ public class BeanHelper {
 		}
 		if(externalSchedulerPanner)
 		schedulerPanner.init();
-		LoggerHelper.info(BeanHelper.class,"bean initd--->"+beanMap.keySet());
+		LoggerHelper.getLogger().info(BeanHelper.class,"bean initd--->"+beanMap.keySet());
 	}
 	public static Object evelV(String elp) throws ElException{
 		return smlElContext.evel(elp);
@@ -467,7 +467,7 @@ public class BeanHelper {
 				}});
 			thread.setName(bean.getClass().getSimpleName()+"."+method.getName());
 			thread.start();
-			LoggerHelper.info(BeanHelper.class,"bean["+bean.getClass()+"]"+method.getName()+" lazy load sleep "+ms+" s!");
+			LoggerHelper.getLogger().info(BeanHelper.class,"bean["+bean.getClass()+"]"+method.getName()+" lazy load sleep "+ms+" s!");
 		}else{
 			if(igErr){
 				try {

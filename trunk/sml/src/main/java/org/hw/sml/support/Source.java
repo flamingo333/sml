@@ -42,7 +42,7 @@ public class Source implements Plugin{
 			}
 			for(Map.Entry<String,DataSource> entry:dss.entrySet()){
 				jts.put(entry.getKey(),newJdbcTemplate(entry.getValue()));
-				LoggerHelper.info(getClass(),"init jdbc-template["+entry.getKey()+"].");
+				LoggerHelper.getLogger().info(getClass(),"init jdbc-template["+entry.getKey()+"].");
 			}
 		}
 	}

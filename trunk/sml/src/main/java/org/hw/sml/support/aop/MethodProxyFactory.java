@@ -18,7 +18,7 @@ public class MethodProxyFactory {
 		iscglib=ClassUtil.hasClass("net.sf.cglib.proxy.MethodInterceptor");
 		if(!iscglib){
 			aop=new JdkAop();
-			LoggerHelper.warn(MethodProxyFactory.class,"cglib not support!");
+			LoggerHelper.getLogger().warn(MethodProxyFactory.class,"cglib not support!");
 		}
 		else
 			aop=ClassUtil.newInstance("org.hw.sml.support.aop.CgLibAop");

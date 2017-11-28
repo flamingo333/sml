@@ -96,7 +96,7 @@ public class ManagedQuene<T extends Task> {
 	public  void init(){
 		if(queue==null){
 			queue=new ArrayBlockingQueue<T>(depth);
-			LoggerHelper.info(getClass(),"manageName ["+getManageName()+"] has init depth "+depth+" !");
+			LoggerHelper.getLogger().info(getClass(),"manageName ["+getManageName()+"] has init depth "+depth+" !");
 		}
 		executingMap=new LinkedHashMap<String, Boolean>();
 		for(int i=1;i<=consumerThreadSize;i++){
@@ -143,7 +143,7 @@ public class ManagedQuene<T extends Task> {
 		queue.add(task);
 		executingMap.put(task.toString(),true);
 		if(!ignoreLog)
-			LoggerHelper.info(getClass(),"add "+getManageName()+" total-"+getDepth()+",current-"+queue.size()+".");
+			LoggerHelper.getLogger().info(getClass(),"add "+getManageName()+" total-"+getDepth()+",current-"+queue.size()+".");
 			
 	}
 	
@@ -173,7 +173,7 @@ public class ManagedQuene<T extends Task> {
 				}
 				stats.get(Thread.currentThread().getName()).success().info(task);
 			}  catch (TimeoutException e) {
-				LoggerHelper.info(getClass(),"task["+task.toString()+"] timeout!");
+				LoggerHelper.getLogger().info(getClass(),"task["+task.toString()+"] timeout!");
 				if(future!=null&&!timeoutRunning)
 					future.cancel(true);
 				else
@@ -181,7 +181,7 @@ public class ManagedQuene<T extends Task> {
 				stats.get(Thread.currentThread().getName()).fail().failInfo(task, e.getMessage());
 			}catch (Exception e) {
 				e.printStackTrace();
-				LoggerHelper.error(getClass(),String.format(getErrorMsg(),task.toString(),e.getMessage()));
+				LoggerHelper.getLogger().error(getClass(),String.format(getErrorMsg(),task.toString(),e.getMessage()));
 				stats.get(Thread.currentThread().getName()).fail().failInfo(task, e.getMessage());
 			}finally{
 				executingMap.remove(task.toString());

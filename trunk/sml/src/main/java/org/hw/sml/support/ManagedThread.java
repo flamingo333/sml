@@ -24,10 +24,10 @@ public abstract class ManagedThread extends Thread {
 	abstract protected boolean extraExitCondition();
 
 	public void run() {
-		LoggerHelper.info(getClass(),this.getName() + " started ...");
+		LoggerHelper.getLogger().info(getClass(),this.getName() + " started ...");
 
 		if (!prepare()) {
-			LoggerHelper.error(getClass(),this.getName() + " prepare failure , thread exit ...");
+			LoggerHelper.getLogger().error(getClass(),this.getName() + " prepare failure , thread exit ...");
 			return;
 		}
 
@@ -35,7 +35,7 @@ public abstract class ManagedThread extends Thread {
 			doWorkProcess();
 		}
 		cleanup();
-		LoggerHelper.info(getClass(),this.getName() + " stopped ...");
+		LoggerHelper.getLogger().info(getClass(),this.getName() + " stopped ...");
 	}
 
 	/**

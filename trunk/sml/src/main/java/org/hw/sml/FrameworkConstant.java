@@ -55,7 +55,7 @@ public class FrameworkConstant {
 						}
 					}
 					otherProperties.load(ist);
-					LoggerHelper.info(FrameworkConstant.class,"load properties--->"+name);
+					LoggerHelper.getLogger().info(FrameworkConstant.class,"load properties--->"+name);
 				}
 			}
 			sysenv();
@@ -68,7 +68,7 @@ public class FrameworkConstant {
 			if(value==null||value.trim().length()==0||value.equals("null"))
 				continue;
 			smlCfgs.put(key, value);
-			LoggerHelper.info(FrameworkConstant.class,key+" is  reset used it --->["+value+"]");
+			LoggerHelper.getLogger().info(FrameworkConstant.class,key+" is  reset used it --->["+value+"]");
 		}
 	}
 	static void sysenv(){

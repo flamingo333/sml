@@ -1,5 +1,7 @@
 package org.hw.sml.support.aop;
 
+import org.hw.sml.support.LoggerHelper;
+
 
 public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect>{
 	/**
@@ -39,7 +41,7 @@ public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect
 				if(pacage.matches(packageMatch))
 					return true;
 			}catch(Exception e){
-				System.out.println(e.getMessage());
+				LoggerHelper.getLogger().error(getClass(),e.getMessage());
 			}
 		}
 		return false;
