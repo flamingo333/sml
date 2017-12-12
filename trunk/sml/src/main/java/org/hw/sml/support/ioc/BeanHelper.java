@@ -61,7 +61,7 @@ public class BeanHelper {
 				Map<String,String> beanKeyValue=getBeanKeyValue(entry.getKey());
 				String classpath=beanKeyValue.get("class");
 				Assert.notNull(classpath,"bean["+beanName+"] class is null!");
-				Assert.isTrue(!beanMap.containsKey(beanName),"bean["+beanName+"] name is conflict! ["+classpath+"]-["+beanMap.get(beanName).getClass().getName()+"]");
+				Assert.isTrue(!beanMap.containsKey(beanName),"bean["+beanName+"] name is conflict! ["+classpath+"]-["+(beanMap.get(beanName)!=null?beanMap.get(beanName).getClass().getName():"")+"]");
 				Object bean=null;
 				if(classpath.startsWith("[")&&classpath.endsWith("]")){
 					classpath=classpath.substring(1,classpath.length()-1);

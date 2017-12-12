@@ -91,6 +91,36 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				}
 			});
 		}
+		@Override
+		public int updates(final List<String> sqls,final  List<List<Object[]>> objs) {
+			if(objs!=null)
+			Assert.isTrue(sqls.size()==objs.size(),"sqls size["+sqls.size()+"] != objs size["+objs.size()+"]");
+			return execute(new ConnectionCallback<Integer>() {
+					public Integer doInConnection(Connection con) {
+						int result=0;
+						PreparedStatement pst = null;
+						try {
+							for(int i=0;i<sqls.size();i++){
+								String sql=sqls.get(i);
+								pst=con.prepareStatement(sql);
+								for(int j=0;j<objs.get(i).size();j++){
+									Object[] params=objs.get(i).get(j);
+									for(int m=0;m<params.length;m++){
+										setPreparedState(pst, m+1, params[m]);
+									}
+									pst.addBatch();
+								}
+								result+=pst.executeBatch().length;
+							}
+							return result;
+						}catch (SQLException e) {
+							throw new SqlException(e);
+						}finally{
+							safeClose(pst);
+						}
+					}
+				});
+		}
 		public int update(final List<String> sqls,final List<Object[]> objs) {
 			if(objs!=null)
 			Assert.isTrue(sqls.size()==objs.size(),"sqls size["+sqls.size()+"] != objs size["+objs.size()+"]");
@@ -374,7 +404,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 					}
 				throw new SqlException(e.getMessage());
 			}finally{
-				DataSourceUtils.safeClose(con);
+				safeClose(con);
 			}
 		}
 		class MapRowMapper implements  RowMapper<Map<String,Object>> {
@@ -391,4 +421,5 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				return mapOfColValues;
 			}
 		}
+		
 }

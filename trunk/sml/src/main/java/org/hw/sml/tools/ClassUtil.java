@@ -1,5 +1,6 @@
 package org.hw.sml.tools;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -263,7 +264,7 @@ public class ClassUtil {
     public static Object getFieldValue(Object bean,String fieldName) throws IllegalArgumentException, IllegalAccessException{
     	if(bean.getClass().isArray()){
     		if(fieldName.equals("length")){
-    			return ((Object[])bean).length;
+    			return Array.getLength(bean);
     		}
     	}
     	Field field=getField(bean.getClass(),fieldName);

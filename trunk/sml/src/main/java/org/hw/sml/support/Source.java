@@ -9,12 +9,13 @@ import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.plugin.Plugin;
 import org.hw.sml.support.cache.CacheManager;
 import org.hw.sml.support.cache.DefaultCacheManager;
+import org.hw.sml.support.log.Loggers;
 import org.hw.sml.tools.ClassUtil;
 
 
 
 public class Source implements Plugin{
-	
+	protected Loggers logger=LoggerHelper.getLogger();
 	protected Object lock=new Object();
 	
 	protected String jdbcClassPath="org.hw.sml.jdbc.impl.DefaultJdbcTemplate";
@@ -37,12 +38,12 @@ public class Source implements Plugin{
 	
 	public void init(){
 		if(jts.size()==0){
-			if(this.defJt==null){
-				this.defJt=newJdbcTemplate(dss.get("defJt"));
-			}
 			for(Map.Entry<String,DataSource> entry:dss.entrySet()){
 				jts.put(entry.getKey(),newJdbcTemplate(entry.getValue()));
-				LoggerHelper.getLogger().info(getClass(),"init jdbc-template["+entry.getKey()+"].");
+				logger.info(getClass(),"init jdbc-template["+entry.getKey()+"].");
+			}
+			if(this.defJt==null){
+				this.defJt=jts.get("defJt");
 			}
 		}
 	}

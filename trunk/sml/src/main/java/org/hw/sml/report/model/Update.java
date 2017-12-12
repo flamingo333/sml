@@ -1,6 +1,7 @@
 package org.hw.sml.report.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class Update extends Criteria {
 		return sb.toString();
 	}
 	public String getUpdateSqlForUpdate(){
-		Assert.isTrue(conditions.size()>0,"不允许更新全表["+tableName+"]操作");
+		Assert.isTrue(conditions.size()>0||!Arrays.asList(Constants.TYPE_UPDATE,Constants.TYPE_ADU).contains(type),"不允许更新全表["+tableName+"]操作");
 		StringBuffer sb=new StringBuffer("update "+tableName+" set ");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
 			//参数绑定
@@ -74,11 +75,11 @@ public class Update extends Criteria {
 				sb.append(" and "+cn+"=?");
 			}
 		}
-		return sb.toString();
+		return sb.toString().replace("where 1=1 and", "where");
 	}
 	public String getUpdateSqlForDelete(){
-		StringBuffer sb=new StringBuffer("delete from "+tableName+" where 1=1 ");
-		Assert.isTrue(data.size()>0,"不允许删除表["+tableName+"]操作");
+		StringBuffer sb=new StringBuffer("delete from "+tableName+" where 1=1");
+		Assert.isTrue(data.size()>0||!type.equals(Constants.TYPE_DELETE),"不允许删除表["+tableName+"]操作");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
 			//参数绑定
 			String field=entry.getKey();
@@ -86,7 +87,7 @@ public class Update extends Criteria {
 			String ft=fts[0];
 			sb.append(" and "+ft+"=?");
 		}
-		return sb.toString();
+		return sb.toString().replace("where 1=1 and", "where");
 	}
 	public String getUpdateSqlForAdu(boolean exists){
 		if(exists){
@@ -147,6 +148,7 @@ public class Update extends Criteria {
 	}
 	
 	private void assertCondigion() {
+		//Assert.notNull(tableName,"tableName must not null!");
 		boolean flag=true;
 		for(String condition:conditions){
 			boolean flag2=false;
@@ -157,10 +159,10 @@ public class Update extends Criteria {
 				}
 			}
 			flag=flag2;
-			Assert.isTrue(flag,"字段："+condition+"不存在");
+			Assert.isTrue(flag,"字段："+condition+"不存在!");
 		}
 		if(!type.equals(Constants.TYPE_DELETE))
-			Assert.isTrue(data.keySet().size()>conditions.size(),"无更新字段！");
+			Assert.isTrue(data.keySet().size()>conditions.size(),"无更新字段!");
 		if(type.equals(Constants.TYPE_ADU))
 			Assert.isTrue(conditions.size()>0,"无法确认数据是否存在!");
 	}

@@ -31,6 +31,10 @@ public class SMLParams implements Serializable{
 		this.smlParams =smlParams;
 		mapParams=MapUtils.sort(mapParams);//解决字符串替换时的问题
 	}
+	public Object getValue(String name,Object defaultValue){
+		SMLParam sp=getSmlParam(name);
+		return sp==null?defaultValue:sp.getValue();
+	}
 	public SMLParam getSmlParam(String name){
 		return mapParams.get(name);
 	}

@@ -52,7 +52,7 @@ public class ParamSqlResolver implements SqlResolver{
 		}
 		//减少对日志长度的限制，虽然不美观，不过值得
 		temp=temp.replace("\n"," ").trim();
-		if(sqlParamMaps.getSmlParam(FrameworkConstant.PARAM_SQLFORMAT)==null||!sqlParamMaps.getSmlParam(FrameworkConstant.PARAM_SQLFORMAT).getValue().equals("false")){
+		if(Boolean.valueOf(sqlParamMaps.getValue(FrameworkConstant.PARAM_SQLFORMAT,"true").toString())){
 				temp=temp.replaceAll("\\s{2,}"," ");
 				temp=temp.replaceAll("(?i)where 1=1 and","where");//排除索引的影响
 		}

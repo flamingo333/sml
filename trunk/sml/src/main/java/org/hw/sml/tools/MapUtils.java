@@ -15,6 +15,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.hw.sml.support.el.SmlElContext;
+
 
 
 /**
@@ -1188,6 +1190,13 @@ public class MapUtils {
 						value=(V)(Object)Math.ceil(Double.parseDouble(String.valueOf(value)));
 					}else if(mark.equalsIgnoreCase("floor")){
 						value=(V)(Object)Math.floor(Double.parseDouble(String.valueOf(value)));
+					}else if(mark.equalsIgnoreCase("el")){
+						Object obj= new SmlElContext().init().evel(two.replace("$value",value.toString()));
+						if(obj!=null&&obj instanceof byte[]){
+							value=(V) new String((byte[])obj);
+						}
+					}else if(mark.equals("boolean")){
+						value=(V) Boolean.valueOf(String.valueOf(value));
 					}
 	    		}catch(Throwable t){}
 	    	return value;

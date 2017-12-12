@@ -26,7 +26,7 @@ public class Calculator {
             }
         }
         String result=resultStack.pop();
-        if(result.endsWith(".0")){
+        if(result.endsWith(".0")||!result.contains(".")){
         	return Long.parseLong(result.substring(0,result.length()-2));
         }
         return Double.valueOf(result);

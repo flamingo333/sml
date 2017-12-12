@@ -13,6 +13,8 @@ import org.hw.sml.report.model.Constants;
 import org.hw.sml.report.model.Update;
 import org.hw.sml.support.LoggerHelper;
 import org.hw.sml.support.ioc.annotation.Inject;
+import org.hw.sml.support.log.Loggers;
+import org.hw.sml.tools.MapUtils;
 
 public class DelegatedSqlMarkupAbstractTemplate {
 	
@@ -27,6 +29,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	
 	protected Map<String,String> mapper=new HashMap<String,String>();
 	
+	protected Loggers logger=LoggerHelper.getLogger();
+	
 	
 	/**
 	 * 增加数据
@@ -39,9 +43,22 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_INSERT);
 		update.init();
-		LoggerHelper.getLogger().debug(getClass(),"executeSql add:["+update.getUpateSql()+"]");
-		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
+		logger.debug(getClass(),"executeSql add:["+update.getUpateSql()+"]");
+		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
+	}
+	public int update(List<Update> updates){
+		List<String> sqls=MapUtils.newArrayList();
+		List<List<Object[]>> params=MapUtils.newArrayList();
+		String dbid=null;
+		for(Update update:updates){
+			dbid=update.getDbId();
+			update.init();
+			sqls.add(update.getUpateSql());
+			params.add(update.getObjects());
+		}
+		logger.debug(getClass(),"sqls:["+sqls+"]");
+		return getJdbc(dbid).updates(sqls, params);
 	}
 	/**
 	 * 更新数据
@@ -54,8 +71,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_UPDATE);
 		update.init();
-		LoggerHelper.getLogger().debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
-		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
+		logger.debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
+		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
 	}
 	/**
@@ -69,8 +86,8 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_DELETE);
 		update.init();
-		LoggerHelper.getLogger().debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
-		int[] flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
+		logger.debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
+		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
 	}
 	/**
@@ -84,9 +101,9 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_ADU);
 		update.init();
-		boolean exists=sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).queryForInt(update.isExistSql(), update.getExistParams())>0;
-		LoggerHelper.getLogger().debug(getClass(),"executeSql adu:["+update.getUpdateSqlForAdu(exists)+"]");
-		int flag = sqlMarkupAbstractTemplate.getJdbc(update.getDbId()).update(update.getUpdateSqlForAdu(exists),update.getObjectForAdu(exists));
+		boolean exists=getJdbc(update.getDbId()).queryForInt(update.isExistSql(), update.getExistParams())>0;
+		logger.debug(getClass(),"executeSql adu:["+update.getUpdateSqlForAdu(exists)+"]");
+		int flag = getJdbc(update.getDbId()).update(update.getUpdateSqlForAdu(exists),update.getObjectForAdu(exists));
 		return flag;
 	}
 	/**

@@ -16,7 +16,6 @@ import org.hw.sml.tools.RegexUtils;
  *
  */
 public class ForeachResolver implements SqlResolver{
-	private El el;
 	public Rst resolve(String dialect, String temp, SMLParams smlParams) {
 		List<String> mathers=null;
 		if(temp.contains("<foreach")){
@@ -54,7 +53,6 @@ public class ForeachResolver implements SqlResolver{
 	}
 
 	public void setEl(El el) {
-		this.el=el;
 	}
 	
 }

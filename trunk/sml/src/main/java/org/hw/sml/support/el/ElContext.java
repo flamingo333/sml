@@ -27,7 +27,6 @@ public abstract class ElContext{
 		withBean("smlElHelper",this);
 		withBean("smlDateHelper",DateTools.newInstance());
 		withBean("smlMapHelper",MapUtils.newInstance());
-		withBean("lo",LogicOperation.newInstance());
 		return (T)this;
 	}
 	@SuppressWarnings("unchecked")

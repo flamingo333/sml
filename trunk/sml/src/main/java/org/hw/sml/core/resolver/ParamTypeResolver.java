@@ -113,8 +113,8 @@ public class ParamTypeResolver implements SqlResolver{
 			}
 		}
 	}
-	private Class[] getClassPath(String sss){
-		Class[] c=new Class[sss.split(",").length];
+	private Class<?>[] getClassPath(String sss){
+		Class<?>[] c=new Class[sss.split(",").length];
 		for(int i=0;i<c.length;i++){
 			c[i]=String.class;
 		}

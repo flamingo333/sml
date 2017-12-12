@@ -9,6 +9,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 /**
  * 加密解密工具包
+ * #{T(org.hw.sml.support.security.CyptoUtils).encode('hdsafs32142','wdsafdsfsdfa')}
  */
 public class CyptoUtils {
 

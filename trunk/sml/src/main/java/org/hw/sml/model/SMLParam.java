@@ -2,22 +2,26 @@ package org.hw.sml.model;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.Date;
+import java.util.UUID;
 
+import org.hw.sml.core.build.SmlTools;
+import org.hw.sml.support.el.ElException;
+import org.hw.sml.support.el.SmlElContext;
+import org.hw.sml.support.ioc.BeanHelper;
+import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.DateTools;
+import org.hw.sml.tools.RegexUtils;
 
 
 public class SMLParam implements Serializable{
-	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -5335788865766697965L;
-
-	
 	public SMLParam() {
 		super();
 	}
-
 	public SMLParam(String name, Object value) {
 		super();
 		this.name = name;
@@ -85,8 +89,6 @@ public class SMLParam implements Serializable{
 		this.value = value;
 	}
 
-
-	
 	public int getOrderIndex() {
 		return orderIndex;
 	}
@@ -111,7 +113,6 @@ public class SMLParam implements Serializable{
 		this.enabled = enabled;
 	}
 
-	
 	public String getFormat() {
 		return format;
 	}
@@ -128,24 +129,55 @@ public class SMLParam implements Serializable{
 		if(value2==null){
 			return;
 		}
+		if(getDefaultValue()!=null&&value2.equals(getDefaultValue())){
+			if(value2.startsWith("#{")&&value2.endsWith("}")){
+				try {
+					this.value=BeanHelper.getBean(SmlElContext.class).evel(value2);
+				} catch (ElException e) {
+					e.printStackTrace();
+				}
+				return;
+			}
+		}
 		this.value=convertValue(this.type, value2);
 	}
 	public Object convertValue(String typev,String value2){
 		Object result=null;
 		if(typev.equals("date")){
 			result=DateTools.parse(value2);
+		}else if(typev.equals("int")){
+			result=ClassUtil.convertValueToRequiredType(value2,Integer.class);
+		}else if(typev.equals("long")){
+			result=ClassUtil.convertValueToRequiredType(value2,Long.class);
+		}else if(typev.equals("float")){
+			result=ClassUtil.convertValueToRequiredType(value2,Float.class);
+		}else if(typev.equals("double")){
+			result=ClassUtil.convertValueToRequiredType(value2,Double.class);
+		}else if(typev.equals("number")){
+			if(!SmlTools.isEmpty(value2)&&RegexUtils.isNumber(value2)){
+				if(typev.contains(".")){
+					result=ClassUtil.convertValueToRequiredType(value2,Double.class);
+				}else if(typev.length()<8){
+					result=ClassUtil.convertValueToRequiredType(value2,Integer.class);
+				}else{
+					result=ClassUtil.convertValueToRequiredType(value2,Number.class);
+				}
+			}else{
+				result=value2;
+			}
 		}else if(typev.equals("array")){
 			result=buildStr(value2);
 		}else if(typev.equals("array-char")||typev.equals("array_char")){
 			result=value2.split(split);
-		}else if(typev.equals("array-date")||typev.equals("array_date")){
+		}else if(typev.equals("array-date")||typev.equals("array_date")||typev.equals("array-time")||typev.equals("array_time")){
 			String vs[]=value2.split(split);
 			Object[] objs=new Object[vs.length];
 			for(int i=0;i<vs.length;i++){
-				objs[i]=DateTools.parse(vs[i]);
+				Date date=DateTools.parse(vs[i]);
+				objs[i]=(typev.equals("array-time")||typev.equals("array_time"))?new Timestamp(date.getTime()):date;
 			}
 			result=objs;
-		}else if(typev.equals("timestamp")){
+		}else if(typev.equals("timestamp")||typev.equals("time")){
 			result=new Timestamp(DateTools.parse(value2).getTime());
 		}else{
 			result=value2;
@@ -178,7 +210,5 @@ public class SMLParam implements Serializable{
 	public void setId(String id) {
 		this.id = id;
 	}
-	
-	
 	
 }

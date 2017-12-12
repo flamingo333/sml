@@ -3,22 +3,55 @@ package org.hw.sml.support.el;
 import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hw.sml.support.Calculator;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
+import org.hw.sml.tools.RegexUtils;
 import org.hw.sml.tools.Strings;
-
+/**
+ * @author wen
+ * #{T(sun.misc.BASE64Decoder).decodeBuffer('$value')}
+ * #{T(sun.misc.BASE64Encoder).encode(#{('$value').getBytes()})}
+ * 
+ *
+ */
 
 public  class SmlElContext extends ElContext{
 	public SmlElContext(){
 		super();
 	}
+	private AtomicInteger atomicInteger=new AtomicInteger(0);
 	public BeanType evelBeanType(String elp) throws ElException {
 		elp=elp.trim();
 		if(elp.startsWith("(")&&elp.endsWith(")")){
 			elp=elp.substring(1, elp.length()-1);
+		}
+		List<String> mathers=null;
+		List<String> tempBeans=null;
+		if(elp.contains("T(")){
+			mathers=RegexUtils.matchGroup("T\\([\\w|\\.|\\$]+\\)",elp);
+			tempBeans=MapUtils.newArrayList();
+			for(String mather:mathers){
+				String tempBean="anonBean"+atomicInteger.getAndIncrement();
+				Object bean=ClassUtil.newInstance(mather.substring(2, mather.length()-1));
+				withBean(tempBean, bean);
+				tempBeans.add(tempBean);
+				elp=elp.replace(mather, tempBean);
+			}
+			BeanType bt=evelBeanType(elp);
+			for(String tempBean:tempBeans)
+			this.beanMap.remove(tempBean);
+			return bt;
+		}
+		if(elp.contains("#{")){
+			mathers=RegexUtils.matchGroup("#\\{[0-9|\\.|+|\\-|\\*|/|\\(|\\)]{2,}\\}", elp);
+			for(String mather:mathers){
+				Object value=new Calculator().calculate(mather.substring(2, mather.length()-1));
+				elp=elp.replace(mather,value.toString());
+			}
 		}
 		Object value=null;
 		try{
@@ -26,9 +59,18 @@ public  class SmlElContext extends ElContext{
 				value= getValue(elp);
 			}else if(elp.startsWith("#{")&&elp.endsWith("}")){
 					String keyElp=elp.substring(2,elp.length()-1);
-				if(keyElp.matches("[0-9|\\.|+|\\-|\\*|/|\\(|\\)]{2,}")){
+				/*if(keyElp.matches("[0-9|\\.|+|\\-|\\*|/|\\(|\\)]{2,}")){
 						value=new Calculator().calculate(keyElp);
-				}else if(elp.contains("."))
+				}else if(keyElp.startsWith("T(")){
+					String cp=RegexUtils.subString(elp,"T(", ")");
+					Object obj=ClassUtil.newInstance(cp);
+					String tempBean=System.currentTimeMillis()+""+atomicInteger.getAndIncrement();
+					String nelp=elp.replace("T("+cp+")",tempBean);
+					this.withBean(tempBean,obj);
+					value=evel(nelp);
+					this.beanMap.remove(tempBean);
+				}else*/ 
+				if(elp.contains("."))
 					value=loopElp(keyElp);
 				else if(keyElp.startsWith("(")&&keyElp.endsWith(")")){
 						value=evel(keyElp);
@@ -95,6 +137,7 @@ public  class SmlElContext extends ElContext{
 				return b;
 			}
 		}catch(Exception e){
+			e.printStackTrace();
 			throw new ElException("elp["+elp+"]is error",e);
 		}
 		return new BeanType(value,value==null?null:value.getClass());
@@ -151,5 +194,8 @@ public  class SmlElContext extends ElContext{
 			key=key.substring(2,key.length()-1);
 		}
 		return properties.get(key);
+	}
+	public static void main(String[] args) throws ElException {
+		System.out.println(new SmlElContext().evel("#{12+3}"));
 	}
 }

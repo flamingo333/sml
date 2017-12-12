@@ -1,17 +1,20 @@
 package org.hw.sml.core.build;
 
+import java.util.Collection;
 import java.util.Map;
 
 import org.hw.sml.core.RebuildParam;
 import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.model.SqlTemplate;
+import org.hw.sml.tools.MapUtils;
 
 public class SmlTools {
 	public static SqlTemplate toSqlTemplate(String dbid,String sql,Map<String,String> params){
 		SqlTemplate st=new SqlTemplate();
 		st.setDbid(dbid);
 		st.setMainSql(sql);
+		st.setId("anon");
 		SMLParams sp=new SMLParams();
 		for(Map.Entry<String,String> entry:params.entrySet()){
 			sp.add(entry.getKey(),entry.getValue());
@@ -114,4 +117,44 @@ public class SmlTools {
 		}
 		return rebuildParam;
 	}
+	public static boolean isEmpty(Object obj){
+		return obj==null||obj.toString().trim().length()==0;
+	}
+	public static boolean isJsonStr(String jsonStr){
+		return !isEmpty(jsonStr)&&jsonStr.startsWith("{")&&jsonStr.endsWith("}");
+	}
+	public static Map<String,String> rebuildSimpleKv(Map<String,Object> param){
+		return rebuildSimpleKv(null, param);
+	}
+	@SuppressWarnings("unchecked")
+	private static Map<String,String> rebuildSimpleKv(String keyPre,Map<String,Object> param){
+		Map<String,String> result=MapUtils.newHashMap();
+		for(Map.Entry<String,Object> entry:param.entrySet()){
+			String key=keyPre==null?entry.getKey():keyPre+"."+entry.getKey();
+			Object value=entry.getValue();
+			if(value==null){
+				result.put(key,null);
+			}else if(value instanceof Map){
+				result.putAll(rebuildSimpleKv(key,(Map<String,Object>)value));
+			}else if(value instanceof Collection){
+				Collection<?> cls=(Collection<?>) value;
+				StringBuffer sb=new StringBuffer();
+				for(Object cl:cls){
+					sb.append(cl).append(",");
+				}
+				result.put(key,sb.deleteCharAt(sb.length()-1).toString());
+			}else if(value.getClass().isArray()){
+				Object[] objs=(Object[]) value;
+				StringBuffer sb=new StringBuffer();
+				for(Object cl:objs){
+					sb.append(cl).append(",");
+				}
+				result.put(key,sb.deleteCharAt(sb.length()-1).toString());
+			}else{
+				result.put(key,String.valueOf(value));
+			}
+		}
+		return result;
+	}
+	
 }

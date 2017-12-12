@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.hw.sml.FrameworkConstant;
 import org.hw.sml.core.Rslt;
 import org.hw.sml.core.SqlMarkupAbstractTemplate;
+import org.hw.sml.core.build.SmlTools;
 import org.hw.sml.core.resolver.Rst;
 import org.hw.sml.core.resolver.SqlResolver;
 import org.hw.sml.core.resolver.SqlResolvers;
@@ -32,11 +33,9 @@ public class SmlContextUtils {
 	public  SmlContextUtils(SqlMarkupAbstractTemplate sqlMarkupAbstractTemplate){
 		this.sqlMarkupAbstractTemplate=sqlMarkupAbstractTemplate;
 	}
-	
 	public  CacheManager getCacheManager(){
 		return sqlMarkupAbstractTemplate.getCacheManager();
 	}
-	
 	public  JdbcTemplate getJdbc(String dbid){
 		return sqlMarkupAbstractTemplate.getJdbc(dbid);
 	}
@@ -71,7 +70,7 @@ public class SmlContextUtils {
 	}
 	@SuppressWarnings("unchecked")
 	public <T> T query(String ifId,String paramsStr){
-		if(paramsStr.trim().startsWith("{")&&paramsStr.trim().endsWith("}"))
+		if(SmlTools.isJsonStr(paramsStr))
 			return (T)query(ifId,sqlMarkupAbstractTemplate.getJsonMapper().toObj(paramsStr,Map.class));
 		return (T)query(ifId,MapUtils.transMapFromStr(paramsStr));
 	}
@@ -111,7 +110,6 @@ public class SmlContextUtils {
 	public int update(String ifId,Map<String,String> params){
 		if(Boolean.valueOf(params.get(FrameworkConstant.PARAM_FLUSHCACHE))){
 			clear(ifId);
-			
 		}
 		SqlTemplate st=sqlMarkupAbstractTemplate.getSqlTemplate(ifId);
 		reInitSqlParam(st, getJdbc(st.getDbid()), params);
@@ -142,9 +140,8 @@ public class SmlContextUtils {
 	}
 	
 	
-	public static void reInitSqlParam(SqlTemplate st, JdbcTemplate jdbc,
-			Map<String, String> params) {
-		boolean isRpt=MapUtils.getString(params,FrameworkConstant.PARAM_ISREMOTEPRAMS,"false").equalsIgnoreCase("true");
+	public static void reInitSqlParam(SqlTemplate st, JdbcTemplate jdbc,Map<String, String> params) {
+		boolean isRpt=MapUtils.getBoolean(params,FrameworkConstant.PARAM_ISREMOTEPRAMS,false);
 		if(isRpt){
 			SMLParams smlParams=new SMLParams();
 			for(Map.Entry<String,String> entry:params.entrySet()){
@@ -179,9 +176,8 @@ public class SmlContextUtils {
 	
 	
 	public static boolean isNotBlank(Object val) {
-		return val != null && String.valueOf(val).trim().length() > 0;
+		return !SmlTools.isEmpty(val);
 	}
-	
 	//--ext
 	public static String queryFromUrl(String contentType,String accept,String url,byte[] requestBody) throws IOException{
 		Https https=Https.newPostHttps(url);

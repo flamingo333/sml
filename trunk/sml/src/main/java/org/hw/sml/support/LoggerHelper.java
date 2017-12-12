@@ -14,13 +14,13 @@ public class LoggerHelper {
 	private static Loggers logger;
 	static{
 		String classPath=defCp;
-		boolean flag=ClassUtil.hasClass("org.slf4j.LoggerFactory");
+		boolean flag=ClassUtil.hasClass("org.apache.log4j.Logger");
 		if(flag){
-			classPath=slf4jCp;
+			classPath=log4jCp;
 		}else{
-			flag=ClassUtil.hasClass("org.apache.log4j.Logger");
+			flag=ClassUtil.hasClass("org.slf4j.LoggerFactory");
 			if(flag){
-				classPath=log4jCp;
+				classPath=slf4jCp;
 			}
 		}
 		logger=ClassUtil.newInstance(classPath);
