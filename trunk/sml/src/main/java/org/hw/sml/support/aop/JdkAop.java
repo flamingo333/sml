@@ -15,10 +15,11 @@ public class JdkAop implements Aop{
     	aspects.setProxyTarget(proxyTarget);
     	if(aspect!=null)
     		aspects.setAspects(Arrays.asList(aspect));
-    	return (T) Proxy.newProxyInstance(
+    	T t= (T) Proxy.newProxyInstance(
                    Thread.currentThread().getContextClassLoader(), 
                    ClassUtil.getInterfaces(proxyTarget.getClass()), 
                    aspects);
+    	return t;
 	}
 
 }

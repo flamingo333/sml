@@ -7,13 +7,13 @@ public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect
 	/**
 	 * 执行顺序
 	 */
-	private int orderId;
+	protected int orderId;
 	/**
 	 * 扫描 路径.类名.方法名
 	 */
-	private String packageMatchs;
+	protected String packageMatchs;
 	
-	private String name="aspect-"+orderId;
+	protected String name="aspect-"+orderId;
 	
 	public boolean isPackageProxy(Object target){
 		if(packageMatchs==null){
@@ -38,8 +38,10 @@ public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect
 		for(String packageMatch:packageMatchs.split(" ")){
 			try{
 				//System.out.println(pacage+":"+packageMatch+"--->"+pacage.matches(packageMatch));
-				if(pacage.matches(packageMatch))
+				if(pacage.matches(packageMatch)){
+					//LoggerHelper.getLogger().debug(getClass(),pacage+" ---> is proxyed!");
 					return true;
+				}
 			}catch(Exception e){
 				LoggerHelper.getLogger().error(getClass(),e.getMessage());
 			}

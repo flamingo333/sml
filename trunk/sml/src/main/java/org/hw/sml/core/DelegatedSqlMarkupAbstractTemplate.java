@@ -43,6 +43,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_INSERT);
 		update.init();
+		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql add:["+update.getUpateSql()+"]");
 		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
@@ -71,6 +72,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_UPDATE);
 		update.init();
+		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
 		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
@@ -86,6 +88,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setTableName(tableName);
 		update.setType(Constants.TYPE_DELETE);
 		update.init();
+		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
 		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
 		return affectRecord(flag);
@@ -102,6 +105,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		update.setType(Constants.TYPE_ADU);
 		update.init();
 		boolean exists=getJdbc(update.getDbId()).queryForInt(update.isExistSql(), update.getExistParams())>0;
+		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql adu:["+update.getUpdateSqlForAdu(exists)+"]");
 		int flag = getJdbc(update.getDbId()).update(update.getUpdateSqlForAdu(exists),update.getObjectForAdu(exists));
 		return flag;
