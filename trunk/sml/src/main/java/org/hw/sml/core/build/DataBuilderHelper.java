@@ -43,8 +43,12 @@ public class DataBuilderHelper {
 		}
 		return splitClass.contains(classpath);
 	}
-	public static Object build(RebuildParam rebuildParam,List<Map<String,Object>> datas,SmlContextUtils jfContextUtils, SqlTemplate sqlTemplate){
+	@SuppressWarnings("unchecked")
+	public static <T> Object build(RebuildParam rebuildParam,List<T> datas,SmlContextUtils jfContextUtils, SqlTemplate sqlTemplate){
 		AbstractDataBuilder adm=null;
+		if(datas.isEmpty()||!(datas.get(0) instanceof Map)){
+			return datas;
+		}
 		if(rebuildParam.getFilepath()!=null){
 			try {
 				adm=(AbstractDataBuilder)ClassHelper.newInstance(rebuildParam.getFilepath(),rebuildParam.getClasspath());
@@ -60,16 +64,16 @@ public class DataBuilderHelper {
 			}
 		}
 		if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)))
-			datas=MapUtils.toLowerCaseForKey(datas);
+			datas=(List<T>) MapUtils.toLowerCaseForKey((List<Map<String,Object>>)datas);
 		if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER))){
-			datas=MapUtils.rebuildMp(datas,rebuildParam.getOriFields(),rebuildParam.getNewFields(),true);
+			datas=(List<T>) MapUtils.rebuildMp((List<Map<String,Object>>)datas,rebuildParam.getOriFields(),rebuildParam.getNewFields(),true);
 		}
 		adm.setRebuildParam(rebuildParam);
 		adm.setSmlContextUtils(jfContextUtils);
 		adm.setSqlTemplate(sqlTemplate);
-		return adm.build(datas);
+		return adm.build((List<Map<String,Object>>)datas);
 	}
-	public static Object build(RebuildParam rebuildParam,List<Map<String,Object>> datas){
+	public static <T> Object build(RebuildParam rebuildParam,List<T> datas){
 		return build(rebuildParam, datas,null,null);
 	}
 	public static List<Map<String,Object>> unBuild(RebuildParam rebuildParam,Object datas){

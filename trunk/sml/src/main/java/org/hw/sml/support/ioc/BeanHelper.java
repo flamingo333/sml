@@ -33,6 +33,7 @@ import org.hw.sml.tools.Strings;
 public class BeanHelper {
 	private BeanHelper(){}
 	public  static final  String IOC_BEAN_SCAN="ioc-bean-scan";
+	public static final String INIT_BEAN_ELP="elp-init-";
 	private static  Map<String,Object> beanMap=MapUtils.newLinkedHashMap();
 	private static  Map<String,Object> propertyInitBeanMap=MapUtils.newLinkedHashMap();
 	private static Map<String,Boolean> beanErrInfo=MapUtils.newLinkedHashMap();
@@ -350,6 +351,14 @@ public class BeanHelper {
 		if(externalSchedulerPanner)
 		schedulerPanner.init();
 		LoggerHelper.getLogger().info(BeanHelper.class,"bean initd--->"+beanMap.keySet());
+		//执行      sml.initElp.=
+		for(Map.Entry<String,String> entry:propertiesHelper.getValuesByKeyStart(INIT_BEAN_ELP).entrySet()){
+			try {
+				evelV(entry.getValue());
+			} catch (Exception e) {
+				LoggerHelper.getLogger().error(BeanHelper.class,String.format("elp init [%s] error:[%s]",entry.getKey(),e.getMessage()));
+			}
+		}
 	}
 	public static Object evelV(String elp) throws ElException{
 		return smlElContext.evel(elp);

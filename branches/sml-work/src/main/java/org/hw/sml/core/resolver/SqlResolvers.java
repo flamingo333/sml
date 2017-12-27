@@ -31,7 +31,7 @@ public class SqlResolvers {
 		sqlResolvers.add(sqlResolver);
 	}
 	
-	public  Rst resolverLinks(String sql,SqlParams sqlParams){
+	public synchronized  Rst  resolverLinks(String sql,SqlParams sqlParams){
 		List<Object> paramsObject=new ArrayList<Object>();
 		for(SqlResolver sqlResolver:sqlResolvers){
 			sqlResolver.setEl(el);

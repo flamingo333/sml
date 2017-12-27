@@ -1,5 +1,6 @@
 package org.hw.sml.core.resolver;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -7,6 +8,7 @@ import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
 import org.hw.sml.tools.Assert;
+import org.hw.sml.tools.DateTools;
 import org.hw.sml.tools.MapUtils;
 import org.hw.sml.tools.RegexUtils;
 
@@ -27,7 +29,7 @@ public class IfSqlResolver implements SqlResolver{
 		Map<String,Boolean> tempMap=MapUtils.newHashMap();
 		Map<String,Object> mapParam=sqlParamMaps.getMap();
 		if(temp.contains("<smlParam")){
-			mathers=RegexUtils.matchGroup("<smlParam name=\"\\w+\" value=\"[\\w|:]+\"/>",temp);
+			mathers=RegexUtils.matchGroup("<smlParam name=\"\\w+\" value=\"\\S+\"/>",temp);
 			for(String mather:mathers){
 				String tmt=mather;
 				if(!temp.contains(tmt)){
@@ -37,7 +39,10 @@ public class IfSqlResolver implements SqlResolver{
 				String value=RegexUtils.subString(tmt, "value=\"","\"/>");
 				if(value.startsWith("ref:")){
 					value=value.replaceFirst("ref:","");
-					sqlParamMaps.add(name,MapUtils.getString(sqlParamMaps.getMap(),value));
+					String[] vs=value.split("\\|");
+					Map<String,Object> params=sqlParamMaps.getMap();
+					Assert.notNull(MapUtils.getString(params,vs[0]), "param ["+vs[0]+"]  is not config!");
+					sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(params,vs[0]),vs));
 				}else{
 					sqlParamMaps.add(name, value);
 				}
@@ -177,7 +182,27 @@ public class IfSqlResolver implements SqlResolver{
 		}
 		return new Rst(temp);
 	}
-
+	private String getRefFormatValue(String value, String[] vs) {
+		if(vs.length==2){
+			String vs1=vs[1];
+			//|date@('')
+			if(vs1.startsWith("date@")){
+				vs1=vs1.substring(7,vs1.length()-2);
+				value=parseDate(value.substring(0,vs1.length()),vs1);
+			}else if(vs1.startsWith("dates@")){
+				vs1=vs1.substring(8,vs1.length()-2);
+				StringBuffer sb=new StringBuffer();
+				for(String v:value.split(",")){
+					sb.append(parseDate(v.substring(0,vs1.length()),vs1)).append(",");
+				}
+				value=sb.deleteCharAt(sb.length()-1).toString();
+			}
+		}
+		return value;
+	}
+	private String parseDate(String time,String pattern){
+		return new SimpleDateFormat("yyyyMMddHHmmss").format(DateTools.getFormatTime(time, pattern));
+	}
 	public El getEl() {
 		return el;
 	}

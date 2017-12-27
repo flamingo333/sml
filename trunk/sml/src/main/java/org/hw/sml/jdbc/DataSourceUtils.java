@@ -4,9 +4,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
@@ -17,16 +17,16 @@ import org.hw.sml.tools.MapUtils;
 
 
 public class DataSourceUtils {
-	private static  ThreadLocal<Map<String,Connection>> connections=new ThreadLocal<Map<String,Connection>>(){
+	private static  ThreadLocal<Map<String,Connection>> connections=new InheritableThreadLocal<Map<String,Connection>>(){
 		protected Map<String, Connection> initialValue() {
-			return new HashMap<String,Connection>();
+			return new ConcurrentHashMap<String,Connection>();
 		}
 	};
 	public static void configIsSqlLog(boolean flag){
 		SqlException.isSqlLog=flag;
 	}
 	static{
-		configIsSqlLog(Boolean.valueOf(System.getProperty("sml.vm.jdbc.sql.error.log")));
+		configIsSqlLog(Boolean.getBoolean("sml.vm.jdbc.sql.error.log"));
 	}
 	//对事务-连接关闭的datasource注册到此集合中
 	private static List<String> transactionManagerKeys=MapUtils.newArrayList();

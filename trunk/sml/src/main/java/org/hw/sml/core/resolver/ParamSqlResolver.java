@@ -23,7 +23,7 @@ public class ParamSqlResolver implements SqlResolver{
 		List<Object> paramObjects= new ArrayList<Object>();
 		List<String> mathers=null;
 		//用于绑定参数，时间类处理相对简单，对数据库压力也减少
-		mathers=RegexUtils.matchGroup("#\\w*#",temp);
+		mathers=RegexUtils.matchGroup("#\\w+#",temp);
 		for(String mather:mathers){
 			String property=mather.substring(1, mather.length()-1);
 			SMLParam sp=sqlParamMaps.getSmlParam(property);
@@ -33,7 +33,7 @@ public class ParamSqlResolver implements SqlResolver{
 			temp=temp.replace(mather,pad(size,"?"));
 		}
 		//用于非绑定参数的增加用于  like 或者  in 之类
-		mathers=RegexUtils.matchGroup("\\$\\w*\\$",temp);
+		mathers=RegexUtils.matchGroup("\\$\\w+\\$",temp);
 		for(String mather:mathers){
 			String property=mather.substring(1, mather.length()-1);
 			SMLParam sp=sqlParamMaps.getSmlParam(property);

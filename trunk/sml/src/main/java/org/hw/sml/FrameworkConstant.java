@@ -21,7 +21,7 @@ public class FrameworkConstant {
 	};
 	public static String DEFAULT="default",VERSION="1.0",AUTHOR="huangwen";
 	public static String CFG_JDBC_INFO="sml.properties";
-	public static String PARAM_TOLOWERCASEFORKEY="toLowerCaseForKey",PARAM_SQLFORMAT="formatSql",PARAM_IGLOG="igLog",PARAM_QUERYTYPE="queryType",PARAM_FLUSHCACHE="FLUSHCACHE",PARAM_OPLINKS="opLinks",PARAM_ISREMOTEPRAMS="isRemoteParams",PARAM_FIELDFILTER="igFieldFilter",PARAM_SHOWSQL="showSql",PARAM_SHOWSQL_DEFAULTV="defaultValue";
+	public static String PARAM_TOLOWERCASEFORKEY="toLowerCaseForKey",PARAM_SQLFORMAT="formatSql",PARAM_IGLOG="igLog",PARAM_QUERYTYPE="queryType",PARAM_FLUSHCACHE="FLUSHCACHE",PARAM_OPLINKS="opLinks",PARAM_ISREMOTEPRAMS="isRemoteParams",PARAM_FIELDFILTER="igFieldFilter",PARAM_SHOWSQL="showSql",PARAM_SHOWSQL_DEFAULTV="defaultValue",PARAM_RESULTMAP="resultMap";
 	public static String getSupportKey(String type){
 		return getSupportKey(DEFAULT, type);
 	}

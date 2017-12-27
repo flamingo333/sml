@@ -19,6 +19,7 @@ import org.hw.sml.support.el.El;
 import org.hw.sml.support.el.JsEl;
 import org.hw.sml.support.el.Links;
 import org.hw.sml.tools.Assert;
+import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
 
 public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMarkup {
@@ -58,26 +59,28 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 	
 
 	@SuppressWarnings("unchecked")
-	public List<Map<String,Object>> querySql(SqlTemplate st){
+	public <T> List<T> querySql(SqlTemplate st){
 		SqlResolvers sqlResolvers=getSqlResolvers();
 		long parserStart=System.currentTimeMillis();
 		Rst rst=sqlResolvers.resolverLinks(st.getMainSql(),st.getSmlParams());
 		long parseEnd=System.currentTimeMillis();
 		List<Object> paramsObject=rst.getParamObjects();
-		String key=CACHE_PRE+":"+st.getId()+":mergeSql:"+rst.getSqlString()+paramsObject.toString();
+		String key=CACHE_PRE+":"+st.getId()+":mergeSql:"+rst.hashCode();
 		if(getCacheManager().get(key)!=null){
-			return (List<Map<String,Object>>) getCacheManager().get(key);
+			return (List<T>) getCacheManager().get(key);
 		}
 		if(isLogger&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_IGLOG,"false").toString()))
 		logger.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
 		Assert.isTrue(!SmlTools.isEmpty(rst.getSqlString()), "querySql config error parser is null");
-		List<Map<String,Object>> result= getJdbc(st.getDbid()).queryForList(rst.getSqlString(),paramsObject.toArray(new Object[]{}));
+		String resultMap=MapUtils.getString(rst.getExtInfo(),FrameworkConstant.PARAM_RESULTMAP);
+		Class<T> resultClassType=(Class<T>) (resultMap==null?Map.class:ClassUtil.loadClass(resultMap));
+		List<T> result= getJdbc(st.getDbid()).queryForList(rst.getSqlString(),paramsObject.toArray(new Object[]{}),resultClassType);
 		if(st.getIsCache()==1)
 		getCacheManager().set(key, result, st.getCacheMinutes());
-		return result;
+		return (List<T>) result;
 	}
-	public List<Map<String,Object>> querySql(String dbid,String sql,Map<String,String> params){
-		return querySql(SmlTools.toSqlTemplate(dbid, sql, params));
+	public <T> List<T> querySql(String dbid,String sql,Map<String,String> params){
+		return querySql(SmlTools.toSqlTemplate(dbid,sql, params));
 	}
 	public int update(SqlTemplate st){
 		int result=0;

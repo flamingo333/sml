@@ -121,7 +121,7 @@ public class SmlContextUtils {
 	@SuppressWarnings("unchecked")
 	public int update(String paramsStr){
 		if(paramsStr.trim().startsWith("{")&&paramsStr.trim().endsWith("}"))
-			return update(sqlMarkupAbstractTemplate.getJsonMapper().toObj(paramsStr,Map.class));
+			return update(getJsonMapper().toObj(paramsStr,Map.class));
 		return update(MapUtils.transMapFromStr(paramsStr));
 	}
 	public void registDataSource(String dbid,DataSource dataSource){
@@ -131,7 +131,7 @@ public class SmlContextUtils {
 	public  int clear(String keyStart){
 		if(!isNotBlank(keyStart))
 			return getCacheManager().clearKeyStart(SqlMarkupAbstractTemplate.CACHE_PRE);
-		return getCacheManager().clearKeyStart(SqlMarkupAbstractTemplate.CACHE_PRE+":"+keyStart);
+		return getCacheManager().clearKeyStart(SqlMarkupAbstractTemplate.CACHE_PRE+":"+keyStart+":");
 	}
 	public  int getCacheSize(String keyStart){
 		if(!isNotBlank(keyStart))

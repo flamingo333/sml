@@ -21,7 +21,7 @@ public class SerializationUtils {
 			out.writeObject(obj);
 		} catch (Exception ex) {
 		} finally {
-			IOUtils.safeClose(obj);
+			IOUtils.safeClose(out);
 		}
 	}
 

@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +22,7 @@ import org.hw.sml.jdbc.RowMapper;
 import org.hw.sml.jdbc.exception.SqlException;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
+import org.hw.sml.tools.LinkedCaseInsensitiveMap;
 
 public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		private boolean transactionInversion;
@@ -220,21 +220,49 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 			return queryForObject(sql, params, new MapRowMapper());
 		}
 		public List<Map<String,Object>> queryForList(String sql,Object... params){
-			return query(sql, params,new MapRowMapper());
+			return query(sql,params,new MapRowMapper());
 		}
 		@SuppressWarnings("unchecked")
 		public <T> T queryForObject(String sql,Object[] params,Class<T> clazz){
 			Map<String,Object> result=queryForMap(sql, params);
-			return (T) ClassUtil.convertValueToRequiredType(result.get(result.keySet().iterator().next()),clazz);
+			if(ClassUtil.isSingleType(clazz))
+				return (T) ClassUtil.convertValueToRequiredType(result.get(result.keySet().iterator().next()),clazz);
+			else if(Map.class.isAssignableFrom(clazz)){
+				return (T) result;
+			}else{
+				try {
+					return ClassUtil.mapToBean(result,clazz);
+				} catch (Exception e) {
+					throw new SqlException(e,sql);
+				}
+			}
 		}
 		@SuppressWarnings("unchecked")
-		public <T> List<T> queryForList(String sql,Object[] params,Class<T> clazz){
-			List<Map<String,Object>> trs=queryForList(sql, params);
-			List<T> result=new ArrayList<T>();
-			for(Map<String,Object> tr:trs){
-				result.add((T)ClassUtil.convertValueToRequiredType(tr.get(tr.keySet().iterator().next()),clazz));
+		public <T> List<T> queryForList(String sql,Object[] params,final Class<T> clazz){
+			if(ClassUtil.isSingleType(clazz)){
+				List<Map<String,Object>> trs=queryForList(sql, params);
+				List<T> result=new ArrayList<T>();
+				for(Map<String,Object> tr:trs){
+					result.add((T)ClassUtil.convertValueToRequiredType(tr.get(tr.keySet().iterator().next()),clazz));
+				}
+				return result;
+			}else if(Map.class.isAssignableFrom(clazz)){
+				return (List<T>) queryForList(sql, params);
+			}else{
+				List<T> trs=query(sql, params,new RowMapper<T>() {
+					MapRowMapper mapper=new MapRowMapper();
+					public T mapRow(ResultSet rs, int rowNum)
+						throws SQLException {
+						Map<String,Object> map=mapper.mapRow(rs,rowNum);
+						try {
+							return ClassUtil.mapToBean(map,clazz);
+						} catch (Exception e) {
+							throw new SQLException(e.getMessage());
+						}
+					}
+				});
+				return trs;
 			}
-			return result;
 		}
 		public void queryForCallback(final String sql,final Object[] params,
 				final Callback callback) {
@@ -412,7 +440,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 					throws SQLException {
 				ResultSetMetaData rsmd = rs.getMetaData();
 				int columnCount = rsmd.getColumnCount();
-				Map<String, Object> mapOfColValues = new LinkedHashMap<String, Object>();
+				Map<String, Object> mapOfColValues = new LinkedCaseInsensitiveMap<Object>();
 				for (int i = 1; i <= columnCount; i++) {
 					String key = lookupColumnName(rsmd, i);
 					Object obj = getResultSetValue(rs, i);

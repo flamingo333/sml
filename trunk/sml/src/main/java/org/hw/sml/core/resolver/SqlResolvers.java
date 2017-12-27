@@ -23,10 +23,10 @@ public class SqlResolvers {
 	}
 	public SqlResolvers init(){
 		sqlResolvers=new ArrayList<SqlResolver>();
-		sqlResolvers.add(new ParamTypeResolver());
 		sqlResolvers.add(new IfSqlResolver());
 		sqlResolvers.add(new SelectSqlResolver());
 		sqlResolvers.add(new ForeachResolver());
+		sqlResolvers.add(new ParamTypeResolver());
 		sqlResolvers.addAll(extResolvers);
 		sqlResolvers.add(new ParamSqlResolver());
 		return this;

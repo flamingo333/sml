@@ -39,8 +39,9 @@ public class IfSqlResolver implements SqlResolver{
 				if(value.startsWith("ref:")){
 					value=value.replaceFirst("ref:","");
 					String[] vs=value.split("\\|");
-					sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(sqlParamMaps.getMap(),vs[0]),vs));
-					
+					Map<String,Object> params=sqlParamMaps.getMap();
+					Assert.notNull(MapUtils.getString(params,vs[0]), "param ["+vs[0]+"]  is not config!");
+					sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(params,vs[0]),vs));
 				}else{
 					sqlParamMaps.add(name, value);
 				}
@@ -184,7 +185,7 @@ public class IfSqlResolver implements SqlResolver{
 	private String getRefFormatValue(String value, String[] vs) {
 		if(vs.length==2){
 			String vs1=vs[1];
-			vs1.split("-");
+			//|date@('')
 			if(vs1.startsWith("date@")){
 				vs1=vs1.substring(7,vs1.length()-2);
 				value=parseDate(value.substring(0,vs1.length()),vs1);
@@ -192,7 +193,6 @@ public class IfSqlResolver implements SqlResolver{
 				vs1=vs1.substring(8,vs1.length()-2);
 				StringBuffer sb=new StringBuffer();
 				for(String v:value.split(",")){
-					System.out.println(v.substring(0,vs1.length()));
 					sb.append(parseDate(v.substring(0,vs1.length()),vs1)).append(",");
 				}
 				value=sb.deleteCharAt(sb.length()-1).toString();
