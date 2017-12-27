@@ -1,5 +1,6 @@
 package org.hw.sml.core.resolver;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Date;
@@ -11,6 +12,7 @@ import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
+import org.hw.sml.tools.DateTools;
 import org.hw.sml.tools.MapUtils;
 import org.hw.sml.tools.RegexUtils;
 /**
@@ -37,7 +39,7 @@ public class ParamTypeResolver implements SqlResolver{
 					SMLParam sp=sqlParamMaps.getSmlParam(name);
 					if(sp!=null){
 						sp.setType(type);
-						sp.handlerValue(sp.getValue()==null?null:String.valueOf(sp.getValue()));
+						sp.handlerValue(getFmtValue(sp.getValue()));
 					}
 					temp=temp.replace(tmt,"");
 				}else{
@@ -52,16 +54,18 @@ public class ParamTypeResolver implements SqlResolver{
 					SMLParam sp=sqlParamMaps.getSmlParam(name);
 					if(sp!=null){
 						sp.setType(type);
-						sp.handlerValue(sp.getValue()==null?null:String.valueOf(sp.getValue()));
+						sp.handlerValue(getFmtValue(sp.getValue()));
 						Object value=sp.getValue();
+						content=parse(content,sqlParamMaps.getMap());
 						if(value!=null){
 							if(value.getClass().isArray()){
 								Object[] tos=(Object[])value;
 								for(int i=0;i<tos.length;i++){
-									tos[i]=JsEngine.evel(content.replace("@value",getValue((tos[i]))));
+									String var=getFmtValue(tos[i]);
+									tos[i]=JsEngine.evel(content.replace("@value",var));
 								}
 							}else{
-								sp.setValue(JsEngine.evel(content.replace("@value",getValue((value)))));
+								sp.setValue(JsEngine.evel(content.replace("@value",getFmtValue(value))));
 							}
 						}
 					}
@@ -102,16 +106,38 @@ public class ParamTypeResolver implements SqlResolver{
 		}
 		return new Rst(temp);
 	}
-	private String getValue(Object v){
-		if(v==null){
-			return null;
-		}else{
-			if(v instanceof Date){
-				return String.valueOf(((Date)v).getTime());
-			}else{
-				return String.valueOf(v);
-			}
+	private String getFmtValue(Object var) {
+		if(var==null){
+			return "";
 		}
+		if(var.getClass().isArray()){
+			int length=Array.getLength(var);
+			if(length==0){
+				return "";
+			}
+			Object val=Array.get(var,0);
+			StringBuffer sb=new StringBuffer();
+			for(int i=0;i<length;i++){
+				if(val instanceof Date){
+						sb.append(DateTools.getFormatTime(((Date)Array.get(var,i)),"yyyyMMddHHmmss")+",");
+				}else{
+					sb.append(var);
+				}
+			}
+			return sb.deleteCharAt(sb.length()-1).toString();
+		}else{
+			if(var instanceof Date){
+				var=DateTools.getFormatTime(((Date)var),"yyyyMMddHHmmss");
+			}
+			return String.valueOf(var);
+		}
+	}
+	private String parse(String elp, Map<String, Object> varMap) {
+		for (Map.Entry<String,Object> entry:varMap.entrySet()) {
+			elp = elp.replace("@" + entry.getKey(),
+					String.valueOf(entry.getValue()));
+		}
+		return elp;
 	}
 	private Class<?>[] getClassPath(String sss){
 		Class<?>[] c=new Class[sss.split(",").length];

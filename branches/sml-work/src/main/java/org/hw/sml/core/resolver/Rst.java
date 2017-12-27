@@ -41,5 +41,12 @@ public class Rst{
 	public void setParamObjects(List<Object> paramObjects) {
 		this.paramObjects = paramObjects;
 	}
-	
+	@Override
+	public int hashCode(){
+		return this.toString().hashCode();
+	}
+	@Override
+	public String toString(){
+		return sqlString+paramObjects;
+	}
 }

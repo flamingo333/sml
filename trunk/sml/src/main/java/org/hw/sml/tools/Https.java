@@ -13,6 +13,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.bind.DatatypeConverter;
 /**
@@ -21,11 +22,10 @@ import javax.xml.bind.DatatypeConverter;
  *
  */
 public class Https {
-	
 	public static final String METHOD_GET="GET";
 	public static final String METHOD_POST="POST";
 	byte[] bytes=new byte[512];
-	private boolean keepAlive=false;
+	private boolean keepAlive=true;
 	private int readTimeout;
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
@@ -74,12 +74,25 @@ public class Https {
 	private Object body;
 	private int connectTimeout;
 	private boolean isUpload=false;
+	private boolean cache=false;
 	private String boundary;
 	private Paramer paramer=new Paramer();
 	private Proxy proxy;
 	private Header responseHeader;
 	public Https charset(String charset){
 		this.charset=charset;
+		return this;
+	}
+	public Https cache(boolean cache){
+		this.cache=cache;
+		return this;
+	}
+	public Https header(String name,String value){
+		getHeader().put(name, value);
+		return this;
+	}
+	public Https param(String name,Object value){
+		getParamer().add1(name, value);
 		return this;
 	}
 	public Https connectTimeout(int timeout){
@@ -242,14 +255,13 @@ public class Https {
 		try{
 			if(this.method.equals(METHOD_POST)){
 				conn.setDoInput(true);
-				conn.setUseCaches(false);
+				conn.setUseCaches(cache);
 				out=conn.getOutputStream();
 				if(body!=null){
 					if(body instanceof String)
 						out.write(body.toString().getBytes(header.requestCharset));
 					else if(isUpload&&body.getClass().isArray()&&Array.get(body,0) instanceof UpFile){
 						ds=new DataOutputStream(out);
-						int i=0;
 						for(Map.Entry<String,Object> entry:this.paramer.params.entrySet()){
 							ds.writeBytes("--"+boundary+"\r\n");
 							ds.writeBytes("Content-Disposition: form-data; name=\""+entry.getKey()+"\"\r\n");
@@ -259,12 +271,13 @@ public class Https {
 						}
 						for(UpFile uf:((UpFile[])body)){
 							ds.writeBytes("--"+boundary+"\r\n");
-							ds.writeBytes("Content-Disposition: form-data; name=\"file"+(i++)+"\";filename=\""+uf.name+"\"\r\n");
+							ds.writeBytes("Content-Disposition: form-data; name=\""+uf.formname+"\";filename=\""+uf.name+"\"\r\n");
 							ds.writeBytes("Content-Type: application/octet-stream;charset="+header.requestCharset+"\r\n");
 							ds.writeBytes("\r\n");
 							int dst=-1;
 							while((dst=uf.is.read(bytes))!=-1){
 								ds.write(bytes,0,dst);
+								ds.flush();
 							}
 							ds.writeBytes("\r\n");
 							ds.flush();
@@ -299,7 +312,6 @@ public class Https {
 		}finally{
 			this.responseStatus=conn.getResponseCode();
 			this.responseMessage=conn.getResponseMessage();
-			
 			if(conn!=null&&!keepAlive)
 				conn.disconnect();
 			if(out!=null)
@@ -343,11 +355,20 @@ public class Https {
 		return new UpFile(name, is);
 	}
 	public static class UpFile{
+		public String formname;
 		public String name;
 		public InputStream is;
+		private AtomicInteger it=new AtomicInteger(0);
 		public UpFile(String name,InputStream is){
 			this.name=name;
 			this.is=is;
+			this.formname="file"+it.getAndIncrement();
+		}
+		public UpFile(String formname,String filename,InputStream is){
+			this.formname=formname;
+			this.name=filename;
+			this.is=is;
 		}
 	}
+	
 }

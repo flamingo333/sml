@@ -59,7 +59,7 @@ public abstract class Session implements Serializable{
 		public synchronized void reset(){
 			this.accessCountPerDay=0;
 			this.first_access_time=new Date();
-			LoggerHelper.info(getClass(),"reset session");
+			LoggerHelper.getLogger().info(getClass(),"reset session");
 		}
 		
 		public String getId() {

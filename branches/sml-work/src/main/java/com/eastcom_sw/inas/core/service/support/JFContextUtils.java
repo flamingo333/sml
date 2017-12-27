@@ -119,7 +119,7 @@ public class JFContextUtils {
 	public  int clear(String keyStart){
 		if(!isNotBlank(keyStart))
 			return getCacheManager().clearKeyStart(AbstractJdbcFTemplate.CACHE_PRE);
-		return getCacheManager().clearKeyStart(AbstractJdbcFTemplate.CACHE_PRE+":"+keyStart);
+		return getCacheManager().clearKeyStart(AbstractJdbcFTemplate.CACHE_PRE+":"+keyStart+":");
 	}
 	public  int getCacheSize(String keyStart){
 		if(!isNotBlank(keyStart))

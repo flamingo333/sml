@@ -55,5 +55,12 @@ public class Rst{
 		this.extInfo = extInfo;
 		return this;
 	}
-	
+	@Override
+	public int hashCode(){
+		return this.toString().hashCode();
+	}
+	@Override
+	public String toString(){
+		return sqlString+paramObjects;
+	}
 }

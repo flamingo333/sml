@@ -63,7 +63,7 @@ public class FrameworkConstant {
 			reset("CFG_REPORT_DETAIL_SQL");
 			reset("CFG_DEFAULT_BUILDER_CLASS");
 		}catch(Exception e){
-			LoggerHelper.error(FrameworkConstant.class,"FrameworkConstant can't found, use default config !");
+			LoggerHelper.getLogger().error(FrameworkConstant.class,"FrameworkConstant can't found, use default config !");
 		}
 		try{
 			InputStream is=FrameworkConstant.class.getClassLoader().getResourceAsStream(CFG_JDBC_INFO);
@@ -72,7 +72,7 @@ public class FrameworkConstant {
 			if(propertyFilesStr!=null){
 				for(String file:propertyFilesStr.split(",")){
 					otherProperties.load(FrameworkConstant.class.getClassLoader().getResourceAsStream(file));
-					LoggerHelper.info(FrameworkConstant.class,"load properties--->"+file);
+					LoggerHelper.getLogger().info(FrameworkConstant.class,"load properties--->"+file);
 				}
 			}
 		}catch(Exception e){
@@ -92,7 +92,7 @@ public class FrameworkConstant {
 		}else if(key.equals("CFG_DEFAULT_BUILDER_CLASS")){
 			CFG_DEFAULT_BUILDER_CLASS=value;
 		}
-		LoggerHelper.warn(FrameworkConstant.class,key+" is  reset used it --->["+value+"]");
+		LoggerHelper.getLogger().warn(FrameworkConstant.class,key+" is  reset used it --->["+value+"]");
 	}
 	public static String getProperty(String key){
 		String result=null;

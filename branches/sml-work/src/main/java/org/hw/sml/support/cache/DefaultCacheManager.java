@@ -59,7 +59,7 @@ public class DefaultCacheManager extends ManagedThread implements CacheManager {
 			if(value instanceof List){
 				List<?> to=(List<?>)value;
 				if(to.size()==0){
-					return;
+					//return;
 				}
 			}
 			caches.put(key, value);
