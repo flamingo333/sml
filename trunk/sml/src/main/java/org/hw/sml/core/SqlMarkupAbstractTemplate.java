@@ -137,7 +137,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		String sqlString=rst.getSqlString();
 		List<Object> paramsObject=rst.getParamObjects();
 		if(isLogger&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_IGLOG,"false").toString()))
-		logger.info(getClass(),"sql["+rst.getSqlString()+"],params"+paramsObject.toString());
+		logger.info(getClass(),"sql["+rst.getPrettySqlString()+"]");
 		return getJdbc(st.getDbid()).query(sqlString,paramsObject.toArray(new Object[]{}), new Rset());
 	}
 

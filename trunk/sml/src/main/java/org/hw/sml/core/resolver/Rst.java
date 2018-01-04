@@ -30,7 +30,7 @@ public class Rst{
 	public String getPrettySqlString(){
 		String prettySql=sqlString;
 		for(Object obj:paramObjects){
-			prettySql=prettySql.replaceFirst("\\?",obj==null?null:(obj instanceof Date?("to_date('"+(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date)obj))+"','yyyy-mm-dd hh24:mi:ss')"):("'"+String.valueOf(obj)+"'")));
+			prettySql=prettySql.replaceFirst("\\?",obj==null?null:(obj instanceof Date?("to_date('"+(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date)obj))+"','yyyy-mm-dd hh24:mi:ss')"):((obj instanceof Number)?String.valueOf(obj):("'"+String.valueOf(obj)+"'"))));
 		}
 		return prettySql;
 	}

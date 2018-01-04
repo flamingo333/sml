@@ -1,9 +1,9 @@
 package org.hw.sml.model;
 
 import java.io.Serializable;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.UUID;
 
 import org.hw.sml.core.build.SmlTools;
 import org.hw.sml.support.el.ElException;
@@ -174,7 +174,7 @@ public class SMLParam implements Serializable{
 			Object[] objs=new Object[vs.length];
 			for(int i=0;i<vs.length;i++){
 				Date date=DateTools.parse(vs[i]);
-				objs[i]=(typev.equals("array-time")||typev.equals("array_time"))?new Timestamp(date.getTime()):date;
+				objs[i]=(typev.equals("array-time")||typev.equals("array_time"))?new Time(date.getTime()):date;
 			}
 			result=objs;
 		}else if(typev.equals("timestamp")||typev.equals("time")){

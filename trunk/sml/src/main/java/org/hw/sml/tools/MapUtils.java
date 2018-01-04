@@ -1191,7 +1191,7 @@ public class MapUtils {
 					}else if(mark.equalsIgnoreCase("floor")){
 						value=(V)(Object)Math.floor(Double.parseDouble(String.valueOf(value)));
 					}else if(mark.equalsIgnoreCase("el")){
-						Object obj= new SmlElContext().init().evel(two.replace("$value",value.toString()));
+						Object obj=new SmlElContext().init().evel(two.replace("$value",value.toString()));
 						if(obj!=null&&obj instanceof byte[]){
 							value=(V) new String((byte[])obj);
 						}

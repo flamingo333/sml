@@ -7,6 +7,7 @@ import org.hw.sml.support.ioc.BeanHelper;
 import org.hw.sml.support.ioc.PropertiesHelper;
 import org.hw.sml.support.queue.ManagedQuene;
 import org.hw.sml.support.queue.Task;
+import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
 
@@ -48,16 +49,17 @@ public class SchedulerPanner extends ManagedQuene<Task>{
 				TaskModel tm=new TaskModel();
 				tm.setElp(value);
 				tm.init();
-				if(!tm.isExecuteNow()||!taskMapStatus.get(key)){
+				if(!tm.isExecuteNow()||!taskMapStatus.get(entry.getKey())){
 					continue;
 				}
 				super.add(new Task() {
-					String[] bm=key.split("-")[1].split("\\.");
+					String[] bm=key.substring(key.indexOf("-")+1).split("\\.");
 					String bn=bm[0];
 					String mn=bm[1];
-					Object bean=BeanHelper.getBean(bn);
-					Class<?> c=bean.getClass();
 					public void execute() throws Exception {
+						Object bean=BeanHelper.getBean(bn);
+						Assert.notNull(bean,String.format("Scheduler bean [%s] not null!",bn));
+						Class<?> c=bean.getClass();
 						ClassUtil.getMethod(c,mn,new Class<?>[]{}).invoke(bean,new Object[]{});
 					}
 					public String toString(){
