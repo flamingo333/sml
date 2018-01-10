@@ -4,23 +4,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.imageio.stream.FileImageInputStream;
 import javax.sql.DataSource;
 
-import org.apache.commons.io.IOUtils;
+import org.hw.sml.context.SmlContextUtils;
 import org.hw.sml.core.SqlMarkupTemplate;
 import org.hw.sml.core.resolver.JsEngine;
 import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.jdbc.impl.DefaultDataSource;
 import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
-import org.hw.sml.queryplugin.JsonMapper;
-import org.hw.sml.support.CallableHelper;
-import org.hw.sml.tools.Maps;
+import org.hw.sml.support.SmlAppContextUtils;
 import org.junit.Test;
 
 
@@ -47,8 +42,19 @@ public class SqlMarkupAbstractTemplateDemo {
 		JsEngine.evel("'a'");
 		st.setDss(dss);
 		st.init();
-		System.out.println(st.getSmlContextUtils().query("area-pm",""));
-		st.getSmlContextUtils().query("defJt","select 1 from dual where 1=1  <if test=\" '@a'=='1' \">and 1<2</if>",new Maps<String,String>().put("a","1").getMap());
+		System.out.println(new SmlContextUtils(st).query("area-pm",""));
+		//new SmlContextUtils(st).query("defJt","select fa as b from DM_RE_BA_HOT where 1=1  <if test=\" '@a'=='1' \">and 1<2</if>",new Maps<String,String>().put("a","1").getMap());
+		StringBuffer sb=new StringBuffer();
+		for(int i=0;i<10000;i++){
+			sb.append(i);
+		}
+		//int i=jdbcTemplate.update("insert into hw_test2(id1,file_) values(?,?)",new Object[]{sb.substring(0,121),new FileInputStream("e:/temp/2017-09-20_18-00-45_CfgBackup-sys-cfg.zip")});
+		//System.out.println(i);
+		String sql=SmlAppContextUtils.getSmlContextUtils().queryRst("area-pm",null).getPrettySqlString();
+		System.out.println(sql);
+		//Map<String,Object> result= jdbcTemplate.queryForMap("select file_ from hw_test2 where id='2'");
+		//System.out.println(result);
+		
 	}
 	public static void main(String[] args) throws SQLException, InterruptedException, FileNotFoundException, IOException {
 		testQuery();

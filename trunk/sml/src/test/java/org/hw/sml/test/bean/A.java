@@ -7,11 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.core.SqlMarkupTemplate;
 import org.hw.sml.support.el.ElException;
 import org.hw.sml.support.el.SmlElContext;
 import org.hw.sml.support.ioc.BeanHelper;
 import org.hw.sml.support.ioc.annotation.Val;
 import org.hw.sml.support.time.annotation.Scheduler;
+import org.hw.sml.tools.ClassUtil;
+import org.hw.sml.tools.MapUtils;
 
 import com.alibaba.fastjson.JSON;
 
@@ -28,6 +31,9 @@ public class A {
 	public A(int i){
 		this.i=i;
 	}
+	public A(){
+		
+	}
 	@Val("{a:#{person.age},b:${properties}}")
 	public String get(String a,String b,String c){
 		return a+b+c;
@@ -36,20 +42,26 @@ public class A {
 		return Arrays.asList(strs).toString();
 	}
 	@Scheduler(Scheduler.min1)
-	public void test() throws ElException{
-	
+	public void test4() throws ElException{
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 		try {
 			Thread.sleep(10);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		System.out.println(new A().i.toString());
 	}
 	@Scheduler(Scheduler.min1)
 	public void test2() throws ElException{
+		List<Object[]> datas=MapUtils.newArrayList();
+		datas.add(new Object[]{"1","2"});
+		datas.add(new Object[]{"1","2"});
+		System.out.println(BeanHelper.getBean(SqlMarkupTemplate.class).getJdbc("rest").batchUpdate("insert into hw_test(id,name) values(?,?)",datas).length);
 		if(count++==1){
 			BeanHelper.evelV("#{schedulerPanner.taskMapStatus.put(('anno-aBean.test'),true)}");
 		}
+		System.out.println(JSON.toJSON(BeanHelper.evelV("#{schedulerPanner.stats}")));
+		System.out.println("=-----="+BeanHelper.evelV("#{sml.getDefJt().queryForList('select * from dual where 1<? and 'a'||'c'=?',(#{([2,'ace']).toArray()}))}"));
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 		try {
 			Thread.sleep(10);
@@ -107,11 +119,11 @@ public class A {
 		System.out.println(BeanHelper.evelV("#{sml.cacheManager.getKeyStart('')}"));
 		System.out.println(BeanHelper.evelV("#{sml.getJdbc('defJt').dataSource.toString().equals(#{sml.getJdbc('defJt').dataSource.toString()})}"));
 		System.out.println(BeanHelper.evelV("'aaaad,dd,d'"));
-		System.out.println(BeanHelper.evelV("{a:{a:2,c:3},b:'eeeee',c:(['a','b','c','d',({a:({a:2,c:3}),b:'eeeee'})])}"));
+		System.out.println("--------------"+BeanHelper.evelV("{a:{a:2,c:3},b:'eeeee',c:(['a','b','c','d',({a:({a:2,c:3,d:({f:1,g:2,e:({e:1})})}),b:'eeeee'})])}"));
 		System.out.println(BeanHelper.evelV("#{(['a','b','c','d',{a:{a:2,c:3},b:'eeeee'}]).containsAll((['a','b']))}"));
 		System.out.println(BeanHelper.evelV("#{('a').length().toString().concat(('dess,sss')).equals(('1dess,sss'))}"));
 		System.out.println(BeanHelper.evelV("#{([1]).toArray()}"));
-		System.out.println("=-----="+BeanHelper.evelV("#{sml.getDefJt().queryForList('select * from dual where 1<? and 'a'||'c'=?',(#{([2,'ace']).toArray()}))}"));
+		System.out.println("=-----="+BeanHelper.evelV("#{sml.getJdbc('rest').queryForList('select * from dual where 1<? and 'a'||'c'=?',(#{([2,'ac']).toArray()}))}"));
 		Map map=(Map) BeanHelper.evelV("{'a':1,'b':2,'c':({234i:'3','e':'4','f':({'g':'6'})})}");
 		System.out.println(map);
 		System.out.println(BeanHelper.evelV("{a:({b:1,c:   ({d:1})   })}"));
@@ -121,6 +133,7 @@ public class A {
 		System.out.println(BeanHelper.evelV("#{smlMapHelper.sort(#{testMap},'a','desc')}"));
 		System.out.println(BeanHelper.evelV("#{('k').equals('k')}"));
 		System.out.println(BeanHelper.evelV("{1:2,a:b,c:d,e:f}"));
+		System.out.println(BeanHelper.evelV("#{(128+(2-9)*10+900+(10*97)+128*23/4)}"));
 		System.out.println(System.currentTimeMillis()-start);
 		//ArrayList c;
 		//"".matches(regex)
@@ -133,6 +146,13 @@ public class A {
 		String key=m.put("a","b");
 		key=m.put("a","c");
 		System.out.println(key);
+		System.out.println(A.class.getInterfaces().length);
+		System.out.println(Arrays.asList(ClassUtil.getInterfaces(A.class)));
+		List<Object[]> datas=MapUtils.newArrayList();
+		datas.add(new Object[]{"1","2"});
+		datas.add(new Object[]{"1","2"});
+		System.out.println(BeanHelper.getBean(SqlMarkupTemplate.class).getJdbc("rest").batchUpdate("insert into hw_test(id,name) values(?,?)",datas).length);
+
 	}
 
 

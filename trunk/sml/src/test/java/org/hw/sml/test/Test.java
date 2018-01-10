@@ -11,6 +11,9 @@ import org.hw.sml.context.SmlContextUtils;
 import org.hw.sml.core.resolver.JsEngine;
 import org.hw.sml.support.el.ElException;
 import org.hw.sml.support.ioc.BeanHelper;
+import org.hw.sml.support.time.StopWatch;
+import org.hw.sml.tools.Https;
+import org.junit.internal.runners.statements.RunAfters;
 
 public class Test {
 	 static class DefaultThreadFactory implements ThreadFactory {
@@ -42,20 +45,36 @@ public class Test {
 	public static void main(String[] args) throws IOException, ElException {
 		BeanHelper.start();
 		JsEngine.evel("");
-		long start=System.currentTimeMillis();
-		for(int i=0;i<100;i++){
-			Object result=BeanHelper.evelV("#{lo.plus(1.0,1)}");
+		StopWatch sw=new StopWatch("eval");
+		sw.start("java");
+		int times=10000;
+		for(int i=0;i<times;i++){
+			Object result=BeanHelper.evelV("#{(1+1.0)}");
 			if(i==1)
 				System.out.println(result);
 		}
-		System.out.println(System.currentTimeMillis()-start);
-		long s=System.currentTimeMillis();
-		for(int i=0;i<100;i++){
-			Object result=JsEngine.evel("1+1");
+		sw.stop();
+		sw.start("js");
+		for(int i=0;i<times;i++){
+			Object result=JsEngine.evel("eval(1+1)");
 			if(i==1)
 				System.out.println(result);
 		}
-		System.out.println(System.currentTimeMillis()-s);
-		
+		sw.stop();
+		System.out.println(sw.prettyPrint());
+		for(int i=0;i<100;i++){
+			new Thread(new Runnable() {
+				
+				public void run() {
+					while(true){
+						try {
+							System.out.println(Https.newPostBodyHttps("http://localhost:8081/post?a=1").body("{\"a2\":1}").execute());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}).start();
+		}
 	}
 }

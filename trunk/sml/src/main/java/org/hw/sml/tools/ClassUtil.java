@@ -320,4 +320,11 @@ public class ClassUtil {
     	}
     	return result;
     }
+    public static Method getSetMethod(Class<?> clazz,String name){
+    	Method method=getMethod(clazz,"set"+new Strings(name).toUpperCaseFirst());
+    	if(method==null&&name.startsWith("is")){
+    			method=getMethod(clazz, "set"+new Strings(name.replaceFirst("is", "")).toUpperCaseFirst());
+    	}
+    	return method;
+    }
 }

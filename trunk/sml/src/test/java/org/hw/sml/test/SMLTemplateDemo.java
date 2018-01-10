@@ -12,8 +12,9 @@ public class SMLTemplateDemo {
 			"<isNotEmpty property=\"a\"> and t.a=#a#</isNotEmpty>" +
 			"<isNotEmpty property=\"b\"> and t.b in(#b#)</isNotEmpty>" +
 			"<isNotEmpty property=\"d\"> and t.d in(#d#)</isNotEmpty>" +
-			"<if test=\" '@c'!='vv' \"> and t.c like '%'||#c#||'%'</if>" +
-			"<jdbcType name=\"d\" type=\"array-char\">'@value'+'100'</jdbcType>";
+			"<if test=\" '@c'!='vv' \"> and t.c like '%'||#c#||'%'</if>" 
+			+"<jdbcType name=\"d\" type=\"array-char\">'@value'+'0000'</jdbcType>"
+			;
 	@Test
 	public  void testSml() {
 		SqlResolvers sqlResolvers=new SqlResolvers(new JsEl());

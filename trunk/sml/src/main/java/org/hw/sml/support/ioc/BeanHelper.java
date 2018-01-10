@@ -351,7 +351,7 @@ public class BeanHelper {
 		if(externalSchedulerPanner)
 		schedulerPanner.init();
 		LoggerHelper.getLogger().info(BeanHelper.class,"bean initd--->"+beanMap.keySet());
-		//执行      elp-init-=
+		//执行      sml.initElp.=
 		for(Map.Entry<String,String> entry:propertiesHelper.getValuesByKeyStart(INIT_BEAN_ELP).entrySet()){
 			try {
 				evelV(entry.getValue());
