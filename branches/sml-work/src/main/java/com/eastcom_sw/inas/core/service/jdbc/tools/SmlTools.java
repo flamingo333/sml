@@ -105,6 +105,12 @@ public class SmlTools {
 		}
 		return rebuildParam;
 	}
+	public static boolean isEmpty(Object obj){
+		return obj==null||obj.toString().trim().length()==0;
+	}
+	public static boolean isJsonStr(String jsonStr){
+		return !isEmpty(jsonStr)&&jsonStr.startsWith("{")&&jsonStr.endsWith("}");
+	}
 	public static String resolveJsEpl(String elp){
 		//js{}
 		String result="";

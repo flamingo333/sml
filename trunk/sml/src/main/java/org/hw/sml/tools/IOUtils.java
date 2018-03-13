@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class IOUtils {
 
@@ -14,11 +15,7 @@ public class IOUtils {
 			throws IOException {
 		Assert.notNull(is, "inputstream is null!");
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] bs = new byte[512];
-		int temp = -1;
-		while ((temp = is.read(bs)) != -1) {
-			baos.write(bs, 0, temp);
-		}
+		copy(baos, is);
 		return baos.toString(charset);
 	}
 	public static String toString(File file,String charset) throws FileNotFoundException, IOException{
@@ -26,6 +23,13 @@ public class IOUtils {
 	}
 	public static String toString(String filePath,String charset) throws FileNotFoundException, IOException{
 		return toString(new File(filePath), charset);
+	}
+	public static void copy(OutputStream os,InputStream is) throws IOException{
+		byte[] bs = new byte[512];
+		int temp = -1;
+		while ((temp = is.read(bs)) != -1) {
+			os.write(bs, 0, temp);
+		}
 	}
 	public static void safeClose(Object obj){
 		if(obj!=null){

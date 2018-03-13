@@ -11,9 +11,19 @@ import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
 /**
  * httpclient  get|post
@@ -21,20 +31,22 @@ import javax.xml.bind.DatatypeConverter;
  *
  */
 public class Https {
-	
-	public static interface Prepared{
-		public void prepare(HttpURLConnection urlConn);
-	}
-	
 	public static final String METHOD_GET="GET";
 	public static final String METHOD_POST="POST";
 	byte[] bytes=new byte[512];
-	private boolean keepAlive=false;
+	private boolean keepAlive=true;
 	private int readTimeout;
-	private Prepared prepared;
+	private List<ConnectionPre> connectionLinks=MapUtils.newArrayList();
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
 		return this;
+	}
+	public Https registerConnectionPre(ConnectionPre connectionPre){
+		connectionLinks.add(connectionPre);
+		return this;
+	}
+	public Https registerTrust(){
+		return registerConnectionPre(new Trust());
 	}
 	private Https(String url){
 		this.url=url;
@@ -50,10 +62,6 @@ public class Https {
 		Https https= new Https(url).method(METHOD_POST);
 		https.getHeader().put("Content-Type","application/json");
 		return https;
-	}
-	public Https preapared(Prepared prepared){
-		this.prepared=prepared;
-		return this;
 	}
 	public Https keepAlive(boolean ka){
 		this.keepAlive=ka;
@@ -83,12 +91,25 @@ public class Https {
 	private Object body;
 	private int connectTimeout;
 	private boolean isUpload=false;
+	private boolean cache=false;
 	private String boundary;
 	private Paramer paramer=new Paramer();
 	private Proxy proxy;
 	private Header responseHeader;
 	public Https charset(String charset){
 		this.charset=charset;
+		return this;
+	}
+	public Https cache(boolean cache){
+		this.cache=cache;
+		return this;
+	}
+	public Https header(String name,String value){
+		getHeader().put(name, value);
+		return this;
+	}
+	public Https param(String name,Object value){
+		getParamer().add1(name, value);
 		return this;
 	}
 	public Https connectTimeout(int timeout){
@@ -230,38 +251,40 @@ public class Https {
 		if(qps!=null&&(this.method.equals(METHOD_GET)||body!=null)) url+=(url.contains("?")?"&":"?")+qps;
 		return this;
 	}
+	
 	public byte[] query() throws IOException{
 		String qps=this.paramer.builder(header.requestCharset);
 		buildUrl(qps);
 		URL realUrl = new URL(url);
-		HttpURLConnection conn = (HttpURLConnection) (proxy==null?realUrl.openConnection():realUrl.openConnection(proxy));
-		for(Map.Entry<String,String> entry:header.header.entrySet())
-			conn.addRequestProperty(entry.getKey(),entry.getValue());
-		if(connectTimeout!=0)
-			conn.setConnectTimeout(connectTimeout);
-		if(readTimeout>0){
-			conn.setReadTimeout(readTimeout);
-		}
-		if(prepared!=null){
-			prepared.prepare(conn);
-		}
+		HttpURLConnection conn = null;
+				
 		//
-		conn.setDoOutput(true);
-		conn.setRequestMethod(this.method);
 		InputStream is=null;
 		OutputStream out=null;
 		DataOutputStream ds=null;
 		try{
+			conn=(HttpURLConnection) (proxy==null?realUrl.openConnection():realUrl.openConnection(proxy));
+			for(Map.Entry<String,String> entry:header.header.entrySet())
+				conn.addRequestProperty(entry.getKey(),entry.getValue());
+			if(connectTimeout!=0)
+				conn.setConnectTimeout(connectTimeout);
+			if(readTimeout>0){
+				conn.setReadTimeout(readTimeout);
+			}
+			conn.setDoOutput(true);
+			conn.setRequestMethod(this.method);
+			for(ConnectionPre connectionPre:connectionLinks){
+				connectionPre.doConnectionBefore(conn);
+			}
 			if(this.method.equals(METHOD_POST)){
 				conn.setDoInput(true);
-				conn.setUseCaches(false);
+				conn.setUseCaches(cache);
 				out=conn.getOutputStream();
 				if(body!=null){
 					if(body instanceof String)
 						out.write(body.toString().getBytes(header.requestCharset));
 					else if(isUpload&&body.getClass().isArray()&&Array.get(body,0) instanceof UpFile){
 						ds=new DataOutputStream(out);
-						int i=0;
 						for(Map.Entry<String,Object> entry:this.paramer.params.entrySet()){
 							ds.writeBytes("--"+boundary+"\r\n");
 							ds.writeBytes("Content-Disposition: form-data; name=\""+entry.getKey()+"\"\r\n");
@@ -271,12 +294,13 @@ public class Https {
 						}
 						for(UpFile uf:((UpFile[])body)){
 							ds.writeBytes("--"+boundary+"\r\n");
-							ds.writeBytes("Content-Disposition: form-data; name=\"file"+(i++)+"\";filename=\""+uf.name+"\"\r\n");
+							ds.writeBytes("Content-Disposition: form-data; name=\""+uf.formname+"\";filename=\""+uf.name+"\"\r\n");
 							ds.writeBytes("Content-Type: application/octet-stream;charset="+header.requestCharset+"\r\n");
 							ds.writeBytes("\r\n");
 							int dst=-1;
 							while((dst=uf.is.read(bytes))!=-1){
 								ds.write(bytes,0,dst);
+								ds.flush();
 							}
 							ds.writeBytes("\r\n");
 							ds.flush();
@@ -309,9 +333,10 @@ public class Https {
 		}catch(IOException e){
 			throw e;
 		}finally{
-			this.responseStatus=conn.getResponseCode();
-			this.responseMessage=conn.getResponseMessage();
-			
+			if(conn!=null){
+				this.responseStatus=conn.getResponseCode();
+				this.responseMessage=conn.getResponseMessage();
+			}
 			if(conn!=null&&!keepAlive)
 				conn.disconnect();
 			if(out!=null)
@@ -355,11 +380,55 @@ public class Https {
 		return new UpFile(name, is);
 	}
 	public static class UpFile{
+		public String formname;
 		public String name;
 		public InputStream is;
+		private static AtomicInteger it=new AtomicInteger(0);
 		public UpFile(String name,InputStream is){
 			this.name=name;
 			this.is=is;
+			this.formname="file"+it.getAndIncrement();
+		}
+		public UpFile(String formname,String filename,InputStream is){
+			this.formname=formname;
+			this.name=filename;
+			this.is=is;
 		}
 	}
+	public static interface ConnectionPre{
+		void doConnectionBefore(HttpURLConnection conn) throws IOException;
+	}
+	public static class Trust implements ConnectionPre{
+		public void doConnectionBefore(HttpURLConnection conn) throws IOException {
+			TrustManager[] tm = { new MyX509TrustManager() };
+	        SSLContext sslContext;
+			try {
+				sslContext = SSLContext.getInstance("SSL");
+				sslContext.init(null,tm,new java.security.SecureRandom());    
+				SSLSocketFactory ssf = sslContext.getSocketFactory();
+				HttpsURLConnection newConn=(HttpsURLConnection) conn;
+				newConn.setSSLSocketFactory(ssf);
+				newConn.setHostnameVerifier(new HostnameVerifier() {
+					public boolean verify(String hostname, SSLSession session) {
+						return true;
+					}
+				});
+			} catch (Exception e) {
+				throw new IOException(e.getMessage());
+			}
+		}
+	}
+	public static  class MyX509TrustManager implements  X509TrustManager{
+		public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException {
+		}
+		public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException {
+		}
+		public X509Certificate[] getAcceptedIssuers() {
+			return null;
+		}  
+		
+	}  
+	
 }

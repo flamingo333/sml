@@ -45,6 +45,7 @@
 * `int importReport(String id, String type,List<Map<String,Object>> datas)`  模板导入   type [insert,update,adu]
 ### jar包引用
 	建议springxml配置
+```
 	<bean id="rcptCommonService" class="com.eastcom_sw.inas.core.service.report.ReportCommonService" init-method="init">
 		<property name="dss">
 			<map>
@@ -53,6 +54,7 @@
 			</map>
 		</property>
 	</bean>
+```
 	引入后便可直接使用    rcptCommonService.核心方法
 ### 根据id获取报表相关配置信息
 

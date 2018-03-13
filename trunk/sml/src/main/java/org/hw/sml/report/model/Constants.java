@@ -16,6 +16,7 @@ public class Constants {
 	//数据库
 	public static final String TYPE_SQL_ORACLE="ORACLE";
 	public static final String TYPE_SQL_SYBASEIQ="SYBASEIQ";
+	public static final String TYPE_SQL_MYSQL="MYSQL";
 	
 	//
 }

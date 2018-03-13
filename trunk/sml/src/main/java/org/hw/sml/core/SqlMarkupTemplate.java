@@ -10,7 +10,7 @@ import org.hw.sml.model.SqlTemplate;
 
 public class SqlMarkupTemplate extends  SqlMarkupAbstractTemplate{	
 	public SqlTemplate getSqlTemplate(String id){
-		String key=CACHE_PRE+":"+id+":getSqlTemplate";
+		String key=CACHE_PRE+":"+id+":sqlTemplate";
 		if(getCacheManager().get(key)==null){
 			SqlTemplate sqt= getSqlTemplateWithOutCache(id);
 			getCacheManager().set(key,sqt,cacheMinutes);

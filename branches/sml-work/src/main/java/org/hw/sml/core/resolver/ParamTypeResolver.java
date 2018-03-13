@@ -57,6 +57,7 @@ public class ParamTypeResolver implements SqlResolver{
 					Assert.isTrue(end!=-1,mather+" must has end!");
 					String tm=temp.substring(start,end+("</jdbcType>").length());
 					String content=RegexUtils.subString(tm,">",("</jdbcType>"));
+				
 					SqlParam sp=sqlParamMaps.getSqlParam(name);
 					if(sp!=null){
 						sp.setType(type);

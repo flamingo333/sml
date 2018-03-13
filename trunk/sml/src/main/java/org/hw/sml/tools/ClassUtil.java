@@ -294,11 +294,11 @@ public class ClassUtil {
     		return method.invoke(bean,paramValues);
     	}
     }
-    public static <T> T mapToBean(Map<String,Object> c,Class<T> t) throws Exception{
+    public static <T,V> T mapToBean(Map<String,V> c,Class<T> t) throws Exception{
     	T bean=t.newInstance();
     	return mapToBean(c,bean);
     }
-    public static <T> T mapToBean(Map<String,Object> c,T bean) throws Exception{
+    public static <T,V> T mapToBean(Map<String,V> c,T bean) throws Exception{
     	Field[] fields=getFields(bean.getClass());
     	for(Field field:fields){
     		if(Modifier.toString(field.getModifiers()).contains("static")||c.get(field.getName())==null){

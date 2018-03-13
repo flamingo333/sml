@@ -1,11 +1,17 @@
 package org.hw.sml.tools;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class ClassUtil {
 
@@ -22,6 +28,18 @@ public class ClassUtil {
     }
     public static Class<?> loadClass(String className) {
         return loadClass(className, true);
+    }
+    public static Class<?>[] getInterfaces(Class<?> targetClass){
+    	if(targetClass.getInterfaces().length==0){
+    		Class<?> superC=targetClass.getSuperclass();
+    		if(superC==null){
+    			return targetClass.getInterfaces();
+    		}else{
+    			return getInterfaces(superC);
+    		}
+    	}else{
+    		return targetClass.getInterfaces();
+    	}
     }
     @SuppressWarnings("unchecked")
 	public static <T> T newInstance(Class<T> t,Class<?>[] parameterTypes,Object[] paramsValues) throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException{
@@ -86,6 +104,9 @@ public class ClassUtil {
     public static boolean isString(Class<?> type) {
         return type.equals(String.class);
     }
+    public static boolean isDate(Class<?> type){
+    	return Date.class.isAssignableFrom(type);
+    }
     public static boolean isBoolean(Class<?> type){
     	return type.equals(boolean.class)||type.equals(Boolean.class);
     }
@@ -94,6 +115,9 @@ public class ClassUtil {
     }
     public static boolean isByte(Class<?> type){
     	return type.equals(byte.class)||type.equals(Byte.class);
+    }
+    public static boolean isSingleType(Class<?> type){
+    	return type.isPrimitive()||isInt(type)||isShort(type)||isLong(type)||isFloat(type)||isByte(type)||isString(type)||isDouble(type)||isDate(type)||Number.class.isAssignableFrom(type)||isChar(type);
     }
     public static boolean isAssignableFrom(Class<?> elSrc,Class<?> clsrc){
     	if(elSrc.isPrimitive()){
@@ -121,8 +145,13 @@ public class ClassUtil {
     }
     @SuppressWarnings({ "rawtypes", "unchecked" })
 	public static Object convertValueToRequiredType(Object value, Class requiredType) {
+    	if(value==null){
+    		return null;
+    	}
     	if(isInt(requiredType)){
     		requiredType=Integer.class;
+    	}else if(isShort(requiredType)){
+    		requiredType=Short.class;
     	}else if(isLong(requiredType)){
     		requiredType=Long.class;
     	}else if(isDouble(requiredType)){
@@ -130,34 +159,47 @@ public class ClassUtil {
     	}else if(isFloat(requiredType)){
     		requiredType=Float.class;
     	}
-    	if(isBoolean(requiredType)){
-    		return Boolean.valueOf(String.valueOf(value));
-    	}
-		if (String.class.equals(requiredType)) {
+    	if (String.class.equals(requiredType)) {
 			return value.toString();
-		}
-		else if (Number.class.isAssignableFrom(requiredType)) {
+		}else if (Number.class.isAssignableFrom(requiredType)) {
 			if (value instanceof Number) {
 				return NumberUtils.convertNumberToTargetClass(((Number) value), requiredType);
 			}
 			else {
 				return NumberUtils.parseNumber(value.toString(), requiredType);
 			}
-		}else{
+		}else if(isChar(requiredType)){
+    		if(value.toString().length()>0)
+    			return String.valueOf(value).charAt(0);
+    		else 
+    			return null;
+    	}else if(isBoolean(requiredType)){
+    		return Boolean.valueOf(String.valueOf(value));
+    	}else if(isDate(requiredType)&&(value instanceof Date)){
+    		Date tv=(Date)value;
+    		if(requiredType.equals(Timestamp.class)){
+    			return new Timestamp(tv.getTime());
+    		}else if(requiredType.equals(Time.class)){
+    			return new Time(tv.getTime());
+    		}
+    		return tv;
+    	}else{
 			return value;
 		}
-		
 	}
     public static Field[] getFields(Class<?> clazz){
-    	Field[] fields=clazz.getFields();
-		Field[] dfs=clazz.getDeclaredFields();
-		Field[] result=getFieldts(fields,dfs);
+    	Field[] result=clazz.getDeclaredFields();
     	while(clazz.getSuperclass()!=null){
     		clazz=clazz.getSuperclass();
-    		Field[] fs=clazz.getDeclaredFields();
-    		Field[] ds=clazz.getDeclaredFields();
-    		Field[] f=getFieldts(fs,ds);
-    		result=getFieldts(result,f);
+    		result=getFieldts(result,getFields(clazz));
+    	}
+    	return result;
+    }
+    public static Field[] getPubFields(Class<?> clazz){
+    	Field[] result=clazz.getFields();
+    	if(clazz.getSuperclass()!=null){
+    		clazz=clazz.getSuperclass();
+    		result=getFieldts(result,getPubFields(clazz));
     	}
     	return result;
     }
@@ -173,15 +215,9 @@ public class ClassUtil {
     }
     public static Method[] getMethods(Class<?> clazz){
     	List<Method> methods=MapUtils.newArrayList();
-    	Method[] fields=clazz.getMethods();
-    	Method[] dfs=clazz.getDeclaredMethods();
-    	Method[] result=getMethodts(fields,dfs);
-    	while(clazz.getSuperclass()!=null&&!clazz.getSuperclass().equals(Object.class)){
-    		Method[] fs=clazz.getSuperclass().getDeclaredMethods();
-    		Method[] ds=clazz.getSuperclass().getDeclaredMethods();
-    		Method[] f=getMethodts(fs,ds);
-    		result=getMethodts(result,f);
-    		clazz=clazz.getSuperclass();
+    	Method[] result=clazz.getDeclaredMethods();
+    	if(clazz.getSuperclass()!=null&&!clazz.getSuperclass().equals(Object.class)){
+    		result=getMethodts(result,getMethods(clazz.getSuperclass()));
     	}
     	for(Method method:result){
     		if(!methods.contains(method))
@@ -213,13 +249,6 @@ public class ClassUtil {
     			return m;
     		}
     	}
-    	ms=clazz.getMethods();
-    	for(Method m:ms){
-    		if(m.getName().equals(name)){
-    			if(pt==null||(isAssignableFrom(m.getParameterTypes(), pt)))
-    			return m;
-    		}
-    	}
     	return getMethod(clazz.getSuperclass(),name,pt);
     }
     public static Field getField(Class<?> clazz,String name){
@@ -227,12 +256,6 @@ public class ClassUtil {
     		return null;
     	}
     	Field[] fs=clazz.getDeclaredFields();
-    	for(Field f:fs){
-    		if(f.getName().equals(name)){
-    			return f;
-    		}
-    	}
-    	fs=clazz.getFields();
     	for(Field f:fs){
     		if(f.getName().equals(name)){
     			return f;
@@ -251,7 +274,7 @@ public class ClassUtil {
     public static Object getFieldValue(Object bean,String fieldName) throws IllegalArgumentException, IllegalAccessException{
     	if(bean.getClass().isArray()){
     		if(fieldName.equals("length")){
-    			return ((Object[])bean).length;
+    			return Array.getLength(bean);
     		}
     	}
     	Field field=getField(bean.getClass(),fieldName);
@@ -262,14 +285,46 @@ public class ClassUtil {
     public static Object invokeMethod(Object bean,String methodName,Class<?>[] parameterTypes,Object[] paramValues) throws IllegalArgumentException, SecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException{
     	Method method=null;
     	try{
-    		 method=bean.getClass().getMethod(methodName, parameterTypes);
-    		 method.setAccessible(true);
+    		method=bean.getClass().getMethod(methodName, parameterTypes);
+    		method.setAccessible(true);
     		return	method.invoke(bean,paramValues);
     	}catch(Exception e){
     		method=getMethod(bean.getClass(),methodName,parameterTypes);
     		method.setAccessible(true);
     		return method.invoke(bean,paramValues);
     	}
-    	
+    }
+    public static <T,V> T mapToBean(Map<String,V> c,Class<T> t) throws Exception{
+    	T bean=t.newInstance();
+    	return mapToBean(c,bean);
+    }
+    public static <T,V> T mapToBean(Map<String,V> c,T bean) throws Exception{
+    	Field[] fields=getFields(bean.getClass());
+    	for(Field field:fields){
+    		if(Modifier.toString(field.getModifiers()).contains("static")||c.get(field.getName())==null){
+    			continue;
+    		}
+    		field.setAccessible(true);
+    		field.set(bean,convertValueToRequiredType(c.get(field.getName()),field.getType()));
+    	}
+    	return bean;
+    }
+    public static Map<String,Object> beanToMap(Object bean) throws Exception{
+    	Map<String,Object> result=MapUtils.newHashMap();
+    	for(Field field:getFields(bean.getClass())){
+    		if(Modifier.toString(field.getModifiers()).contains("static")){
+    			continue;
+    		}
+    		field.setAccessible(true);
+    		result.put(field.getName(),field.get(bean));
+    	}
+    	return result;
+    }
+    public static Method getSetMethod(Class<?> clazz,String name){
+    	Method method=getMethod(clazz,"set"+new Strings(name).toUpperCaseFirst());
+    	if(method==null&&name.startsWith("is")){
+    			method=getMethod(clazz, "set"+new Strings(name.replaceFirst("is", "")).toUpperCaseFirst());
+    	}
+    	return method;
     }
 }

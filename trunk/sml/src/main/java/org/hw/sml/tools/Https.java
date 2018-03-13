@@ -11,10 +11,19 @@ import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
 /**
  * httpclient  get|post
@@ -27,9 +36,17 @@ public class Https {
 	byte[] bytes=new byte[512];
 	private boolean keepAlive=true;
 	private int readTimeout;
+	private List<ConnectionPre> connectionLinks=MapUtils.newArrayList();
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
 		return this;
+	}
+	public Https registerConnectionPre(ConnectionPre connectionPre){
+		connectionLinks.add(connectionPre);
+		return this;
+	}
+	public Https registerTrust(){
+		return registerConnectionPre(new Trust());
 	}
 	private Https(String url){
 		this.url=url;
@@ -234,25 +251,31 @@ public class Https {
 		if(qps!=null&&(this.method.equals(METHOD_GET)||body!=null)) url+=(url.contains("?")?"&":"?")+qps;
 		return this;
 	}
+	
 	public byte[] query() throws IOException{
 		String qps=this.paramer.builder(header.requestCharset);
 		buildUrl(qps);
 		URL realUrl = new URL(url);
-		HttpURLConnection conn = (HttpURLConnection) (proxy==null?realUrl.openConnection():realUrl.openConnection(proxy));
-		for(Map.Entry<String,String> entry:header.header.entrySet())
-			conn.addRequestProperty(entry.getKey(),entry.getValue());
-		if(connectTimeout!=0)
-			conn.setConnectTimeout(connectTimeout);
-		if(readTimeout>0){
-			conn.setReadTimeout(readTimeout);
-		}
+		HttpURLConnection conn = null;
+				
 		//
-		conn.setDoOutput(true);
-		conn.setRequestMethod(this.method);
 		InputStream is=null;
 		OutputStream out=null;
 		DataOutputStream ds=null;
 		try{
+			conn=(HttpURLConnection) (proxy==null?realUrl.openConnection():realUrl.openConnection(proxy));
+			for(Map.Entry<String,String> entry:header.header.entrySet())
+				conn.addRequestProperty(entry.getKey(),entry.getValue());
+			if(connectTimeout!=0)
+				conn.setConnectTimeout(connectTimeout);
+			if(readTimeout>0){
+				conn.setReadTimeout(readTimeout);
+			}
+			conn.setDoOutput(true);
+			conn.setRequestMethod(this.method);
+			for(ConnectionPre connectionPre:connectionLinks){
+				connectionPre.doConnectionBefore(conn);
+			}
 			if(this.method.equals(METHOD_POST)){
 				conn.setDoInput(true);
 				conn.setUseCaches(cache);
@@ -310,8 +333,10 @@ public class Https {
 		}catch(IOException e){
 			throw e;
 		}finally{
-			this.responseStatus=conn.getResponseCode();
-			this.responseMessage=conn.getResponseMessage();
+			if(conn!=null){
+				this.responseStatus=conn.getResponseCode();
+				this.responseMessage=conn.getResponseMessage();
+			}
 			if(conn!=null&&!keepAlive)
 				conn.disconnect();
 			if(out!=null)
@@ -358,7 +383,7 @@ public class Https {
 		public String formname;
 		public String name;
 		public InputStream is;
-		private AtomicInteger it=new AtomicInteger(0);
+		private static AtomicInteger it=new AtomicInteger(0);
 		public UpFile(String name,InputStream is){
 			this.name=name;
 			this.is=is;
@@ -370,5 +395,40 @@ public class Https {
 			this.is=is;
 		}
 	}
+	public static interface ConnectionPre{
+		void doConnectionBefore(HttpURLConnection conn) throws IOException;
+	}
+	public static class Trust implements ConnectionPre{
+		public void doConnectionBefore(HttpURLConnection conn) throws IOException {
+			TrustManager[] tm = { new MyX509TrustManager() };
+	        SSLContext sslContext;
+			try {
+				sslContext = SSLContext.getInstance("SSL");
+				sslContext.init(null,tm,new java.security.SecureRandom());    
+				SSLSocketFactory ssf = sslContext.getSocketFactory();
+				HttpsURLConnection newConn=(HttpsURLConnection) conn;
+				newConn.setSSLSocketFactory(ssf);
+				newConn.setHostnameVerifier(new HostnameVerifier() {
+					public boolean verify(String hostname, SSLSession session) {
+						return true;
+					}
+				});
+			} catch (Exception e) {
+				throw new IOException(e.getMessage());
+			}
+		}
+	}
+	public static  class MyX509TrustManager implements  X509TrustManager{
+		public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException {
+		}
+		public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException {
+		}
+		public X509Certificate[] getAcceptedIssuers() {
+			return null;
+		}  
+		
+	}  
 	
 }

@@ -35,6 +35,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 	protected El el;
 	
 	protected SqlResolvers sqlResolvers;
+	public final static String CACHE_DATA=CACHE_PRE+":%s:mergeSql:"; 
 
 	
 	public void init(){
@@ -65,9 +66,10 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		Rst rst=sqlResolvers.resolverLinks(st.getMainSql(),st.getSmlParams());
 		long parseEnd=System.currentTimeMillis();
 		List<Object> paramsObject=rst.getParamObjects();
-		String key=CACHE_PRE+":"+st.getId()+":mergeSql:"+rst.hashCode();
-		if(getCacheManager().get(key)!=null){
-			return (List<T>) getCacheManager().get(key);
+		String key=String.format(CACHE_DATA,st.getId())+rst.hashCode();
+		Object tt= getCacheManager().get(key);
+		if(tt!=null){
+			return (List<T>) tt;
 		}
 		if(isLogger&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_IGLOG,"false").toString()))
 		logger.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getPrettySqlString()+"],sqlParseUseTime["+(parseEnd-parserStart)+"ms]");
@@ -104,6 +106,12 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 				linkParams.add(rst.getParamObjects().toArray(new Object[]{}));
 			}
 			result=getJdbc(st.getDbid()).update(linkSqls,linkParams);
+		}
+		String values=st.getSmlParams().getValue(FrameworkConstant.PARAM_FLUSHCACHEKEYS,"").toString();
+		if(result>0&&!SmlTools.isEmpty(values)){
+			for(String key:values.split("\\|")){
+				cacheManager.clearKeyStart(String.format(CACHE_DATA,key));
+			}
 		}
 		return result;
 	}

@@ -22,14 +22,14 @@ public class DateTools {
 	}
 	public static final long DAY_TIME_MILLS = 24 * 60 * 60 * 1000;
 	public static final long HOUR_TIME_MILLS = 60 * 60 * 1000;
-	public static final SimpleDateFormat sdf = new SimpleDateFormat();
-	public static final SimpleDateFormat sdf_mi = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	public static final SimpleDateFormat sdf_mis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-	public static final SimpleDateFormat sdf_mi2 = new SimpleDateFormat("yyyyMMddHHmmss");
-	public static final SimpleDateFormat sdf_dd = new SimpleDateFormat("yyyyMMdd");
-	public static final SimpleDateFormat sdf_hh = new SimpleDateFormat("yyyyMMddHH");
 	public static Date date(){
 		return new Date();
+	}
+	public static SimpleDateFormat sdf_mi(){
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	}
+	public static SimpleDateFormat sdf_mis(){
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
 	}
 	/** 格式化取整时间 */
 	public static Date trunc(Date date, int type) {
@@ -147,20 +147,6 @@ public class DateTools {
 		}
 		return null;
 	}
-	/**默认值的读取*/
-	@SuppressWarnings("deprecation")
-	public static String getDefaultStarttime(String type,int ... integer){
-		if("week".equalsIgnoreCase(type)){
-			return sdf_dd.format(addDays(trunc(new Date(), Calendar.DAY_OF_MONTH), -new Date().getDay()-6));
-		}else if("day".equalsIgnoreCase(type)){
-			return sdf_dd.format(addDays(new Date(),-1));
-		}else if("minute".equalsIgnoreCase(type)){
-			return sdf_mi2.format(addHours(trunc(new Date(), Calendar.MINUTE),-1));
-		}else if("hour".equalsIgnoreCase(type)){
-			return sdf_hh.format(addHours(trunc(new Date(), Calendar.HOUR),-2));
-		}
-		return "";
-	}
 	public static int getYear(Date date){
 		Calendar cal=Calendar.getInstance();
 		cal.setTime(date);
@@ -180,19 +166,6 @@ public class DateTools {
 		Calendar cal=Calendar.getInstance();
 		cal.setTime(date);
 		return cal.get(Calendar.MONTH)+1;
-	}
-	@SuppressWarnings("deprecation")
-	public static String getDefaultEndtime(String type){
-		if("week".equalsIgnoreCase(type)){
-			return sdf_dd.format(addDays(trunc(new Date(), Calendar.DAY_OF_MONTH), -new Date().getDay()));
-		}else if("day".equalsIgnoreCase(type)){
-			return sdf_dd.format(addDays(new Date(),-1));
-		}else if("minute".equalsIgnoreCase(type)){
-			return sdf_mi2.format(trunc(new Date(), Calendar.MINUTE));
-		}else if("hour".equalsIgnoreCase(type)){
-			return sdf_hh.format(addHours(trunc(new Date(), Calendar.HOUR),-1));
-		}
-		return "";
 	}
 	
 	public static Date parse(String timestamp){
@@ -280,6 +253,7 @@ public class DateTools {
 			return parse(mathers.get(index));
 		}
 	}
+	
 	
 	
 }

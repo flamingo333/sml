@@ -25,6 +25,7 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 	/**
 	 *日志开关
 	 */
+	public static final String CACHE_DATA=CACHE_PRE+":%s:mergeSql:";
 	private Loggers logger=LoggerHelper.getLogger();
 	protected boolean isLogger=true;
 	
@@ -69,7 +70,7 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 		Rst rst=sqlResolvers.resolverLinks(st.getMainSql(), st.getSqlParamMap());
 		long parseEnd=System.currentTimeMillis();
 		List<Object> paramsObject=rst.getParamObjects();
-		String key=CACHE_PRE+":"+st.getId()+":mergeSql:"+rst.hashCode();
+		String key=String.format(CACHE_DATA,st.getId())+rst.hashCode();
 		if(getCacheManager().get(key)!=null){
 			return (List<Map<String,Object>>) getCacheManager().get(key);
 		}
@@ -103,6 +104,14 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 				linkParams.add(rst.getParamObjects().toArray(new Object[]{}));
 			}
 			result=getJdbc(st.getDbid()).update(linkSqls,linkParams);
+		}
+		if(result>0){
+			SqlParam sqlParam=st.getSqlParamMap().getSqlParam(FrameworkConstant.PARAM_FLUSHCACHEKEYS);
+			if(sqlParam!=null&&sqlParam.getValue()!=null){
+				for(String key:sqlParam.getValue().toString().split("\\|")){
+					getCacheManager().clearKeyStart(String.format(CACHE_DATA,key));
+				}
+			}
 		}
 		return result;
 	}
@@ -197,6 +206,9 @@ public abstract class AbstractJdbcFTemplate extends Source implements IJdbcFTemp
 		this.isLogger = isLogger;
 	}
 	
+	public static void main(String[] args) {
+		System.out.println(String.format("aa:%s","ADc"));
+	}
 	
 
 }

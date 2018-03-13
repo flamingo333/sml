@@ -9,6 +9,7 @@ import org.hw.sml.FrameworkConstant;
 import org.hw.sml.context.SmlContextUtils;
 import org.hw.sml.core.RebuildParam;
 import org.hw.sml.core.build.lmaps.AbstractDataBuilder;
+import org.hw.sml.core.build.lmaps.DefaultDataBuilder;
 import org.hw.sml.model.SqlTemplate;
 import org.hw.sml.support.ClassHelper;
 import org.hw.sml.tools.MapUtils;
@@ -21,6 +22,7 @@ public class DataBuilderHelper {
 	public static Map<Integer,String> classType=new HashMap<Integer,String>();
 	public static List<String> splitClass=new ArrayList<String>();
 	static String classPathPreFix=FrameworkConstant.getSupportKey("CFG_DEFAULT_BUILDER_CLASS");
+    static AbstractDataBuilder DEFAULT=new DefaultDataBuilder();
 	static{
 		classType.put(0,classPathPreFix+".DefaultDataBuilder");
 		classType.put(1,classPathPreFix+".FieldDataBuilder");
@@ -45,7 +47,7 @@ public class DataBuilderHelper {
 	}
 	@SuppressWarnings("unchecked")
 	public static <T> Object build(RebuildParam rebuildParam,List<T> datas,SmlContextUtils jfContextUtils, SqlTemplate sqlTemplate){
-		AbstractDataBuilder adm=null;
+		AbstractDataBuilder adm=DEFAULT;
 		if(datas.isEmpty()||!(datas.get(0) instanceof Map)){
 			return datas;
 		}
@@ -77,7 +79,7 @@ public class DataBuilderHelper {
 		return build(rebuildParam, datas,null,null);
 	}
 	public static List<Map<String,Object>> unBuild(RebuildParam rebuildParam,Object datas){
-		AbstractDataBuilder adm=null;
+		AbstractDataBuilder adm=DEFAULT;
 		String rebuildPath=getClassPath(rebuildParam);
 		try {
 			adm=(AbstractDataBuilder) Class.forName(rebuildPath).newInstance();

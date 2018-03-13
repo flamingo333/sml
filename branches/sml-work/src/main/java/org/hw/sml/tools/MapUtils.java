@@ -716,6 +716,12 @@ public class MapUtils {
     	Map<String,String> formats=transMapFromStr(format);
     	Map<String,Integer> keyNotEmptyCounts=newLinkedHashMap();
     	boolean hasConcat=format.contains("wm_concat");
+    	boolean hasMinMaxField=formats.containsKey("minMaxField");
+    	String[] minMaxField=null;
+    	if(hasMinMaxField){
+    		minMaxField=formats.get("minMaxField").split(",");
+    	}
+    	formats.remove("minMaxField");
     	Map<String,Set<Object>> concats=null;
     	if(hasConcat){
     		concats=newHashMap();
@@ -773,20 +779,24 @@ public class MapUtils {
     					if(value!=null){
     						Object newV=value;
     						Object oldV=result.get(returnField);
-    						if(oldV==null)
+    						if(oldV==null){
     							result.put(returnField,newV);
-    						else{
+    							minMaxField(minMaxField, returnField, result, data,"max");
+    						}else{
     						   if(newV instanceof String){
     							  if(String.valueOf(newV).compareTo(String.valueOf(oldV))>0){
     								  result.put(returnField,newV);
+    								  minMaxField(minMaxField, returnField, result, data,"max");
     							  }
     						   }else if(newV.getClass().getSimpleName().toLowerCase().contains("date")||newV.getClass().getSimpleName().toLowerCase().contains("time")){
     							   if(((Date)newV).after((Date)oldV)){
     								   result.put(returnField,newV);
+    								   minMaxField(minMaxField, returnField, result, data,"max");
     							   }
     						   }else{
     							   if(Double.parseDouble(String.valueOf(newV))>Double.parseDouble(String.valueOf(oldV))){
     								   result.put(returnField, newV);
+    								   minMaxField(minMaxField, returnField, result, data,"max");
     							   }
     						   }
     						}
@@ -800,20 +810,25 @@ public class MapUtils {
     					if(value!=null){
     						Object newV=value;
     						Object oldV=result.get(returnField);
-    						if(oldV==null)
+    						if(oldV==null){
     							result.put(returnField,newV);
+    							minMaxField(minMaxField, returnField, result, data,"min");
+    						}
     						else{
     						   if(newV instanceof String){
     							  if(String.valueOf(newV).compareTo(String.valueOf(oldV))<0){
     								  result.put(returnField,newV);
+    								  minMaxField(minMaxField, returnField, result, data,"min");
     							  }
     						   }else if(newV.getClass().getSimpleName().toLowerCase().contains("date")||newV.getClass().getSimpleName().toLowerCase().contains("time")){
     							   if(((Date)newV).before((Date)oldV)){
     								   result.put(returnField,newV);
+    								   minMaxField(minMaxField, returnField, result, data,"min");
     							   }
     						   }else{
     							   if(Double.parseDouble(String.valueOf(newV))<Double.parseDouble(String.valueOf(oldV))){
     								   result.put(returnField, newV);
+    								   minMaxField(minMaxField, returnField, result, data,"min");
     							   }
     						   }
     						}
@@ -838,6 +853,12 @@ public class MapUtils {
     		
     	}
     	return result;
+    }
+    private static void minMaxField(String[] minMaxField,String returnField,Map<String,Object> result,Map<String,Object> ori,String mm){
+    	if(minMaxField!=null){
+			for(String f:minMaxField)
+			result.put(returnField+"_"+mm+"_"+f,ori.get(f));
+		}
     }
     public static <K,V> Map<K,V> buildMp(K[] ks,V[] vs){
     	Map<K,V> result=newLinkedHashMap();
@@ -900,22 +921,14 @@ public class MapUtils {
 	}
 	public static <V> Integer getInt(Map<String,V> data,String k,Integer defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return Integer.parseInt(String.valueOf(v));
-		}
+		return v==null?defaultValue:Integer.parseInt(String.valueOf(v));
 	}
 	public static <V> Long getLong(Map<String,V> data,String k){
 		return getLong(data, k,null);
 	}
 	public static <V> Long getLong(Map<String,V> data,String k,Long defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return Long.parseLong(String.valueOf(v));
-		}
+		return v==null?defaultValue:Long.parseLong(String.valueOf(v));
 	}
 	
 	public static interface Builder<T>{

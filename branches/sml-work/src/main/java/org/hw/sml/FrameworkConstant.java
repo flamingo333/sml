@@ -25,6 +25,7 @@ public class FrameworkConstant {
 	public static final String PARAM_IGLOG="igLog";
 	public static final String PARAM_QUERYTYPE="queryType";
 	public static final String PARAM_FLUSHCACHE="FLUSHCACHE";
+	public static final String PARAM_FLUSHCACHEKEYS="flushCacheKeys";
 	public static final String PARAM_OPLINKS="opLinks";
 	public static final String PARAM_ISREMOTEPRAMS="isRemoteParams";
 	public static final String PARAM_FIELDFILTER="igFieldFilter";

@@ -10,7 +10,6 @@ import org.hw.sml.jdbc.ResultSetExtractor;
 import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
 
 public class Rset implements ResultSetExtractor<Rslt>{
-	
 	public Rslt extractData(ResultSet rs) throws SQLException {
 		 Rslt rt=new Rslt();
 		 final List<List<Object>> listData = new ArrayList<List<Object>>();
@@ -33,5 +32,4 @@ public class Rset implements ResultSetExtractor<Rslt>{
 	        }
 	        return rt;
 	}
-	
  };

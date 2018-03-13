@@ -6,23 +6,25 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.hw.sml.tools.MapUtils;
 /**
  * 
  */
 
-public class ImportSql implements Serializable{
+public class ImportSql{
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -6255476935661214L;
 	private String type;//update,import,adu(混合)
 	private PiTable piTable;
 	private Map<String,PiTableDetail> piMap=new HashMap<String,PiTableDetail>();
 	private List<PiTableDetail> piTableDetails;
-	private List<UpdateSql> updateSqls=new ArrayList<UpdateSql>();
+	private List<UpdateSql> updateSqls;
 	private List<Map<String,Object>> datas=new ArrayList<Map<String,Object>>();
 	public ImportSql() {
 		super();
+		updateSqls=new ArrayList<UpdateSql>();
 	}
 
 	public ImportSql(String type,PiTable piTable,List<PiTableDetail> piTableDetails,List<Map<String,Object>> datas) {
@@ -82,7 +84,7 @@ public class ImportSql implements Serializable{
 			for(String uf:updateFields){
 				ucf.put(uf,data.get(piMap.get(uf).getFieldZn()));
 			}
-			if(isNotNullContent(ucf)){
+			if(!MapUtils.ValueHelper.isValueEmpty(ucf)){
 				pcu.setUpdateCondition(ucd);
 				pcu.setUpdateField(ucf);
 				UpdateSql updateSql=new UpdateSql(pcu, piTable, piTableDetails);
@@ -131,14 +133,5 @@ public class ImportSql implements Serializable{
 	public void setPiTableDetails(List<PiTableDetail> piTableDetails) {
 		this.piTableDetails = piTableDetails;
 	}
-	public static  boolean isNotNullContent(Map<String, Object> obj) {
-		boolean flag=false;
-		for(Map.Entry<String,Object> entry:obj.entrySet()){
-			flag=entry.getValue()!=null&&String.valueOf(entry.getValue()).trim().length()>0;
-			if(flag){
-				return true;
-			}
-		}
-		return flag;
-	}
+	
 }

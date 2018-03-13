@@ -727,6 +727,12 @@ public class MapUtils {
     	if(hasConcat){
     		concats=newHashMap();
     	}
+    	boolean hasMinMaxField=formats.containsKey("minMaxField");
+    	String[] minMaxField=null;
+    	if(hasMinMaxField){
+    		minMaxField=formats.get("minMaxField").split(",");
+    	}
+    	formats.remove("minMaxField");
     	int isNotEmptyCount=0;
     	for(Map<String,Object> data:datas){
     		//count
@@ -780,20 +786,25 @@ public class MapUtils {
     					if(value!=null){
     						Object newV=value;
     						Object oldV=result.get(returnField);
-    						if(oldV==null)
+    						if(oldV==null){
     							result.put(returnField,newV);
+								minMaxField(minMaxField, returnField, result, data,"max");
+    						}
     						else{
     						   if(newV instanceof String){
     							  if(String.valueOf(newV).compareTo(String.valueOf(oldV))>0){
     								  result.put(returnField,newV);
+    								  minMaxField(minMaxField, returnField, result, data,"max");
     							  }
     						   }else if(newV.getClass().getSimpleName().toLowerCase().contains("date")||newV.getClass().getSimpleName().toLowerCase().contains("time")){
     							   if(((Date)newV).after((Date)oldV)){
     								   result.put(returnField,newV);
+     								   minMaxField(minMaxField, returnField, result, data,"max");
     							   }
     						   }else{
     							   if(Double.parseDouble(String.valueOf(newV))>Double.parseDouble(String.valueOf(oldV))){
     								   result.put(returnField, newV);
+     								   minMaxField(minMaxField, returnField, result, data,"max");
     							   }
     						   }
     						}
@@ -807,20 +818,25 @@ public class MapUtils {
     					if(value!=null){
     						Object newV=value;
     						Object oldV=result.get(returnField);
-    						if(oldV==null)
+    						if(oldV==null){
     							result.put(returnField,newV);
+    							minMaxField(minMaxField, returnField, result, data,"min");
+    						}
     						else{
     						   if(newV instanceof String){
     							  if(String.valueOf(newV).compareTo(String.valueOf(oldV))<0){
     								  result.put(returnField,newV);
+    								  minMaxField(minMaxField, returnField, result, data,"min");
     							  }
     						   }else if(newV.getClass().getSimpleName().toLowerCase().contains("date")||newV.getClass().getSimpleName().toLowerCase().contains("time")){
     							   if(((Date)newV).before((Date)oldV)){
     								   result.put(returnField,newV);
+    								   minMaxField(minMaxField, returnField, result, data,"min");
     							   }
     						   }else{
     							   if(Double.parseDouble(String.valueOf(newV))<Double.parseDouble(String.valueOf(oldV))){
     								   result.put(returnField, newV);
+    								   minMaxField(minMaxField, returnField, result, data,"min");
     							   }
     						   }
     						}
@@ -845,6 +861,12 @@ public class MapUtils {
     		
     	}
     	return result;
+    }
+    private static void minMaxField(String[] minMaxField,String returnField,Map<String,Object> result,Map<String,Object> ori,String mm){
+    	if(minMaxField!=null){
+			for(String f:minMaxField)
+			result.put(returnField+"_"+mm+"_"+f,ori.get(f));
+		}
     }
     public static <K,V> Map<K,V> buildMp(K[] ks,V[] vs){
     	Map<K,V> result=newLinkedHashMap();
@@ -957,7 +979,7 @@ public class MapUtils {
 		String[] fs=field.split("@");
 		Object val=data.get(ori==null?fs[0]:ori);
 		if(val!=null&&val.getClass().getSimpleName().toLowerCase().contains("timestamp")){
-			val=DateTools.sdf_mi.format(val);
+			val=DateTools.sdf_mi().format(val);
 		}
 		if(fs.length==1){
 			return val;
@@ -968,7 +990,7 @@ public class MapUtils {
 				return DateTools.getFormatTime(DateTools.parse(String.valueOf(val)),two);
 			}else if(mark.equalsIgnoreCase("wdate")){
 				String[] twos=two.split(",");
-				return DateTools.getFormatTime(DateTools.getFormatTime(val==null?null:String.valueOf(val),twos[0]),twos[1]);
+				return DateTools.getFormatTime(DateTools.getFormatTime(String.valueOf(val),twos[0]),twos[1]);
 			}
 		}
 		return val;
