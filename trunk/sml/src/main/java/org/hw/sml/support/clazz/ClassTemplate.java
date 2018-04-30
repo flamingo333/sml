@@ -65,6 +65,7 @@ public abstract class ClassTemplate {
 	                    return (file.isFile() && file.getName().endsWith(".class")) || file.isDirectory();
 	                }
 	            });
+	            if(files!=null)
 	            for (File file : files) {
 	                String fileName = file.getName();
 	                if (file.isFile()) {

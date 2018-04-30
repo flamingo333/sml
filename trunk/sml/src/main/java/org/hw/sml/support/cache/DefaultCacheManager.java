@@ -14,16 +14,13 @@ import org.hw.sml.support.ManagedThread;
 public class DefaultCacheManager extends ManagedThread implements CacheManager {
 	private static   Map<String,Object> caches=new ConcurrentHashMap<String, Object>();
 	private static   Map<String,Long> cacheMinute=new ConcurrentHashMap<String, Long>();
-	private static DefaultCacheManager cm;
+	private final static DefaultCacheManager cm=new DefaultCacheManager();
 	public DefaultCacheManager(){
 		this.setDaemon(true);
 		this.setName("defaultCacheManagerThread");
 		init();
 	}
 	public static DefaultCacheManager newInstance(){
-		if(cm==null){
-			cm=new DefaultCacheManager();
-		}
 		return cm;
 	}
 	
@@ -119,7 +116,6 @@ public class DefaultCacheManager extends ManagedThread implements CacheManager {
 	}
 	public void destroy() {
 		this.stopFlag=true;
-		cm=null;
 	}
 	@Override
 	protected boolean prepare() {

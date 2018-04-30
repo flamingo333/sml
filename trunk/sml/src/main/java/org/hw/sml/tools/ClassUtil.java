@@ -263,6 +263,11 @@ public class ClassUtil {
     	}
     	return getField(clazz.getSuperclass(), name);
     }
+    public static void injectFieldValue(Object obj,String fieldName,Object value) throws Exception{
+    	Field field=getField(obj.getClass(),fieldName);
+    	field.setAccessible(true);
+    	field.set(obj,convertValueToRequiredType(value,field.getGenericType().getClass()));
+    }
     public  static boolean hasClass(String classPath){
     	try{
     		Class.forName(classPath);

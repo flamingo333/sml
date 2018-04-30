@@ -35,7 +35,7 @@ public class FrameworkConstant {
 	public static Properties otherProperties=new Properties();
 	static {
 		try{
-			InputStream is=ClassUtil.getClassLoader().getResourceAsStream(CFG_JDBC_INFO);
+			InputStream is=ClassUtil.getClassLoader().getResourceAsStream(System.getProperty("smlProperties",CFG_JDBC_INFO));
 			otherProperties.load(is);
 			reset();
 			String propertyFilesStr=otherProperties.getProperty("file-properties");

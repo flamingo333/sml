@@ -1,0 +1,20 @@
+<smlParam name="age" value="ref:discteteTime|dates@('yyyyww')"/>
+<jdbcType name="discteteTime" type="array-time"/>
+<jdbcType name="age" type="array-date"/>
+
+<smlParam name="discteteTime2" value="ref:discteteTime|dates@('yyyyww')"/>
+<jdbcType name="discteteTime2" type="char">
+	var value='@value',
+	vs=value.split(','),
+	result=[];
+	for(var i=0;i<vs.length;i++){
+		var subV=vs[i];
+		for(var j=0;j<700;j++){
+			result.push(new Date(parseDate(subV).getTime()+(j+@f)*1000*24*60*60).format('yyyyMMddhhmmss'));
+		}
+	}
+	result.join(',');
+</jdbcType>
+<jdbcType name="discteteTime2" type="array-time"/>
+
+select * from dual where and test in(#discteteTime#) and age in(#age#) and t in(#discteteTime2#)

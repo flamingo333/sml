@@ -4,22 +4,22 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
 import org.hw.sml.jdbc.exception.SqlException;
 import org.hw.sml.tools.Assert;
-import org.hw.sml.tools.MapUtils;
 
 
 
 public class DataSourceUtils {
-	private static  ThreadLocal<Map<String,Connection>> connections=new InheritableThreadLocal<Map<String,Connection>>(){
+	public static  ThreadLocal<Map<String,Connection>> connections=new InheritableThreadLocal<Map<String,Connection>>(){
 		protected Map<String, Connection> initialValue() {
-			return new ConcurrentHashMap<String,Connection>();
+			return new HashMap<String,Connection>();
 		}
 	};
 	public static void configIsSqlLog(boolean flag){
@@ -29,15 +29,29 @@ public class DataSourceUtils {
 		configIsSqlLog(Boolean.getBoolean("sml.vm.jdbc.sql.error.log"));
 	}
 	//对事务-连接关闭的datasource注册到此集合中
-	private static List<String> transactionManagerKeys=MapUtils.newArrayList();
-	public static void registTransactionManager(String dataSourceKey){
-		transactionManagerKeys.add(dataSourceKey);
+	public static ThreadLocal<Set<String>> transactionManagerKeys=new InheritableThreadLocal<Set<String>>(){
+		protected Set<String> initialValue() {
+			return new HashSet<String>();
+		}
+	};
+	//private static List<String> transactionManagerKeys=MapUtils.newArrayList();
+	public static void registTransactionKeys(String dataSourceKey){
+		transactionManagerKeys.get().add(dataSourceKey);
+	}
+	public static void removeTransactionKeys(String dataSourceKey){
+		transactionManagerKeys.get().remove(dataSourceKey);
+	}
+	public static boolean isTransaction(DataSource dataSource){
+		return transactionManagerKeys.get().contains(dataSource.toString());
+	}
+	public static boolean isConnection(DataSource dataSource){
+		return connections.get().containsKey(dataSource.toString());
 	}
 	public static Connection getConnection(DataSource dataSource) throws SQLException{
 		return doGetConnection(dataSource);
 	}
 	public static void commit(DataSource dataSource){
-		if(!transactionManagerKeys.contains(dataSource.toString()))
+		if(!transactionManagerKeys.get().contains(dataSource.toString()))
 		try {
 			getConnection(dataSource).commit();
 		} catch (SQLException e) {
@@ -45,7 +59,7 @@ public class DataSourceUtils {
 		}
 	}
 	public static void rollback(DataSource dataSource){
-		if(!transactionManagerKeys.contains(dataSource.toString()))
+		if(!transactionManagerKeys.get().contains(dataSource.toString()))
 		try {
 			getConnection(dataSource).rollback();
 		} catch (SQLException e) {
@@ -67,7 +81,7 @@ public class DataSourceUtils {
 		Map<String,Connection> map=connections.get();
 		String key=dataSource.toString();
 		try {
-			if(map.containsKey(key)&&!transactionManagerKeys.contains(key)){
+			if(map.containsKey(key)&&!transactionManagerKeys.get().contains(key)){
 				Connection con=map.remove(key);
 				if(con!=null&&!con.isClosed()){
 					safeClose(con);

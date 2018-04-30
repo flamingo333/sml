@@ -155,10 +155,11 @@ public class ManagedQuene<T extends Task> {
 			Task task=null;
 			ExecutorService exec=null;
 			Future<Integer> future=null;
+			String treadName=Thread.currentThread().getName();
 			try {
 				task=queue.take();
 				final Task t=task;
-				stats.get(Thread.currentThread().getName()).start(t.toString());
+				stats.get(treadName).start(t.toString());
 				if(timeout<=0)
 					task.execute();
 				else{
@@ -171,19 +172,21 @@ public class ManagedQuene<T extends Task> {
 					future=exec.submit(call);
 					future.get(timeout, TimeUnit.SECONDS);
 				}
-				stats.get(Thread.currentThread().getName()).success().info(task);
+				stats.get(treadName).success().info(task);
 			}  catch (TimeoutException e) {
 				LoggerHelper.getLogger().info(getClass(),"task["+task.toString()+"] timeout!");
 				if(future!=null&&!timeoutRunning)
 					future.cancel(true);
 				else
 					executingMap.put(task.toString(),false);
-				stats.get(Thread.currentThread().getName()).fail().failInfo(task, e.getMessage());
+				stats.get(treadName).fail().failInfo(task, e.getMessage());
 			}catch (Exception e) {
 				e.printStackTrace();
-				LoggerHelper.getLogger().error(getClass(),String.format(getErrorMsg(),task.toString(),e.getMessage()));
-				stats.get(Thread.currentThread().getName()).fail().failInfo(task, e.getMessage());
+				LoggerHelper.getLogger().error(getClass(),String.format(getErrorMsg(),task,e.getMessage()));
+				if(task!=null)
+				stats.get(treadName).fail().failInfo(task, e.getMessage());
 			}finally{
+				if(task!=null)
 				executingMap.remove(task.toString());
 				if(exec!=null){
 					if(timeoutRunning)
@@ -390,10 +393,10 @@ public class ManagedQuene<T extends Task> {
 			lastExecuteIncrementHour++;
 		}
 		public String getLastExecuteTime() {
-			return DateTools.sdf_mis.format(lastExecuteTime);
+			return DateTools.sdf_mis().format(lastExecuteTime);
 		}
 		public String getLastExecuteErrorTime() {
-			return DateTools.sdf_mis.format(lastExecuteErrorTime);
+			return DateTools.sdf_mis().format(lastExecuteErrorTime);
 		}
 		public int getExecutiveIncrementTimes() {
 			return executiveIncrementTimes;
@@ -417,10 +420,10 @@ public class ManagedQuene<T extends Task> {
 			return lastExecuteTaskErrorInfo;
 		}
 		public String getD() {
-			return DateTools.sdf_mis.format(d);
+			return DateTools.sdf_mis().format(d);
 		}
 		public String getH() {
-			return DateTools.sdf_mis.format(h);
+			return DateTools.sdf_mis().format(h);
 		}
 		public String getExecuteTaskInfo() {
 			return executeTaskInfo;

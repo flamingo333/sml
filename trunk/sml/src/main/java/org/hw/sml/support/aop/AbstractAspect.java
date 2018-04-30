@@ -13,7 +13,11 @@ public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect
 	 */
 	protected String packageMatchs;
 	
-	protected String name="aspect-"+orderId;
+	protected String name;
+	
+	public AbstractAspect(){
+		this.name="aspect-"+getOrderId();
+	}
 	
 	public boolean isPackageProxy(Object target){
 		if(packageMatchs==null){
@@ -22,8 +26,7 @@ public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect
 		String pacage=target.getClass().getName();
 		for(String packageMatch:packageMatchs.split(" ")){
 			try{
-				if(pacage.matches(packageMatch.substring(0,packageMatch.lastIndexOf("."))))
-					return true;
+				return pacage.matches(packageMatch.substring(0,packageMatch.lastIndexOf(packageMatch.contains("#")?"#":".")));
 			}catch(Exception e){
 			}
 		}
@@ -38,7 +41,7 @@ public abstract class AbstractAspect implements Aspect,Comparable<AbstractAspect
 		for(String packageMatch:packageMatchs.split(" ")){
 			try{
 				//System.out.println(pacage+":"+packageMatch+"--->"+pacage.matches(packageMatch));
-				if(pacage.matches(packageMatch)){
+				if(pacage.matches(packageMatch.replace("#","."))){
 					//LoggerHelper.getLogger().debug(getClass(),pacage+" ---> is proxyed!");
 					return true;
 				}

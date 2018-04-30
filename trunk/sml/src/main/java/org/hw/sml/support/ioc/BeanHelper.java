@@ -113,6 +113,14 @@ public class BeanHelper {
 				for(Map.Entry<String,Object> beans:beanMap.entrySet()){
 					Object bean=beans.getValue();
 					if(bean instanceof AbstractAspect){
+						String aopPropStart="aop.bean."+beans.getKey()+".";
+						Map<String,String> bkv=propertiesHelper.getValuesByKeyStart(aopPropStart);
+						Map<String,String> mapToBean=MapUtils.newHashMap();
+						for(Map.Entry<String,String> entry:bkv.entrySet()){
+							mapToBean.put(entry.getKey().replace(aopPropStart,""),entry.getValue());
+						}
+						ClassUtil.mapToBean(mapToBean,bean);
+						//
 						aspects.add((AbstractAspect)bean);
 					}
 				}

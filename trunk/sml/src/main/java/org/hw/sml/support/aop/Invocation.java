@@ -66,5 +66,13 @@ public abstract class Invocation {
 	public void setThrowable(Throwable throwable) {
 		this.throwable = throwable;
 	}
+
+	public boolean isExecute() {
+		return isExecute;
+	}
+
+	public void setExecute(boolean isExecute) {
+		this.isExecute = isExecute;
+	}
 	
 }

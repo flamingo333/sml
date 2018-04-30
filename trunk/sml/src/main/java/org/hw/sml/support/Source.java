@@ -30,8 +30,17 @@ public class Source implements Plugin{
 	
 	protected CacheManager cacheManager;
 	
+	protected boolean transactionInversion;
+	
 	public JdbcTemplate newJdbcTemplate(DataSource dataSource){
 		JdbcTemplate jt=ClassUtil.newInstance(jdbcClassPath,JdbcTemplate.class);
+		if(transactionInversion){
+			try {
+				ClassUtil.injectFieldValue(jt,"transactionInversion",transactionInversion);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		jt.setDataSource(dataSource);
 		return jt;
 	}
@@ -105,6 +114,22 @@ public class Source implements Plugin{
 
 	public void setLock(Object lock) {
 		this.lock = lock;
+	}
+	
+	public String getJdbcClassPath() {
+		return jdbcClassPath;
+	}
+
+	public void setJdbcClassPath(String jdbcClassPath) {
+		this.jdbcClassPath = jdbcClassPath;
+	}
+
+	public boolean isTransactionInversion() {
+		return transactionInversion;
+	}
+
+	public void setTransactionInversion(boolean transactionInversion) {
+		this.transactionInversion = transactionInversion;
 	}
 
 	@Override

@@ -1,0 +1,14 @@
+
+<jdbcType name="shebeiIdStr" type="char">
+	var result=[];
+	var deviceStr = '@shebeiIdStr';
+	var  deviceArr = deviceStr.split(',');
+	for(var i=0;i<deviceArr.length; i++){
+		result.push("SELECT ID f FROM ipmsdw.o_rm_interface WHERE device_id = '" + deviceArr[i] + "'");
+	}
+	
+	result.join(' union ');
+</jdbcType>
+
+in ($duankouIdStr$)
+$shebeiIdStr$
