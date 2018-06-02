@@ -12,6 +12,7 @@ import org.hw.sml.FrameworkConstant;
 import org.hw.sml.core.Rslt;
 import org.hw.sml.core.SqlMarkupAbstractTemplate;
 import org.hw.sml.core.build.SmlTools;
+import org.hw.sml.core.build.SqlFilterHelper;
 import org.hw.sml.core.resolver.Rst;
 import org.hw.sml.core.resolver.SqlResolver;
 import org.hw.sml.core.resolver.SqlResolvers;
@@ -163,11 +164,17 @@ public class SmlContextUtils {
 			for(SMLParam sp:lst){
 				String name=sp.getName();
 				String value=params.get(name);
-				if(isNotBlank(value)){
-					sp.handlerValue(value);
+				if(name.equals("sql")&&SmlTools.isEmpty(value)){
+					String sql=SqlFilterHelper.createConditionSql(params);
+					if(isNotBlank(sql))
+					sp.setValue(sql);
 				}else{
-					boolean showsql=Boolean.valueOf(params.get(FrameworkConstant.PARAM_SHOWSQL));
-					sp.handlerValue(sp.getDefaultValue()==null?(showsql?MapUtils.get(params,FrameworkConstant.PARAM_SHOWSQL_DEFAULTV,"1"):null):sp.getDefaultValue());
+					if(isNotBlank(value)){
+						sp.handlerValue(value);
+					}else{
+						boolean showsql=Boolean.valueOf(params.get(FrameworkConstant.PARAM_SHOWSQL));
+						sp.handlerValue(sp.getDefaultValue()==null?(showsql?MapUtils.get(params,FrameworkConstant.PARAM_SHOWSQL_DEFAULTV,"1"):null):sp.getDefaultValue());
+					}
 				}
 			}
 			st.getSmlParams().reinit();

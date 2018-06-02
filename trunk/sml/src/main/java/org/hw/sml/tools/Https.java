@@ -7,8 +7,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.cert.CertificateException;
@@ -37,6 +39,7 @@ public class Https {
 	private boolean keepAlive=true;
 	private int readTimeout;
 	private List<ConnectionPre> connectionLinks=MapUtils.newArrayList();
+	private Failover[] failovers;;
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
 		return this;
@@ -45,10 +48,62 @@ public class Https {
 		connectionLinks.add(connectionPre);
 		return this;
 	}
+	public Https failover(String ... urls){
+		failovers=new Failover[urls.length];
+		for(int i=0;i<urls.length;i++){
+			failovers[i]=new Failover(urls[i],1);
+		}
+		return this;
+	}
+	public static class Failover{
+		private String url;
+		private int retry=1;
+		private int timewait=0;
+		public Failover(String url,int retry){
+			this.url=url;
+			this.retry=retry;
+		}
+		public Failover(String url,int retry,int timewait){
+			this.url=url;
+			this.retry=retry;
+			this.timewait=timewait;
+		}
+	}
+	public Https failover(Failover ...fos){
+		List<Failover> fail=MapUtils.newArrayList();
+		for(Failover fo:fos){
+			for(int i=0;i<fo.retry;i++){
+				fail.add(fo);
+			}
+		}
+		this.failovers=fail.toArray(new Failover[0]);
+		return this;
+	}
 	public Https registerTrust(){
 		return registerConnectionPre(new Trust());
 	}
+	/**
+	 *url:  
+	 *http:// 
+	 *https://
+	 *failover:http://localhost:8080/a/b/c,http://localhost:8080/b/c/d 
+	 * 
+	 */
 	private Https(String url){
+		if(url.startsWith("failover:")){
+			url=url.replaceFirst("failover:","");
+			String[] urls=url.split(",");
+			if(urls.length>1){
+				failovers=new Failover[urls.length-1];
+			}
+			for(int i=0;i<urls.length;i++){
+				if(i==0){
+					this.url=urls[i];
+				}else{
+					failovers[i-1]=new Failover(urls[i],1);
+				}
+			}
+		}else
 		this.url=url;
 	}
 	private OutputStream bos=new ByteArrayOutputStream();
@@ -251,8 +306,28 @@ public class Https {
 		if(qps!=null&&(this.method.equals(METHOD_GET)||body!=null)) url+=(url.contains("?")?"&":"?")+qps;
 		return this;
 	}
-	
+	static AtomicInteger urlChoose=new AtomicInteger(0);
 	public byte[] query() throws IOException{
+		byte[] bs=null;
+		try{
+			bs=this.query0();
+			return bs;
+		}catch(IOException e){
+			int urlChooseIndx=urlChoose.getAndIncrement();
+			if((e instanceof ConnectException||e instanceof SocketTimeoutException)&&failovers!=null&&failovers.length>urlChooseIndx){
+				this.url=failovers[urlChooseIndx].url;
+				try {
+					Thread.sleep(failovers[urlChooseIndx].timewait);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				return query();
+			}else
+				throw e;
+		}
+	}
+	public byte[] query0() throws IOException{
+		boolean isOk=true;
 		String qps=this.paramer.builder(header.requestCharset);
 		buildUrl(qps);
 		URL realUrl = new URL(url);
@@ -331,23 +406,24 @@ public class Https {
 				responseHeader.put(entry.getKey(),entry.getValue().get(0));
 			}
 		}catch(IOException e){
+			isOk=!(e instanceof ConnectException||e instanceof SocketTimeoutException)&&failovers!=null;
 			throw e;
 		}finally{
-			if(conn!=null){
-				this.responseStatus=conn.getResponseCode();
-				this.responseMessage=conn.getResponseMessage();
-			}
-			if(conn!=null&&!keepAlive)
-				conn.disconnect();
-			if(out!=null)
-				out.close();
-			if(is!=null)
-				is.close();
-			if(ds!=null)
-				ds.close();
-			if(bos!=null){
-				bos.close();
-			}
+				if(conn!=null&&isOk){
+					this.responseStatus=conn.getResponseCode();
+					this.responseMessage=conn.getResponseMessage();
+				}
+				if(conn!=null&&!keepAlive&&isOk)
+					conn.disconnect();
+				if(out!=null)
+					out.close();
+				if(is!=null)
+					is.close();
+				if(ds!=null)
+					ds.close();
+				if(bos!=null){
+					bos.close();
+				}
 		}
 		return (bos instanceof ByteArrayOutputStream)?((ByteArrayOutputStream)bos).toByteArray():new byte[0];
 	}

@@ -12,6 +12,7 @@ import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
 
 public class SchedulerPanner extends ManagedQuene<Task>{
+	private int secondIntervals;
 	private  Map<String,String> taskMapContain=MapUtils.newHashMap();
 	private  Map<String,Boolean> taskMapStatus=MapUtils.newHashMap();
 	public void init(){
@@ -37,7 +38,7 @@ public class SchedulerPanner extends ManagedQuene<Task>{
 					task();
 				}
 			});
-			sd.setDelay(60);
+			sd.setDelay(secondIntervals);
 			sd.init();
 		}
 	}
@@ -82,5 +83,12 @@ public class SchedulerPanner extends ManagedQuene<Task>{
 	}
 	public void setTaskMapStatus(Map<String, Boolean> taskMapStatus) {
 		this.taskMapStatus = taskMapStatus;
+	}
+	public int getSecondIntervals() {
+		return secondIntervals;
+	}
+	public void setSecondIntervals(int secondIntervals) {
+		this.secondIntervals = secondIntervals;
 	}	
+	
 }

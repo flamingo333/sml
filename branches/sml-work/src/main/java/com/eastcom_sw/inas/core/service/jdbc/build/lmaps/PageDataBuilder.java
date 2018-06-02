@@ -23,14 +23,19 @@ public class PageDataBuilder extends AbstractDataBuilder {
 		Result result=new Result();
 		int page=Integer.parseInt(String.valueOf(sqlTemplate.getSqlParamMap().getSqlParam(MapUtils.getString(rebuildParam.getExtMap(),"pageMark","page")).getValue()));
 		int limit=Integer.parseInt(String.valueOf(sqlTemplate.getSqlParamMap().getSqlParam(MapUtils.getString(rebuildParam.getExtMap(),"limitMark","limit")).getValue()));
+		result.setPage(page);
+		result.setLimit(limit);
 		if(sqlTemplate.getSqlParamMap().getSqlParam(FrameworkConstant.PARAM_QUERYTYPE).getValue().equals("count")){
-			Long count=Long.parseLong(String.valueOf(datas.get(0).get(datas.get(0).keySet().iterator().next())));
+			Map<String,Object> countData=datas.get(0);
+			Long count=Long.parseLong(String.valueOf(countData.get(countData.keySet().iterator().next())));
 			result.setCount(count);
+			result.setExtInfo(countData);
 			if(count>0){
 				sqlTemplate.getSqlParamMap().getSqlParam(FrameworkConstant.PARAM_QUERYTYPE).setValue("select");
 				List<Map<String,Object>> data=jfContextUtils.getJdbcFTemplate().mergeSql(sqlTemplate);
 				if(rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)!=null&&rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY).equals("true"))
 					data=MapUtils.toLowerCaseForKey(data);
+					countData=MapUtils.toLowerCaseForKey(countData);
 				if(oriFields!=null&&newFields!=null){
 					data=MapUtils.rebuildMp(data, oriFields,newFields,Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER)));
 				}
@@ -49,8 +54,10 @@ public class PageDataBuilder extends AbstractDataBuilder {
 			}else{
 				sqlTemplate.getSqlParamMap().getSqlParam(FrameworkConstant.PARAM_QUERYTYPE).setValue("count");
 				List<Map<String,Object>> data=jfContextUtils.getJdbcFTemplate().mergeSql(sqlTemplate);
-				Long count=Long.parseLong(String.valueOf(data.get(0).get(data.get(0).keySet().iterator().next())));
+				Map<String,Object> countData=data.get(0);
+				Long count=Long.parseLong(String.valueOf(countData.get(countData.keySet().iterator().next())));
 				result.setCount(count);
+				result.setExtInfo(countData);
 			}
 		}
 		return result;

@@ -201,7 +201,7 @@ public class IfSqlResolver implements SqlResolver{
 		return value;
 	}
 	private String parseDate(String time,String pattern){
-		return new SimpleDateFormat("yyyyMMddHHmmss").format(DateTools.getFormatTime(time, pattern));
+		return new SimpleDateFormat("yyyyMMddHHmmss").format(DateTools.getFormatTime(time,pattern));
 	}
 	public El getEl() {
 		return el;

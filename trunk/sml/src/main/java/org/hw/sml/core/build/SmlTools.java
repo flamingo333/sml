@@ -1,6 +1,7 @@
 package org.hw.sml.core.build;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.hw.sml.core.RebuildParam;
@@ -8,6 +9,7 @@ import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.model.SqlTemplate;
 import org.hw.sml.tools.MapUtils;
+import org.hw.sml.tools.RegexUtils;
 
 public class SmlTools {
 	public static SqlTemplate toSqlTemplate(String dbid,String sql,Map<String,String> params){
@@ -155,6 +157,18 @@ public class SmlTools {
 			}
 		}
 		return result;
+	}
+	public static String getSelectContentById(String sql,String selectId){
+		List<String> matchs=RegexUtils.matchGroup("<select\\d* id=\""+selectId+"\">",sql);
+		if(matchs.isEmpty()){
+			return null;
+		}
+		String match=matchs.get(0);
+		String mark=RegexUtils.subString(match, "<", " id=");
+		int start=sql.indexOf(match);
+		int end=sql.indexOf("</"+mark+">",start);
+		String tm=sql.substring(start,end+("</"+mark+">").length());
+		return RegexUtils.subString(tm,">",("</"+mark+">")).trim();
 	}
 	
 }

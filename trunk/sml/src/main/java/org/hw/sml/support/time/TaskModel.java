@@ -29,8 +29,12 @@ public class TaskModel implements Serializable{
 	 */
 	private String enabled;//1、启动、0、停用
 	
+	
 	public void init(){
 		if(elp!=null){
+			if(elp.split(" ").length>5&&!elp.startsWith("cron|")){
+				elp="cron|"+elp;
+			}
 			String[] elps=elp.split("\\|");
  			if(elps.length>=1){
 				timeType=elps[0];
@@ -41,7 +45,6 @@ public class TaskModel implements Serializable{
  			if(elps.length>=3){
  				timePoint=elps[2];
  			}
- 			
 		}
 	}
 	
@@ -53,7 +56,6 @@ public class TaskModel implements Serializable{
 	public void setElp(String elp) {
 		this.elp = elp;
 	}
-
 	public boolean isExecuteNow(){
 	    	boolean flag=false;
 	    	if(timeType.equalsIgnoreCase(TimeType.min1.toString())){
@@ -72,6 +74,8 @@ public class TaskModel implements Serializable{
 	    		flag=indexOf(getArrayTimepoint(),getWeekHour())>-1&&indexOf(getArrayTimeInvokePoint(),getMinute())>-1;
 	    	}else if(timeType.equalsIgnoreCase(TimeType.month.toString())){
 	    		flag=indexOf(getArrayTimepoint(),getMonthHour())>-1&&indexOf(getArrayTimeInvokePoint(),getMinute())>-1;
+	    	}else if(timeType.equalsIgnoreCase(TimeType.cron.toString())){
+	    		flag=new CronExpression(timeInvokePoint).isExecuteNow();
 	    	}
 	    	return flag;
 	   }
@@ -170,5 +174,10 @@ public class TaskModel implements Serializable{
 			this.timePoint = timePoint;
 		}
 	
-		
+		public static void main(String[] args) {
+			TaskModel tm=new TaskModel();
+			tm.setElp("cron|0 1/10 15 18 * *");
+			tm.init();
+			System.out.println(tm.isExecuteNow());
+		}
 }

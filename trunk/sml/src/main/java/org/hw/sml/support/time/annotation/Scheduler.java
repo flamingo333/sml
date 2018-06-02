@@ -10,5 +10,6 @@ import java.lang.annotation.Target;
 public @interface Scheduler {
     String value();
     boolean triggerdCondition() default true;
+    String triggerdConditionElp() default "";
     public static String min1="min1";
 }

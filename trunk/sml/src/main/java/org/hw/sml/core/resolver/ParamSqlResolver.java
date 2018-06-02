@@ -1,9 +1,7 @@
 package org.hw.sml.core.resolver;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import org.hw.sml.FrameworkConstant;
@@ -37,18 +35,8 @@ public class ParamSqlResolver implements SqlResolver{
 		for(String mather:mathers){
 			String property=mather.substring(1, mather.length()-1);
 			SMLParam sp=sqlParamMaps.getSmlParam(property);
-			boolean notInnerK=true;
-			if(sp==null){
-				if(property.startsWith("date_")){
-					String v=new SimpleDateFormat(property.substring(5)).format(new Date());
-					notInnerK=false;
-					temp=temp.replace(mather,v);
-				}
-			}
-			if(notInnerK){
-				Assert.notNull(sp, property+" is not configed for param build");
-				temp=temp.replace(mather, sp.getValue()+"");
-			}
+			Assert.notNull(sp, property+" is not configed for param build");
+			temp=temp.replace(mather, sp.getValue()+"");
 		}
 		//减少对日志长度的限制，虽然不美观，不过值得
 		temp=temp.replace("\n"," ").trim();
@@ -56,7 +44,6 @@ public class ParamSqlResolver implements SqlResolver{
 				temp=temp.replaceAll("\\s{2,}"," ");
 				temp=temp.replaceAll("(?i)where 1=1 and","where");//排除索引的影响
 		}
-		
 		return new Rst(temp,paramObjects);
 	}
 	private CharSequence pad(int size, String string) {

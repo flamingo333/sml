@@ -115,6 +115,8 @@ public class DateTools {
 			return addMonths(date, times);
 		}else if(type==Calendar.MINUTE){
 			return addMinutes(date, times);
+		}else if(type==Calendar.DAY_OF_WEEK){
+			return addDays(date,times*7);
 		}
 		return date;
 	}

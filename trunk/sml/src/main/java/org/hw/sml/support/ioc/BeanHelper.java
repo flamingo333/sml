@@ -341,6 +341,8 @@ public class BeanHelper {
 			SchedulerPanner schedulerPanner=new SchedulerPanner();
 			schedulerPanner.setConsumerThreadSize(MapUtils.getInt(propertiesHelper.getValues(),"sml.server.scheduler.consumerThreadSize",2));
 			schedulerPanner.setDepth(MapUtils.getInt(propertiesHelper.getValues(),"sml.server.scheduler.depth",10000));
+			schedulerPanner.setTimeout(MapUtils.getInt(propertiesHelper.getValues(),"sml.server.scheduler.timeout",0));
+			schedulerPanner.setSecondIntervals(MapUtils.getInt(propertiesHelper.getValues(),"sml.server.scheduler.secondIntervals",60));
 			schedulerPanner.setSkipQueueCaseInExecute(MapUtils.getBoolean(propertiesHelper.getValues(),"sml.server.scheduler.skipQueueCaseInExecute",true));
 			beanMap.put("schedulerPanner",schedulerPanner);
 		}
@@ -426,6 +428,9 @@ public class BeanHelper {
 		return result;
 	}
 	public static String getValue(String key){
+		if(key.startsWith("${")&&key.endsWith("}")){
+			key=key.substring(2,key.length()-1);
+		}
 		return propertiesHelper.getValue(key);
 	}
 	public static Object getValue(String key,boolean isEvel) throws ElException{

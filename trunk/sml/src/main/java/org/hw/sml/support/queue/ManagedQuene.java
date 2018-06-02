@@ -87,18 +87,22 @@ public class ManagedQuene<T extends Task> {
 	/**
 	 * 执行或即将执行的任务
 	 */
-	private  Map<String,Boolean> executingMap;
+	private  Map<String,Long> executingMap;
 	/**
 	 * 工作线程计数器
 	 */
 	private AtomicInteger ai=new AtomicInteger(0);
+	/**
+	 * 任务清除超时s
+	 */
+	private long taskClearTimeout=60*60*2;
 	
 	public  void init(){
 		if(queue==null){
 			queue=new ArrayBlockingQueue<T>(depth);
 			LoggerHelper.getLogger().info(getClass(),"manageName ["+getManageName()+"] has init depth "+depth+" !");
 		}
-		executingMap=new LinkedHashMap<String, Boolean>();
+		executingMap=new LinkedHashMap<String,Long>();
 		for(int i=1;i<=consumerThreadSize;i++){
 			Execute execute=new Execute();
 			execute.setDaemon(true);
@@ -137,11 +141,12 @@ public class ManagedQuene<T extends Task> {
 	}
 	
 	public synchronized void addT(T task){
-		if(skipQueueCaseInExecute&&executingMap.containsKey(task.toString())){
+		if(skipQueueCaseInExecute&&executingMap.containsKey(task.toString())&&executingMap.get(task.toString())+taskClearTimeout*1000>System.currentTimeMillis()){
 			return;
 		}
+		if(queue.size()<depth)
+		executingMap.put(task.toString(),System.currentTimeMillis());
 		queue.add(task);
-		executingMap.put(task.toString(),true);
 		if(!ignoreLog)
 			LoggerHelper.getLogger().info(getClass(),"add "+getManageName()+" total-"+getDepth()+",current-"+queue.size()+".");
 			
@@ -178,7 +183,7 @@ public class ManagedQuene<T extends Task> {
 				if(future!=null&&!timeoutRunning)
 					future.cancel(true);
 				else
-					executingMap.put(task.toString(),false);
+					executingMap.remove(task.toString());
 				stats.get(treadName).fail().failInfo(task, e.getMessage());
 			}catch (Exception e) {
 				e.printStackTrace();
@@ -331,11 +336,11 @@ public class ManagedQuene<T extends Task> {
 		this.skipQueueCaseInExecute = skipQueueCaseInExecute;
 	}
 
-	public Map<String, Boolean> getExecutingMap() {
+	public Map<String, Long> getExecutingMap() {
 		return executingMap;
 	}
 
-	public void setExecutingMap(Map<String, Boolean> executingMap) {
+	public void setExecutingMap(Map<String, Long> executingMap) {
 		this.executingMap = executingMap;
 	}
 	

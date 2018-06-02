@@ -15,7 +15,9 @@ import org.hw.sml.tools.ClassUtil;
 
 
 public class Source implements Plugin{
+	
 	protected Loggers logger=LoggerHelper.getLogger();
+	
 	protected Object lock=new Object();
 	
 	protected String jdbcClassPath="org.hw.sml.jdbc.impl.DefaultJdbcTemplate";

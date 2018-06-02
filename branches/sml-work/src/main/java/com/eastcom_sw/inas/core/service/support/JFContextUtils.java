@@ -21,6 +21,8 @@ import com.eastcom_sw.inas.core.service.jdbc.SqlParams;
 import com.eastcom_sw.inas.core.service.jdbc.SqlTemplate;
 import com.eastcom_sw.inas.core.service.jdbc.build.Rslt;
 import com.eastcom_sw.inas.core.service.jdbc.resolver.SqlResolvers;
+import com.eastcom_sw.inas.core.service.jdbc.tools.SmlTools;
+import com.eastcom_sw.inas.core.service.jdbc.tools.SqlFilterHelper;
 import com.eastcom_sw.inas.core.service.tools.MapUtils;
 /**
  * 
@@ -152,10 +154,16 @@ public class JFContextUtils {
 			for(SqlParam sp:lst){
 				String name=sp.getName();
 				String value=params.get(name);
-				if(isNotBlank(value)){
-					sp.handlerValue(value);
+				if(name.equals("sql")&&SmlTools.isEmpty(value)){
+					String sql=SqlFilterHelper.createConditionSql(params);
+					if(isNotBlank(sql))
+					sp.setValue(sql);
 				}else{
-					sp.handlerDefaultValue(jdbc);
+					if(isNotBlank(value)){
+						sp.handlerValue(value);
+					}else{
+						sp.handlerDefaultValue(jdbc);
+					}
 				}
 			}
 		}

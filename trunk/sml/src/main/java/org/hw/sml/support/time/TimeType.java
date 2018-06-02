@@ -18,7 +18,8 @@ public enum TimeType {
 	hour("hour"),
 	day("day"),
 	week("week"),
-	month("month");
+	month("month"),
+	cron("cron");
 	private String value;
 	private TimeType(String value) {
 	     this.value = value;

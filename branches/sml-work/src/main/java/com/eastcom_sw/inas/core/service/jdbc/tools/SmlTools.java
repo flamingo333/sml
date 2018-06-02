@@ -1,5 +1,6 @@
 package com.eastcom_sw.inas.core.service.jdbc.tools;
 
+import java.util.Collection;
 import java.util.Map;
 
 import org.hw.sml.core.resolver.JsEngine;
@@ -8,6 +9,7 @@ import com.eastcom_sw.inas.core.service.jdbc.RebuildParam;
 import com.eastcom_sw.inas.core.service.jdbc.SqlParam;
 import com.eastcom_sw.inas.core.service.jdbc.SqlParams;
 import com.eastcom_sw.inas.core.service.jdbc.SqlTemplate;
+import com.eastcom_sw.inas.core.service.tools.MapUtils;
 
 public class SmlTools {
 	public static SqlParams toSplParams(String sqlPStr){
@@ -107,6 +109,39 @@ public class SmlTools {
 	}
 	public static boolean isEmpty(Object obj){
 		return obj==null||obj.toString().trim().length()==0;
+	}
+	public static Map<String,String> rebuildSimpleKv(Map<String,Object> param){
+		return rebuildSimpleKv(null, param);
+	}
+	@SuppressWarnings("unchecked")
+	private static Map<String,String> rebuildSimpleKv(String keyPre,Map<String,Object> param){
+		Map<String,String> result=MapUtils.newHashMap();
+		for(Map.Entry<String,Object> entry:param.entrySet()){
+			String key=keyPre==null?entry.getKey():keyPre+"."+entry.getKey();
+			Object value=entry.getValue();
+			if(value==null){
+				result.put(key,null);
+			}else if(value instanceof Map){
+				result.putAll(rebuildSimpleKv(key,(Map<String,Object>)value));
+			}else if(value instanceof Collection){
+				Collection<?> cls=(Collection<?>) value;
+				StringBuffer sb=new StringBuffer();
+				for(Object cl:cls){
+					sb.append(cl).append(",");
+				}
+				result.put(key,sb.deleteCharAt(sb.length()-1).toString());
+			}else if(value.getClass().isArray()){
+				Object[] objs=(Object[]) value;
+				StringBuffer sb=new StringBuffer();
+				for(Object cl:objs){
+					sb.append(cl).append(",");
+				}
+				result.put(key,sb.deleteCharAt(sb.length()-1).toString());
+			}else{
+				result.put(key,String.valueOf(value));
+			}
+		}
+		return result;
 	}
 	public static boolean isJsonStr(String jsonStr){
 		return !isEmpty(jsonStr)&&jsonStr.startsWith("{")&&jsonStr.endsWith("}");

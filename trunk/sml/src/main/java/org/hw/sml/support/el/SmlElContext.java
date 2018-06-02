@@ -195,7 +195,4 @@ public  class SmlElContext extends ElContext{
 		}
 		return properties.get(key);
 	}
-	public static void main(String[] args) throws ElException {
-		System.out.println(new SmlElContext().evel("#{12+3}"));
-	}
 }
