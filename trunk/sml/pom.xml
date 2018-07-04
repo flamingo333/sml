@@ -78,6 +78,12 @@
 			<version>2.9.0</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.madgag</groupId>
+			<artifactId>markdownj-core</artifactId>
+			<version>0.4.1</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

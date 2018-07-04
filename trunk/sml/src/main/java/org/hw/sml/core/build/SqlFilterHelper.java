@@ -1,9 +1,12 @@
 package org.hw.sml.core.build;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.hw.sml.tools.DateTools;
 import org.hw.sml.tools.MapUtils;
+import org.hw.sml.tools.Maps;
 
 
 
@@ -32,6 +35,7 @@ public class SqlFilterHelper {
 	 */
 	public static String createConditionSql(Map<String,String> params){
 		StringBuffer sb=new StringBuffer();
+		Map<String,List<Map<String,String>>> orConditions=MapUtils.newHashMap();
 		for(Map.Entry<String,String> entry:params.entrySet()){
 			String value=entry.getValue();
 			if(value==null||value.length()==0||!entry.getKey().startsWith(CONDITION_PRE)) continue;
@@ -41,17 +45,45 @@ public class SqlFilterHelper {
 			String[] fieldNames=key.replaceFirst(type+"_", "").split("@");
 			String fieldName=fieldNames[0];
 			String fieldType=fieldNames.length==2?fieldNames[1]:"char";
-			String operator=OPERATORS.get(type);
-			if(operator.contains("in")){
-				String[] vs=value.split(",");
-				sb.append(" and "+fieldName+" "+operator+" ("+buildInStrs(type,vs)+")");
+			if(type.startsWith("or")){
+				String group=type.substring(2,3);
+				String realType=type.substring(3);
+				if(!orConditions.containsKey(group)){
+					orConditions.put(group,new ArrayList<Map<String,String>>());
+				}
+				orConditions.get(group).add(new Maps<String,String>().put("type",realType).put("value",value).put("fieldType",fieldType).put("fieldName",fieldName).getMap());
 			}else{
-				if(operator.contains("like"))
-					sb.append(" and "+fieldName+" "+operator+" '%"+value+"%'");
-				else
-					sb.append(" and "+fieldName+" "+operator+" "+buildV(fieldType, value)+"");
+				String operator=OPERATORS.get(type);
+				if(operator.contains("in")){
+					String[] vs=value.split(",");
+					sb.append(" and "+fieldName+" "+operator+" ("+buildInStrs(type,vs)+")");
+				}else{
+					if(operator.contains("like"))
+						sb.append(" and "+fieldName+" "+operator+" '%"+value+"%'");
+					else
+						sb.append(" and "+fieldName+" "+operator+" "+buildV(fieldType, value)+"");
+				}
 			}
-			
+		}
+		for(Map.Entry<String,List<Map<String,String>>> entry:orConditions.entrySet()){
+			List<Map<String,String>> values=entry.getValue();
+			int i=0;
+			sb.append(" and (");
+			for(Map<String,String> value:values){
+				String operator=OPERATORS.get(value.get("type"));
+				if(operator.contains("in")){
+					String[] vs=value.get("value").split(",");
+					sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" ("+buildInStrs(value.get("type"),vs)+")");
+				}else{
+					if(operator.contains("like"))
+						sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" '%"+value.get("value")+"%'");
+					else
+						sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" "+buildV(value.get("fieldType"), value.get("value")
+						)+"");
+				}
+				i++;
+			}
+			sb.append(") ");
 		}
 		return sb.toString();
 	}
@@ -69,5 +101,15 @@ public class SqlFilterHelper {
 			sb.append("'"+vs[i]+"',");
 		}
 		return sb.deleteCharAt(sb.length()-1).toString();
+	}
+	public static void main(String[] args) {
+		Map<String,String> params=MapUtils.newHashMap();
+		params.put("condition_eq_f1","1");
+		params.put("condition_eq_f2","2");
+		params.put("condition_or1eq_f3","4");
+		params.put("condition_or1notin_f4","5");
+		params.put("condition_or2like_f3","4");
+		params.put("condition_or2like_f4","5");
+		System.out.println(createConditionSql(params));
 	}
 }
