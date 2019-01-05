@@ -1,5 +1,6 @@
 package org.hw.sml.tools;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Strings {
@@ -54,5 +55,10 @@ public class Strings {
 	}
 	public String toUpperCaseFirst(){
 		return elp.substring(0,1).toUpperCase()+elp.substring(1);
+	}
+	
+	public static void main(String[] args) {
+		String str="1,2,3,4,(5(,(,,,,)6,))";
+		System.out.println(Arrays.asList(new Strings(str).splitToken(',','(',')')));
 	}
 }

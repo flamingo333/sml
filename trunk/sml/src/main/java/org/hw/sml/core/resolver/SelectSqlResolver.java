@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.hw.sml.FrameworkConstant;
+import org.hw.sml.core.resolver.exception.TagEOFException;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
 import org.hw.sml.tools.Assert;
@@ -31,7 +32,9 @@ public class SelectSqlResolver implements SqlResolver{
 				//取标签值
 				String mark=RegexUtils.subString(tmt, "<", " id=");
 				int end=temp.indexOf("</"+mark+">",start);
-				Assert.isTrue(end!=-1,mather+" must has end!");
+				if(end==-1){
+					throw new TagEOFException(mather+" must has end!");
+				}
 				//整个逻辑字符串 tm
 				String tm=temp.substring(start,end+("</"+mark+">").length());
 				//属性值

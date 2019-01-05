@@ -133,7 +133,6 @@ public class DateTools {
 		return cal.getTime();
 	}
 
-	/** 将指定格式的时间字符串转化成时间格式 */
 	public static Date parseDate(String timestamp, String... format) {
 		String[] fms = format;
 		SimpleDateFormat sdf = null;
@@ -169,7 +168,11 @@ public class DateTools {
 		cal.setTime(date);
 		return cal.get(Calendar.MONTH)+1;
 	}
-	
+	/**
+	 * 
+	 * @param timestamp
+	 * @return
+	 */
 	public static Date parse(String timestamp){
 		if(timestamp==null||timestamp.trim().length()==0){
 			return null;

@@ -12,6 +12,7 @@ import org.hw.sml.core.build.lmaps.AbstractDataBuilder;
 import org.hw.sml.core.build.lmaps.DefaultDataBuilder;
 import org.hw.sml.model.SqlTemplate;
 import org.hw.sml.support.ClassHelper;
+import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
 /**
  * 内置了几类数据参数形式，自己开发中常用到的数据格式
@@ -48,9 +49,9 @@ public class DataBuilderHelper {
 	@SuppressWarnings("unchecked")
 	public static <T> Object build(RebuildParam rebuildParam,List<T> datas,SmlContextUtils jfContextUtils, SqlTemplate sqlTemplate){
 		AbstractDataBuilder adm=DEFAULT;
-		if(datas.isEmpty()||!(datas.get(0) instanceof Map)){
-			return datas;
-		}
+		//if(datas.isEmpty()||!(datas.get(0) instanceof Map)){
+		//	return datas;
+		//}
 		if(rebuildParam.getFilepath()!=null){
 			try {
 				adm=(AbstractDataBuilder)ClassHelper.newInstance(rebuildParam.getFilepath(),rebuildParam.getClasspath());
@@ -73,7 +74,13 @@ public class DataBuilderHelper {
 		adm.setRebuildParam(rebuildParam);
 		adm.setSmlContextUtils(jfContextUtils);
 		adm.setSqlTemplate(sqlTemplate);
-		return adm.build((List<Map<String,Object>>)datas);
+		Object value= adm.build((List<Map<String,Object>>)datas);
+		if(rebuildParam.get("valueHandler")!=null){
+			try{
+			value=((ValueHandler)ClassUtil.newInstance(rebuildParam.get("valueHandler"))).handler(value,rebuildParam);
+			}catch(Exception e){e.printStackTrace();}
+		}
+		return value;
 	}
 	public static <T> Object build(RebuildParam rebuildParam,List<T> datas){
 		return build(rebuildParam, datas,null,null);

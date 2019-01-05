@@ -24,7 +24,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 	 * 增加数据
 	 * @throws Exception
 	 */
-	public int add(Update update) throws Exception{
+	public int add(Update update){
 		update.setType(Constants.TYPE_INSERT);
 		update.init();
 		if(!update.getInLog())

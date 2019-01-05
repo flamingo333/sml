@@ -47,6 +47,10 @@ public class Result {
 	public void setExtInfo(Map<String, Object> extInfo) {
 		this.extInfo = extInfo;
 	}
+	
+	public void setPageNum(int pageNum) {
+		this.pageNum = pageNum;
+	}
 	@Override
 	public String toString() {
 		return "Result [count=" + count + ", datas=" + datas + "]";

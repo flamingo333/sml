@@ -921,7 +921,6 @@ public class MapUtils {
 		V v=get(data, k, null);
 		return v==null?defaultValue:Long.parseLong(String.valueOf(v));
 	}
-	
 	public static interface Builder<T>{
 		public void build(T data);
 	}
@@ -1051,6 +1050,26 @@ public class MapUtils {
 								return 0;
 							}
 						}
+				 }else if(v1 instanceof Date &&v2 instanceof Date){
+					    Long d1=(((Date)v1).getTime());
+					    Long d2=(((Date)v2).getTime());
+						if(order.equals("asc")){
+							if(d1>d2){
+								return 1;
+							}else if(d1<d2){
+								return -1;
+							}else{
+								return 0;
+							}
+						}else{
+							if(d1<d2){
+								return 1;
+							}else if(d1>d2){
+								return -1;
+							}else{
+								return 0;
+							}
+						}
 				 }else{
 					 if(order.equals("asc"))
 						 return String.valueOf(v1).compareTo(String.valueOf(v2));
@@ -1133,6 +1152,9 @@ public class MapUtils {
 	 */
 	public static <K,V> Map<K,V> newLinkedHashMap(){
 		return new LinkedHashMap<K,V>();
+	}
+	public static <V> Map<String,V> newLinkedCaseInsensitiveMap(){
+		return new LinkedCaseInsensitiveMap<V>();
 	}
 	/**
 	 * 创建ArrayList
@@ -1317,5 +1339,4 @@ public class MapUtils {
 		    	return flag;
 		    }
 	}
-	
 }

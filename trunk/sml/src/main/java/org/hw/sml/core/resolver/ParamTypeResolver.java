@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.core.resolver.exception.TagEOFException;
 import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
@@ -48,7 +49,9 @@ public class ParamTypeResolver implements SqlResolver{
 					String type=RegexUtils.subString(tmt,"type=\"","\">");
 					int start=temp.indexOf(tmt);
 					int end=temp.indexOf("</jdbcType>",start);
-					Assert.isTrue(end!=-1,mather+" must has end!");
+					if(end==-1){
+						throw new TagEOFException(mather+" must has end!");
+					}
 					String tm=temp.substring(start,end+("</jdbcType>").length());
 					String content=RegexUtils.subString(tm,">",("</jdbcType>"));
 					SMLParam sp=sqlParamMaps.getSmlParam(name);

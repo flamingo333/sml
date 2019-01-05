@@ -11,10 +11,11 @@ public class MapListDataBuilder extends AbstractDataBuilder{
 		for(Map<String,Object> data :datas){
 			String key=rebuildParam.get("key")==null?"key":rebuildParam.get("key");
 			String value=rebuildParam.get("value")==null?"value":rebuildParam.get("value");
-			if(!result.containsKey(key)){
-				result.put(key,new ArrayList<Object>());
+			String keyv=String.valueOf(data.get(key));
+			if(!result.containsKey(keyv)){
+				result.put(keyv,new ArrayList<Object>());
 			}
-			result.get(key).add(data.get(value));
+			result.get(keyv).add(data.get(value));
 		}
 		return result;
 	}

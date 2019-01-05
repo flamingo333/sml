@@ -443,7 +443,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				Map<String, Object> mapOfColValues = new LinkedCaseInsensitiveMap<Object>();
 				for (int i = 1; i <= columnCount; i++) {
 					String key = lookupColumnName(rsmd, i);
-					Object obj = getResultSetValue(rs, i);
+					Object obj = getResultSetValue0(rs, i,getCharTransCodes());
 					mapOfColValues.put(key, obj);
 				}
 				return mapOfColValues;

@@ -3,6 +3,7 @@ package org.hw.sml.jdbc;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.PreparedStatement;
@@ -15,6 +16,8 @@ import java.util.Calendar;
 import javax.sql.DataSource;
 
 public abstract class JdbcAccessor {
+	private String charTransCode;
+	private String[] charTransCodes;
 	public JdbcAccessor(){
 		
 	}
@@ -31,18 +34,25 @@ public abstract class JdbcAccessor {
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
-
-	public static Object getResultSetValue(ResultSet rs, int index) throws SQLException {
+	public static Object getResultSetValue(ResultSet rs,int index) throws SQLException{
+		return getResultSetValue0(rs, index,null);
+	}
+	public static  Object getResultSetValue0(ResultSet rs, int index,String[] ctc) throws SQLException {
 		Object obj = rs.getObject(index);
 		String className = null;
 		if (obj != null) {
 			className = obj.getClass().getName();
+		}else{
+			return obj;
 		}
 		if (obj instanceof Blob) {
 			obj = rs.getBytes(index);
 		}
-		else if (obj instanceof Clob) {
+		else if (obj instanceof Clob||obj instanceof String) {
 			obj = rs.getString(index);
+			if(obj!=null&&ctc!=null&&ctc.length==2){
+				obj=toBytes(obj.toString(), ctc[0],ctc[1]);
+			}
 		}
 		else if (className != null &&
 				("oracle.sql.TIMESTAMP".equals(className) ||
@@ -109,6 +119,27 @@ public abstract class JdbcAccessor {
 				!(java.sql.Date.class.isAssignableFrom(inValueType) ||
 						java.sql.Time.class.isAssignableFrom(inValueType) ||
 						java.sql.Timestamp.class.isAssignableFrom(inValueType)));
+	}
+	private static String toBytes(String val,String fromCode,String toCode){
+		if(val==null){
+			return val;
+		}
+		try {
+			return new String(val.getBytes(fromCode),toCode);
+		} catch (UnsupportedEncodingException e) {
+			return val;
+		}
+	}
+
+	public String[] getCharTransCodes() {
+		if(charTransCodes==null&&charTransCode!=null){
+			charTransCodes=charTransCode.split(",");
+		}
+		return charTransCodes;
+	}
+
+	public void setCharTransCode(String charTransCode) {
+		this.charTransCode = charTransCode;
 	}
 	
 }

@@ -122,8 +122,11 @@ public class SmlTools {
 	public static boolean isEmpty(Object obj){
 		return obj==null||obj.toString().trim().length()==0;
 	}
+	public static boolean isNotEmpty(Object obj){
+		return !isEmpty(obj);
+	}
 	public static boolean isJsonStr(String jsonStr){
-		return !isEmpty(jsonStr)&&jsonStr.startsWith("{")&&jsonStr.endsWith("}");
+		return !isEmpty(jsonStr)&&jsonStr.trim().startsWith("{")&&jsonStr.trim().endsWith("}");
 	}
 	public static Map<String,String> rebuildSimpleKv(Map<String,Object> param){
 		return rebuildSimpleKv(null, param);

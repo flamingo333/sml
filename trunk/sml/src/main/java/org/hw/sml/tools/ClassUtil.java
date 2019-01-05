@@ -266,7 +266,7 @@ public class ClassUtil {
     public static void injectFieldValue(Object obj,String fieldName,Object value) throws Exception{
     	Field field=getField(obj.getClass(),fieldName);
     	field.setAccessible(true);
-    	field.set(obj,convertValueToRequiredType(value,field.getGenericType().getClass()));
+    	field.set(obj,convertValueToRequiredType(value,(Class<?>)field.getGenericType()));
     }
     public  static boolean hasClass(String classPath){
     	try{
@@ -294,9 +294,23 @@ public class ClassUtil {
     		method.setAccessible(true);
     		return	method.invoke(bean,paramValues);
     	}catch(Exception e){
-    		method=getMethod(bean.getClass(),methodName,parameterTypes);
-    		method.setAccessible(true);
-    		return method.invoke(bean,paramValues);
+    		try{
+	    		method=getMethod(bean.getClass(),methodName,parameterTypes);
+	    		method.setAccessible(true);
+	    		return method.invoke(bean,paramValues);
+    		}catch(Exception e2){
+    			if(methodName.startsWith("set")||methodName.startsWith("is")){
+    				String filed=new Strings(methodName.substring(methodName.startsWith("set")?3:2)).toLowerCaseFirst();
+    				try {
+						injectFieldValue(bean, filed, paramValues[0]);
+					} catch (Exception e1) {
+						throw new NoSuchMethodException(e1.getMessage());
+					}
+    				return null;
+    			}else{
+    				throw new NoSuchMethodException();
+    			}
+    		}
     	}
     }
     public static <T,V> T mapToBean(Map<String,V> c,Class<T> t) throws Exception{
@@ -304,6 +318,11 @@ public class ClassUtil {
     	return mapToBean(c,bean);
     }
     public static <T,V> T mapToBean(Map<String,V> c,T bean) throws Exception{
+    	if(!(c instanceof LinkedCaseInsensitiveMap)){
+    		Map<String,V> t=new LinkedCaseInsensitiveMap<V>();
+    		t.putAll(c);
+    		c=t;
+    	}
     	Field[] fields=getFields(bean.getClass());
     	for(Field field:fields){
     		if(Modifier.toString(field.getModifiers()).contains("static")||c.get(field.getName())==null){

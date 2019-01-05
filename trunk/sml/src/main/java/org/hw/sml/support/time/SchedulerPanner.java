@@ -10,7 +10,7 @@ import org.hw.sml.support.queue.Task;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.MapUtils;
-
+//SchedulerPanner.taskMapStatus.put('',false)
 public class SchedulerPanner extends ManagedQuene<Task>{
 	private int secondIntervals;
 	private  Map<String,String> taskMapContain=MapUtils.newHashMap();

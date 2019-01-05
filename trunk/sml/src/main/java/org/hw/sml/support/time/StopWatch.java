@@ -13,11 +13,17 @@ public class StopWatch {
 	private long runStart;
 	private long stepTime;
 	private long total;
+	public StopWatch(){
+		this("stopWatch");
+	}
 	public StopWatch(String taskName){
 		this.taskName=taskName;
 		runStart=System.currentTimeMillis();
 	}
 	public synchronized void start(String step){
+		if(currentSteps!=null){
+			stop();
+		}
 		currentSteps=step;
 		stepTime=System.currentTimeMillis();
 	}
@@ -28,6 +34,9 @@ public class StopWatch {
 		total=System.currentTimeMillis()-runStart;
 	}
 	public String prettyPrint(){
+		if(currentSteps!=null){
+			stop();
+		}
 		StringBuilder sb = new StringBuilder(taskName+" cost:"+total+" ms\n");
 		sb.append("-----------------------------------------\n");
 		sb.append("ms     %     Task name\n");

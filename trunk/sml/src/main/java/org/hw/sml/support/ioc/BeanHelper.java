@@ -251,8 +251,8 @@ public class BeanHelper {
 						Assert.notNull(configName, "beanName:"+beanName+"-"+bean.getClass()+",field config "+filed.getName()+" is null");
 						filed.setAccessible(true);
 						if(config.required())
-						Assert.notNull(getValue(configName), "beanName:["+beanName+"-"+bean.getClass()+"],field value "+filed.getName()+" is null");
-						if(getValue(configName)!=null)
+						Assert.notNull(getValue(configName,config.isEvel()), "beanName:["+beanName+"-"+bean.getClass()+"],field value "+filed.getName()+" is null");
+						if(getValue(configName,config.isEvel())!=null)
 						filed.set(beanMap.get(beanName),ClassUtil.convertValueToRequiredType(getValue(configName,config.isEvel()),filed.getType()));
 					}
 					//方法注入方式
@@ -264,7 +264,7 @@ public class BeanHelper {
 						}
 						String configName=val.value();
 						method.setAccessible(true);
-						Assert.notNull(getValue(configName), "beanName:["+beanName+"-"+bean.getClass()+"],method param "+method.getName()+" is null");
+						Assert.notNull(getValue(configName,val.isEvel()), "beanName:["+beanName+"-"+bean.getClass()+"],method param "+method.getName()+" is null");
 						method.invoke(beanMap.get(beanName),ClassUtil.convertValueToRequiredType(getValue(configName,val.isEvel()),method.getParameterTypes()[0]));
 					}
 				}
@@ -435,9 +435,9 @@ public class BeanHelper {
 	}
 	public static Object getValue(String key,boolean isEvel) throws ElException{
 		if(!isEvel)
-			return propertiesHelper.getValue(key);
+			return getValue(key);
 		else
-			return evelV(propertiesHelper.getValue(key));
+			return evelV(key);
 	}
 	public static Object getValue(String type,String key) throws IllegalArgumentException, IllegalAccessException, ElException{
 		if(type==null){

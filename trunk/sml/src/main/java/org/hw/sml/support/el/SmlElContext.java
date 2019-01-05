@@ -1,6 +1,9 @@
 package org.hw.sml.support.el;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,6 +23,10 @@ import org.hw.sml.tools.Strings;
  */
 
 public  class SmlElContext extends ElContext{
+	private static final SmlElContext defaultEl=new SmlElContext();
+	public static SmlElContext defaultEl(){
+		return defaultEl;
+	}
 	public SmlElContext(){
 		super();
 	}
@@ -31,14 +38,24 @@ public  class SmlElContext extends ElContext{
 		}
 		List<String> mathers=null;
 		List<String> tempBeans=null;
-		if(elp.contains("T(")){
-			mathers=RegexUtils.matchGroup("T\\([\\w|\\.|\\$]+\\)",elp);
+		mathers=RegexUtils.matchGroup("T\\([\\w|\\.|\\$]+\\)",elp);
+		if(mathers.size()>0){
 			tempBeans=MapUtils.newArrayList();
 			for(String mather:mathers){
 				String tempBean="anonBean"+atomicInteger.getAndIncrement();
-				Object bean=ClassUtil.newInstance(mather.substring(2, mather.length()-1));
-				withBean(tempBean, bean);
-				tempBeans.add(tempBean);
+				String classpath=mather.substring(2, mather.length()-1);
+				Class<?> clazz;
+				try {
+					clazz = Class.forName(classpath);
+					Object bean=clazz;
+					if(mather.startsWith("T")){
+						bean=clazz.newInstance();
+					}
+					tempBeans.add(tempBean);
+					withBean(tempBean, bean);
+				} catch (Exception e) {
+					throw new ElException(e.getMessage());
+				}
 				elp=elp.replace(mather, tempBean);
 			}
 			BeanType bt=evelBeanType(elp);
@@ -174,7 +191,8 @@ public  class SmlElContext extends ElContext{
 				constCls[i]=b.getC();
 			}
 			try {
-				value=ClassUtil.invokeMethod(bean, mn, constCls, consts);
+				
+				value=invokeMethod(bean, mn, constCls, consts);
 			}  catch (Exception e) {
 				Assert.isTrue(false,"elp-["+bnelp+"] error["+e+"]!");
 			}
@@ -189,10 +207,50 @@ public  class SmlElContext extends ElContext{
 		}
 		return loopElp(value,ss[pos+1],ss,pos+1);
 	}
+	public static Object getFiledValue(Object bean,String bnelp) throws Exception{
+		if(bean instanceof Class){
+			Class cls=(Class) bean;
+			Field field= cls.getField(bnelp);
+			field.setAccessible(true);
+			field.get(null);
+		}
+		return ClassUtil.getFieldValue(bean,bnelp);
+	}
+	 public static Object invokeMethod(Object bean,String methodName,Class<?>[] parameterTypes,Object[] paramValues) throws IllegalArgumentException, SecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException{
+		 if(bean instanceof Class){
+			 Class<?> cls=(Class) bean;
+			 Method method=ClassUtil.getMethod(cls,methodName,parameterTypes);
+			 method.setAccessible(true);
+			 return method.invoke(null,paramValues);
+		 }
+		 if((bean instanceof List)&&methodName.equals("get")){
+	    		List<Object> clt=(List<Object>)bean;
+	    		int size=clt.size();
+	    		int index=Integer.parseInt(String.valueOf(paramValues[0]));
+	    		if(index<0){
+	    			index=size+index;
+	    		}
+	    		return clt.get(index);
+	      }
+		  if(bean.getClass().isArray()&&methodName.equals("get")){
+			  int size=Array.getLength(bean);
+	    	  int index=Integer.parseInt(String.valueOf(paramValues[0]));
+	    	  if(index<0){
+	    		 index=size+index;
+	    	  }
+	    	  return Array.get(bean,index);
+		  }
+		 return ClassUtil.invokeMethod(bean, methodName, parameterTypes, paramValues);
+	 }
 	public String getValue(String key){
 		if(key.startsWith("${")&&key.endsWith("}")){
 			key=key.substring(2,key.length()-1);
 		}
 		return properties.get(key);
 	}
+	public static String toS(String str){
+		return str;
+	}
+	
+
 }

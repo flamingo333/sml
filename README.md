@@ -6,15 +6,15 @@
 
  * 无依赖：无三方jar包依赖，可独立使用;
  
- * IOC：本身为容器，对象生命周期，依赖管理;
+ * IOC：本身为bean容器，对象生命周期，依赖管理;
  
- * AOP: 引入切面概念，默认jdk动态代理，也可引入cglib包实现类高级代理，可简单实现日志记录，事务，其它统计类服务;
+ * AOP: 引入切面概念，默认jdk动态代理，也可引入cglib包实现类层面高级代理，可简单实现日志记录，事务，其它统计类服务;
  
- * jdbc: 对jdbc进行轻量级封装达到快速访问数据库，参考spring-jdbc实现;
+ * jdbc: 对jdbc进行轻量级封装达到快速访问数据库，参考spring-jdbc实现，并预留最底层编码控制，可统一进行编码、解码;
  
- * sml: sql标记语言，基于一套标签语法（参考ibatis,mybatis）为动态sql提供执行引擎，可扩展动态开发接口服务;
+ * sml: sql标记语言，基于一套标签语法-指令（参考ibatis,mybatis）为动态sql提供模板引擎，内置指令，也可引入其它模板引擎扩展功能;
  
- * el : sml表达示语言，方便对象方法、属性操作访问；
+ * el : sml表达示语言，方便对对象进行方法调用、属性访问等，更好的管理bean结构；
  
  * tools:提供常用工具类：MapUtils,Https,CallableHelper,ClassHelper,QueueManaged,ThreadManaged,MethodProxyFactory...
  
@@ -22,9 +22,11 @@
  
 ## 适用场景
 
- * sql书写较多的应用，sql驱动型服务应用
+ * sql书写较多的应用，sql驱动型服务应用，承认以SQL为中心
  
- * 服务频繁更新
+ * 数据模型支持Pojo，也支持Map/List这种快速模型，更建议后者（支持快速开发，但规范需要在可控范围）
+ 
+ * 服务频繁更新，接口配置支持动态刷新，可不需要重启服务通过简单命令就能重置开发接口
  
  * 低配置环境下的服务开发(仅需要分配3m内存即可启动sml-server服务发布rest接口服务)
 
@@ -42,7 +44,7 @@
 <repository>
    <id>hw-snapshots</id>
    <name>hw-snapshots</name>
-   <url>http://23.247.25.117:8081/nexus/content/repositories/snapshots</url>
+   <url>http://117.131.58.154:28080/nexus/content/repositories/snapshots</url>
 </repository>
 ```
 
@@ -51,9 +53,9 @@
 ```html
    person.age=25
    bean-doubleBean=--class=java.lang.Double(12d)
-   bean-person=--class=org.hw.sml.test.Person --p-age=${person.age} --p-height=#{doubleBean} --init=init --destroy=stop
+   bean-person=--class=org.hw.sml.test.Person --p-age=${person.age} --p-height=#{doubleBean} --init-method=init --destroy-method=stop
 ```
-   在属性通过`${*}` 赋值 `#{*}`赋对象 ,`--init=`后面为bean初始化方法，`destroy`为对象销毁执行操作，
+   属性通过`${*}` 赋值 `#{*}`赋对象 ,`init-method=`后面为bean初始化方法，`destroy-method`为对象销毁执行操作，
    所有bean注入可通过属性文件也可通过 注解`@Bean`(创建bean),`@Inject`(对象注入),`@Val`(value值注入),`@Init`(初始化方法),`@Stop`(销毁方法),
 ```java
    @Bean
@@ -66,7 +68,7 @@
 	private int age;
 	@Inject("doubleBean")
 	private Double height;
-	@Val("['成功','失败']")
+	@Val(value="['成功','失败']",isEvel=true)//通过el表达式注入组织结构对象
 	private List<String> infos;
  	@Init(delay=true,sleep=5)//对象创建5s后执行
 	public void init(){
@@ -133,9 +135,11 @@ List<Person> persons= jdbcTemplate.queryForList("select id,name from t_test wher
 
 * 背景mybatis,ibatis书写sql的方便，但调整xml配置文件整体服务需要重新启动；
 
+* 适用于承认以SQL为中心，同时又需求工具能自动能生成大量常用的SQL的应用
+
 * 一般访问数据库操作关心：执行sql+参数集+返回结果，针对这三块内容，结合mybatis,ibatis语法进行抽象封装，满足sql动态，返回结果可订制；
 
-* 引擎语法标记 `isEmpty`,`isNotEmpty`,`select`,`jdbcType`,`if`,`smlParam`
+* 引擎语法标记（指令） `isEmpty`,`isNotEmpty`,`select`,`jdbcType`,`if`,`smlParam`
 
 * 表达式语言（EL）默认已java内置js表达示语言做为实现引擎; 
 
@@ -199,6 +203,37 @@ https.execute();
 Https.newGetHttps("http://url1").failover(Https.Failover("https://url2",5,100L)).execute();//多指定一个url,设置重试5次，每次间隔100ms
 ```
 
-   
- ## ext-httpServer功能  50kb
-      提供内置httpServer，为微服务体系提供基础。sml-module 提供一套接口rest开发功能，开发注解类配置类rest风格接口，整体不到1m依赖。
+## api解析
+
+* [Source](https://github.com/huangwenjimmy/sml/blob/master/trunk/sml/src/main/java/org/hw/sml/support/Source.java)
+
+> 属性dss `Map<String,DataSource>` 数据源
+
+> 属性cacheManage 元数据缓存接口，有默认内存实现类，可实现其它如redis
+
+* [SqlMarkupAbstractTemplate](https://github.com/huangwenjimmy/sml/blob/master/trunk/sml/src/main/java/org/hw/sml/core/SqlMarkupAbstractTemplate.java) 
+
+> 抽象类继承Source，接口配置来源需要具体实现类,可以是数据库，要以是xml文件或者其它。
+
+> `jsonMapper` 属性可选，如果配置需要用json需要注入
+
+> `el`         指令  <if test=" '' "> 表达示，默认js表达示，可继承重写
+
+> `sqlResolvers` sql解析链，可继承SqlResolver实现其它解析指令，并注入
+
+* [SqlMarkupTemplate](https://github.com/huangwenjimmy/sml/blob/master/trunk/sml/src/main/java/org/hw/sml/core/SqlMarkupAbstractTemplate.java)    
+
+> 接口配置来源来自数据库,继承 SqlMarkupAbstractTemplate
+
+``` java
+	public SqlTemplate getSqlTemplate(String id){
+		String key=CACHE_PRE+":"+id+":sqlTemplate";
+		if(getCacheManager().get(key)==null){
+			SqlTemplate sqt= getSqlTemplateWithOutCache(id);
+			getCacheManager().set(key,sqt,cacheMinutes);
+		}
+		SqlTemplate stp= ((SqlTemplate) getCacheManager().get(key)).clone();
+		reInitSqlTemplate(stp);
+		return stp;
+	}
+```

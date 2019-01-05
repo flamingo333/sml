@@ -125,7 +125,7 @@ public class Update extends Criteria {
 			String[] fts=field.split("@");
 			String ft=fts[0];
 			if(conditions.contains(ft)){
-				sb.append(" and "+ft+"=?");
+				sb.append(" and "+ft.replace("old.","")+"=?");
 			}
 		}
 		return sb.toString().replace("where 1=1 and", "where");

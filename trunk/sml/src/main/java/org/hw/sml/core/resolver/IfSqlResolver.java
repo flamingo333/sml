@@ -4,9 +4,15 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.core.resolver.exception.ParamNotConfigException;
+import org.hw.sml.core.resolver.exception.ParamNullException;
+import org.hw.sml.core.resolver.exception.TagEOFException;
+import org.hw.sml.core.resolver.exception.TagException;
 import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
+import org.hw.sml.support.el.ElException;
+import org.hw.sml.support.el.SmlElContext;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.DateTools;
 import org.hw.sml.tools.MapUtils;
@@ -20,6 +26,7 @@ import org.hw.sml.tools.RegexUtils;
  * @author hw
  *后续解决：  if else逻辑    case when 逻辑
  *2016-03-09  empty 把空字符串纳入空
+ *2018-11-26  isNull|isNotNull 标签引入
  */
 public class IfSqlResolver implements SqlResolver{
 	
@@ -41,10 +48,16 @@ public class IfSqlResolver implements SqlResolver{
 					value=value.replaceFirst("ref:","");
 					String[] vs=value.split("\\|");
 					Map<String,Object> params=sqlParamMaps.getMap();
-					Assert.notNull(MapUtils.getString(params,vs[0]), "param ["+vs[0]+"]  is not config!");
+					if(MapUtils.getString(params,vs[0])==null){
+						throw new ParamNotConfigException("param ["+vs[0]+"]  is not config!");
+					}
 					sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(params,vs[0]),vs));
 				}else{
-					sqlParamMaps.add(name, value);
+					try {
+						sqlParamMaps.add(name,SmlElContext.defaultEl().evel(value));
+					} catch (ElException e) {
+						throw new TagException(mather+" error:["+e.getMessage()+"]",e);
+					}
 				}
 				temp=temp.replace(tmt,"");
 			}
@@ -62,7 +75,9 @@ public class IfSqlResolver implements SqlResolver{
 				//取标签值
 				String mark=RegexUtils.subString(tmt, "<", " property=");
 				int end=temp.indexOf("</"+mark+">",start);
-				Assert.isTrue(end!=-1,mather+" must has end!");
+				if(end==-1){
+					throw new TagEOFException(mather+" must has end!");
+				}
 				//整个逻辑字符串 tm
 				String tm=temp.substring(start,end+("</"+mark+">").length());
 				boolean flag=false;
@@ -70,7 +85,9 @@ public class IfSqlResolver implements SqlResolver{
 					String property=RegexUtils.subString(tm,"property=\"","\">");
 					//内容
 					SMLParam sp=sqlParamMaps.getSmlParam(property);
-					Assert.notNull(sp, property+" is not config for "+mark);
+					if(sp==null){
+						throw new ParamNotConfigException(property+" is not config for "+mark);
+					}
 					flag=sp!=null?(sp.getValue()!=null&&String.valueOf(sp.getValue()).length()>0):false;
 					tempMap.put(tmt,flag);
 				}else{
@@ -85,6 +102,45 @@ public class IfSqlResolver implements SqlResolver{
 				}
 			}
 		}
+		if(temp.contains("<isNotNull")){
+			//非空函数   \\d*用于嵌套
+				mathers=RegexUtils.matchGroup("<isNotNull\\d* property=\"\\w+\">",temp);
+				for(String mather:mathers){
+					String tmt=mather;
+					int start=temp.indexOf(tmt);
+					if(!temp.contains(tmt)){
+						continue;
+					}
+					//取标签值
+					String mark=RegexUtils.subString(tmt, "<", " property=");
+					int end=temp.indexOf("</"+mark+">",start);
+					if(end==-1){
+						throw new TagEOFException(mather+" must has end!");
+					}
+					//整个逻辑字符串 tm
+					String tm=temp.substring(start,end+("</"+mark+">").length());
+					boolean flag=false;
+					if(!tempMap.containsKey(tmt)){
+						String property=RegexUtils.subString(tm,"property=\"","\">");
+						//内容
+						SMLParam sp=sqlParamMaps.getSmlParam(property);
+						if(sp==null){
+							throw new ParamNotConfigException(property+" is not config for "+mark);
+						}
+						flag=sp!=null?(sp.getValue()!=null):false;
+						tempMap.put(tmt,flag);
+					}else{
+						flag=tempMap.get(tmt);
+					}
+					String content=RegexUtils.subString(tm,">",("</"+mark+">"));
+					Assert.notRpeatMark(content,mark);
+					if(flag){
+						temp=temp.replace(tm, content);
+					}else{
+						temp=temp.replace(tm," ");
+					}
+				}
+		}
 		if(temp.contains("<isEmpty")){
 		//空函数
 			mathers=RegexUtils.matchGroup("<isEmpty\\d* property=\"\\w+\">",temp);
@@ -96,13 +152,17 @@ public class IfSqlResolver implements SqlResolver{
 				int start=temp.indexOf(tmt);
 				String mark=RegexUtils.subString(tmt, "<", " property=");
 				int end=temp.indexOf("</"+mark+">",start);
-				Assert.isTrue(end!=-1,mather+" must has end!");
+				if(end==-1){
+					throw new TagEOFException(mather+" must has end!");
+				}
 				String tm=temp.substring(start,end+("</"+mark+">").length());
 				boolean flag=false;
 				if(!tempMap.containsKey(tmt)){
 					String property=RegexUtils.subString(tm,"property=\"","\">");
 					SMLParam sp=sqlParamMaps.getSmlParam(property);
-					Assert.notNull(sp, property+" is not config for "+mark);
+					if(sp==null){
+						throw new ParamNotConfigException(property+" is not config for "+mark);
+					}
 					flag=sp==null?true:(sp.getValue()==null||String.valueOf(sp.getValue()).length()==0);
 					tempMap.put(tmt,flag);
 				}else{
@@ -117,6 +177,42 @@ public class IfSqlResolver implements SqlResolver{
 				}
 			}
 		}
+		if(temp.contains("<isNull")){
+			//空函数
+				mathers=RegexUtils.matchGroup("<isNull\\d* property=\"\\w+\">",temp);
+				for(String mather:mathers){
+					String tmt=mather;
+					if(!temp.contains(tmt)){
+						continue;
+					}
+					int start=temp.indexOf(tmt);
+					String mark=RegexUtils.subString(tmt, "<", " property=");
+					int end=temp.indexOf("</"+mark+">",start);
+					if(end==-1){
+						throw new TagEOFException(mather+" must has end!");
+					}
+					String tm=temp.substring(start,end+("</"+mark+">").length());
+					boolean flag=false;
+					if(!tempMap.containsKey(tmt)){
+						String property=RegexUtils.subString(tm,"property=\"","\">");
+						SMLParam sp=sqlParamMaps.getSmlParam(property);
+						if(sp==null){
+							throw new ParamNotConfigException(property+" is not config for "+mark);
+						}
+						flag=sp==null?true:(sp.getValue()==null);
+						tempMap.put(tmt,flag);
+					}else{
+						flag=tempMap.get(tmt);
+					}
+					String content=RegexUtils.subString(tm,">",("</"+mark+">"));
+					Assert.notRpeatMark(content,mark);
+					if(flag){
+						temp=temp.replace(tm, content);
+					}else{
+						temp=temp.replace(tm," ");
+					}
+				}
+			}
 		if(temp.contains("<isEqual")){
 			//相等函数
 			mathers=RegexUtils.matchGroup("<isEqual\\d* property=\"\\w+\" compareValue=\"\\w+\">",temp);
@@ -128,14 +224,18 @@ public class IfSqlResolver implements SqlResolver{
 				int start=temp.indexOf(tmt);
 				String mark=RegexUtils.subString(tmt, "<", " property=");
 				int end=temp.indexOf("</"+mark+">",start);
-				Assert.isTrue(end!=-1,mather+" must has end!");
+				if(end==-1){
+					throw new TagEOFException(mather+" must has end!");
+				}
 				String tm=temp.substring(start,end+("</"+mark+">").length());
 				String property=RegexUtils.subString(tm,"property=\"","\" compareValue");
 				String value=RegexUtils.subString(tm,"compareValue=\"","\">");
 				String content=RegexUtils.subString(tm,">",("</"+mark+">"));
 				Assert.notRpeatMark(content,mark);
 				SMLParam sp=sqlParamMaps.getSmlParam(property);
-				Assert.notNull(sp, property+" is not config for "+mark);
+				if(sp==null){
+					throw new ParamNotConfigException(property+" is not config for "+mark);
+				}
 				boolean flag=sp==null?false:(value.equals(sp.getValue()));
 				if(flag){
 					temp=temp.replace(tm, content);
@@ -155,7 +255,9 @@ public class IfSqlResolver implements SqlResolver{
 				int start=temp.indexOf(tmt);
 				String mark=RegexUtils.subString(tmt, "<", " test=");
 				int end=temp.indexOf("</"+mark+">",start);
-				Assert.isTrue(end!=-1,mather+" must has end!");
+				if(end==-1){
+					throw new TagEOFException(mather+" must has end!");
+				}
 				String tm=temp.substring(start,end+("</"+mark+">").length());
 				String text=RegexUtils.subString(tm,"test=\"","\">");
 				String content=RegexUtils.subString(tm,">",("</"+mark+">"));
@@ -167,7 +269,7 @@ public class IfSqlResolver implements SqlResolver{
 					try {
 						flag = el.parser(text,mapParam);
 					} catch (Exception e) {//
-						throw new IllegalArgumentException("jsElP["+text+"] exception "+e );
+						throw new TagException("jsElP["+text+"]",e);
 					}
 					tempMap.put(tmt,flag);
 				}else{

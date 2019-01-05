@@ -50,4 +50,5 @@ public abstract class ElContext{
 		return properties.get(key);
 	}
 	public abstract BeanType evelBeanType(String elp) throws ElException;
+	
 }

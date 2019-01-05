@@ -5,10 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.hw.sml.FrameworkConstant;
+import org.hw.sml.core.resolver.exception.ParamNotConfigException;
+import org.hw.sml.core.resolver.exception.ParamNullException;
 import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
-import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.RegexUtils;
 /**
  * 解析sql获取绑定参数，减少数据库消耗
@@ -25,8 +26,12 @@ public class ParamSqlResolver implements SqlResolver{
 		for(String mather:mathers){
 			String property=mather.substring(1, mather.length()-1);
 			SMLParam sp=sqlParamMaps.getSmlParam(property);
-			Assert.notNull(sp, property+" is not configed for param build");
-			Assert.notNull(sp.getValue(), property+" is  configed  but is null!");
+			if(sp==null){
+				throw new ParamNotConfigException(property+" is not configed for param build");
+			}
+			if(sp.getValue()==null){
+				throw new ParamNullException(property+" is  configed  but is null!");
+			}
 			int size=add(paramObjects,sp.getValue());
 			temp=temp.replace(mather,pad(size,"?"));
 		}
@@ -35,7 +40,9 @@ public class ParamSqlResolver implements SqlResolver{
 		for(String mather:mathers){
 			String property=mather.substring(1, mather.length()-1);
 			SMLParam sp=sqlParamMaps.getSmlParam(property);
-			Assert.notNull(sp, property+" is not configed for param build");
+			if(sp==null){
+				throw new ParamNotConfigException(property+" is not configed for param build");
+			}
 			temp=temp.replace(mather, sp.getValue()+"");
 		}
 		//减少对日志长度的限制，虽然不美观，不过值得
@@ -66,7 +73,13 @@ public class ParamSqlResolver implements SqlResolver{
 			paramObjects.addAll(Arrays.asList(objs));
 			return objs.length;
 		}else{
-			paramObjects.add(value);
+			if(value.equals("<null>")){
+				paramObjects.add(null);
+			}else if(value.equals("<empty>")){
+				paramObjects.add("");
+			}else{
+				paramObjects.add(value);
+			}
 			return 1;
 		}
 	}

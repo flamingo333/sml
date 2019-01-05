@@ -66,6 +66,7 @@ public class SmlContextUtils {
 		SqlTemplate st=sqlMarkupAbstractTemplate.getSqlTemplate(ifId);
 		return (T)query(st,params);
 	}
+	
 	public  List<Map<String,Object>> query(String dbid,String sql,Map<String,String> params){
 		return sqlMarkupAbstractTemplate.querySql(dbid, sql, params);
 	}
@@ -139,7 +140,12 @@ public class SmlContextUtils {
 			return getCacheManager().getKeyStart(SqlMarkupAbstractTemplate.CACHE_PRE+":").size();
 		return getCacheManager().getKeyStart(SqlMarkupAbstractTemplate.CACHE_PRE+":"+keyStart+":").size();
 	}
-	
+	public Rst getSql(String ifId,Map<String,String> params){
+		SqlTemplate st=getSqlMarkupAbstractTemplate().getSqlTemplate(ifId);
+		getSqlMarkupAbstractTemplate().reInitSqlTemplate(st);
+		reInitSqlParam(st, getJdbc(st.getDbid()), params);
+		return getSqlResolvers().resolverLinks(st.getMainSql(),st.getSmlParams());
+	}
 	
 	public static void reInitSqlParam(SqlTemplate st, JdbcTemplate jdbc,Map<String, String> params) {
 		boolean isRpt=MapUtils.getBoolean(params,FrameworkConstant.PARAM_ISREMOTEPRAMS,false);
@@ -160,6 +166,9 @@ public class SmlContextUtils {
 			st.setSmlParams(smlParams);
 			smlParams.reinit();
 		}else{
+			if(params.containsKey(FrameworkConstant.PARAM_RECACHE)){
+				st.getSmlParams().add(FrameworkConstant.PARAM_RECACHE, "false");
+			}
 			List<SMLParam> lst=st.getSmlParams().getSmlParams();
 			for(SMLParam sp:lst){
 				String name=sp.getName();
@@ -167,7 +176,7 @@ public class SmlContextUtils {
 				if(name.equals("sql")&&SmlTools.isEmpty(value)){
 					String sql=SqlFilterHelper.createConditionSql(params);
 					if(isNotBlank(sql))
-					sp.setValue(sql);
+						sp.setValue(sql);
 				}else{
 					if(isNotBlank(value)){
 						sp.handlerValue(value);

@@ -68,7 +68,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		List<Object> paramsObject=rst.getParamObjects();
 		String key=String.format(CACHE_DATA,st.getId())+rst.hashCode();
 		Object tt= getCacheManager().get(key);
-		if(tt!=null){
+		if(tt!=null&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_RECACHE,"false").toString())){
 			return (List<T>) tt;
 		}
 		if(isLogger&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_IGLOG,"false").toString()))
@@ -86,11 +86,13 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 	}
 	public int update(SqlTemplate st){
 		int result=0;
+		st.getSmlParams().add("__update__", "true").reinit();
 		SqlResolvers sqlResolvers=getSqlResolvers();
 		boolean isLinks=st.getSmlParams().getMapParams().keySet().contains(FrameworkConstant.PARAM_OPLINKS);
 		if(!isLinks){
 			Rst rst=sqlResolvers.resolverLinks(st.getMainSql(), st.getSmlParams());
 			List<Object> paramsObject=rst.getParamObjects();
+			if(isLogger&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_IGLOG,"false").toString()))
 			logger.info(getClass(),"ifId["+st.getId()+"]-sql["+rst.getSqlString()+"],params"+paramsObject.toString()+"]");
 			result=getJdbc(st.getDbid()).update(rst.getSqlString(),paramsObject.toArray(new Object[]{}));
 		}else{
@@ -101,6 +103,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 			for(String link:links){
 				st.getSmlParams().getSmlParam(FrameworkConstant.PARAM_OPLINKS).setValue(link);
 				Rst rst=sqlResolvers.resolverLinks(st.getMainSql(), st.getSmlParams());
+				if(isLogger&&!Boolean.valueOf(st.getSmlParams().getValue(FrameworkConstant.PARAM_IGLOG,"false").toString()))
 				logger.info(getClass(),"ifId["+st.getId()+"]-links["+link+"]-sql["+rst.getSqlString()+"],params"+rst.getParamObjects().toString()+"]");
 				linkSqls.add(rst.getSqlString());
 				linkParams.add(rst.getParamObjects().toArray(new Object[]{}));
@@ -115,7 +118,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		}
 		return result;
 	}
-	protected void reInitSqlTemplate(SqlTemplate st){
+	public void reInitSqlTemplate(SqlTemplate st){
 				//以json格式返回
 				if(SmlTools.isJsonStr(st.getConditionInfo())){
 					if(st.getConditionInfo().contains("\"sqlParams\"")){

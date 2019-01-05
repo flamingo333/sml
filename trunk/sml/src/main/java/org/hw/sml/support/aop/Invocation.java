@@ -38,7 +38,7 @@ public abstract class Invocation {
 		this.value = value;
 	}
 
-	public Object proceed() throws Throwable {
+	public  Object proceed() throws Throwable {
 		if(!isExecute){
 			try{
 				value=invoke();

@@ -40,7 +40,7 @@ public class SqlMarkupTemplate extends  SqlMarkupAbstractTemplate{
 			});
 			return sqt;
 		}catch(Exception e){
-			throw new IllegalArgumentException("ifId:["+id+"] not exists or can't get ifInfo from datasource! detail:["+e.getMessage()+"]");
+			throw new RuntimeException("ifId:["+id+"] not exists or can't get ifInfo from datasource! detail:["+e.getMessage()+"]");
 		}
 	}
 	

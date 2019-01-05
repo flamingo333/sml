@@ -29,7 +29,7 @@ public class SMLParam implements Serializable{
 	}
 	private String name;
 	
-	private String type="char";//类型[date,char,number,array]
+	private String type="char";//类型[date,char,number,array,map,list]
 	
 	private String encode="utf-8";
 	private String defaultValue;
@@ -49,7 +49,7 @@ public class SMLParam implements Serializable{
 	private String id;
 	
 	public String getSplit() {
-		return split;
+		return split; 
 	}
 
 	public void setSplit(String split) {
@@ -168,8 +168,14 @@ public class SMLParam implements Serializable{
 		}else if(typev.equals("array")){
 			result=buildStr(value2);
 		}else if(typev.equals("array-char")||typev.equals("array_char")){
+			if(value2.length()==0){
+				return result;
+			}
 			result=value2.split(split);
 		}else if(typev.equals("array-date")||typev.equals("array_date")||typev.equals("array-time")||typev.equals("array_time")){
+			if(value2.length()==0){
+				return result;
+			}
 			String vs[]=value2.split(split);
 			Object[] objs=new Object[vs.length];
 			for(int i=0;i<vs.length;i++){
@@ -185,7 +191,7 @@ public class SMLParam implements Serializable{
 		return result;
 	}
 	
-	private String buildStr(String val){
+	public String buildStr(String val){
 		StringBuffer sb=new StringBuffer();
 		String[] vs=val.split(split);
 		for(int i=0;i<vs.length;i++){

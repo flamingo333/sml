@@ -10,6 +10,7 @@ import org.hw.sml.jdbc.ResultSetExtractor;
 import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
 
 public class Rset implements ResultSetExtractor<Rslt>{
+	private int limit=Integer.MAX_VALUE;
 	public Rslt extractData(ResultSet rs) throws SQLException {
 		 Rslt rt=new Rslt();
 		 final List<List<Object>> listData = new ArrayList<List<Object>>();
@@ -22,6 +23,7 @@ public class Rset implements ResultSetExtractor<Rslt>{
 	          header.add(columnLabel);
 	        }
 	        rt.setHeadMetas(header);
+	        int total=0;
 	        while (rs.next()) {
 	          List<Object> data = new ArrayList<Object>();
 	          for (int i = 1; i <= iterNum; i++)
@@ -29,7 +31,19 @@ public class Rset implements ResultSetExtractor<Rslt>{
 	            data.add(DefaultJdbcTemplate.getResultSetValue(rs,i));
 	          }
 	          listData.add(data);
+	          total++;
+	          if(total>=limit){
+	        	 return rt;
+	          }
 	        }
 	        return rt;
 	}
+	public int getLimit() {
+		return limit;
+	}
+	public Rset setLimit(int limit) {
+		this.limit = limit;
+		return this;
+	}
+	
  };

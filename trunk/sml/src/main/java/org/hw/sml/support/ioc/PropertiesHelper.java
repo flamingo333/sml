@@ -32,7 +32,7 @@ public class PropertiesHelper {
 	}
 	public PropertiesHelper renameValue(String withOutStartKey){
 		for(Map.Entry<String,String> entry:propertiesMap.entrySet()){
-			if(!entry.getKey().startsWith("bean-")){
+			if(!entry.getKey().startsWith(withOutStartKey)){
 				String value=entry.getValue();
 				List<String> ms=RegexUtils.matchGroup("\\$\\{[\\w|.|-]+\\}",value);
 				if(ms.size()==0) continue;

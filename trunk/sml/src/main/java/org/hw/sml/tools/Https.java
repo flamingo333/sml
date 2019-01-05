@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -28,24 +29,34 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
 /**
- * httpclient  get|post
+ * httpclient  get|post|put|delete
  * @author wen
  *
  */
 public class Https {
 	public static final String METHOD_GET="GET";
 	public static final String METHOD_POST="POST";
+	public static final String METHOD_PUT="PUT";
+	public static final String METHOD_DELETE="POST";
 	byte[] bytes=new byte[512];
 	private boolean keepAlive=true;
 	private int readTimeout;
 	private List<ConnectionPre> connectionLinks=MapUtils.newArrayList();
-	private Failover[] failovers;;
+	private List<ConnectionPre> connectionAfter=MapUtils.newArrayList();
+	private Failover[] failovers;
+	private boolean bosClose=true;
+	private boolean isClose=true;
+	
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
 		return this;
 	}
 	public Https registerConnectionPre(ConnectionPre connectionPre){
 		connectionLinks.add(connectionPre);
+		return this;
+	}
+	public Https registerConnectionAfter(ConnectionPre connectionPre){
+		connectionAfter.add(connectionPre);
 		return this;
 	}
 	public Https failover(String ... urls){
@@ -167,6 +178,12 @@ public class Https {
 		getParamer().add1(name, value);
 		return this;
 	}
+	public Https methodToPut(){
+		return method(METHOD_PUT);
+	}
+	public Https methodToDelete(){
+		return method(METHOD_DELETE);
+	}
 	public Https connectTimeout(int timeout){
 		this.connectTimeout=timeout;
 		return this;
@@ -177,7 +194,13 @@ public class Https {
 		getHeader().put("Proxy-Authorization", "Basic "+DatatypeConverter.printBase64Binary(auths.getBytes()));
 		return this;
 	}
-	private Https method(String method){
+	public Https proxy(String host,int port,String auths){
+		return proxy(new Proxy(Proxy.Type.SOCKS,new InetSocketAddress(host,port)), auths);
+	}
+	public Https proxy(String host,int port){
+		return proxy(host, port, null);
+	}
+	public Https method(String method){
 		this.method=method;
 		return this;
 	}
@@ -256,7 +279,7 @@ public class Https {
 		}
 		private String requestCharset=charset;
 		private String responseCharset=charset;
-		private Map<String,String> header=MapUtils.newLinkedHashMap();
+		private Map<String,String> header=MapUtils.newLinkedCaseInsensitiveMap();
 		public Header put(String name,String value){
 			if(name==null||value==null){
 				return this;
@@ -297,6 +320,14 @@ public class Https {
 	private int responseStatus;
 	public int getResponseStatus(){
 		return responseStatus;
+	}
+	public Https bosClose(boolean bosClose){
+		this.bosClose=bosClose;
+		return this;
+	}
+	public Https isClose(boolean isClose){
+		this.isClose=isClose;
+		return this;
 	}
 	private String responseMessage;
 	public String getResponseMessage(){
@@ -382,14 +413,20 @@ public class Https {
 						}
 						ds.writeBytes("--"+boundary+"--\r\n");
 						ds.writeBytes("\r\n");
-					}else
+					}else if(body instanceof InputStream){
+						IOUtils.copy(out,(InputStream)body);
+					}else{
 						out.write((byte[])body);
+					}
 				}else if(qps!=null){
 					out.write(qps.getBytes());
 				}
 				out.flush();
 			}
 			conn.connect();
+			for(ConnectionPre connectionPre:connectionAfter){
+				connectionPre.doConnectionBefore(conn);
+			}
 			if(conn.getResponseCode()==200)
 				is=conn.getInputStream();
 			else
@@ -417,11 +454,11 @@ public class Https {
 					conn.disconnect();
 				if(out!=null)
 					out.close();
-				if(is!=null)
+				if(is!=null&&isClose)
 					is.close();
 				if(ds!=null)
 					ds.close();
-				if(bos!=null){
+				if(bos!=null&&bosClose){
 					bos.close();
 				}
 		}
@@ -432,6 +469,10 @@ public class Https {
 		return this;
 	}
 	public Https body(byte[] requestBody){
+		this.body=requestBody;
+		return this;
+	}
+	public Https body(InputStream requestBody){
 		this.body=requestBody;
 		return this;
 	}
@@ -506,5 +547,4 @@ public class Https {
 		}  
 		
 	}  
-	
 }
