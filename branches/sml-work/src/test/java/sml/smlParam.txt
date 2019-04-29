@@ -1,4 +1,4 @@
-
+#resolvers=(jdbcType)#
 <jdbcType name="shebeiIdStr" type="char">
 	var result=[];
 	var deviceStr = '@shebeiIdStr';

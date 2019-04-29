@@ -8,9 +8,11 @@ import javax.sql.DataSource;
 import org.hw.sml.context.SmlContextUtils;
 import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.model.Result;
+import org.hw.sml.model.SqlTemplate;
 import org.hw.sml.report.model.Constants;
 import org.hw.sml.report.model.Update;
 import org.hw.sml.support.LoggerHelper;
+import org.hw.sml.support.cache.CacheManager;
 import org.hw.sml.support.ioc.annotation.Inject;
 import org.hw.sml.support.log.Loggers;
 import org.hw.sml.tools.MapUtils;
@@ -39,10 +41,16 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		for(Update update:updates){
 			dbid=update.getDbId();
 			update.init();
+			if(update.getData().isEmpty()){
+				continue;
+			}
 			sqls.add(update.getUpateSql());
 			params.add(update.getObjects());
 		}
 		logger.debug(getClass(),"sqls:["+sqls+"]");
+		if(sqls.size()==0){
+			return 0;
+		}
 		return getJdbc(dbid).updates(sqls, params);
 	}
 	/**
@@ -57,7 +65,28 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql update:["+update.getUpateSql()+"]");
 		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
-		return affectRecord(flag);
+		int affectRecord=affectRecord(flag);
+		clearRefCache(update.isClearRefIf()&&affectRecord>0,update.getTableName());
+		return affectRecord;
+	}
+	private void clearRefCache(boolean clearRefIf, String tableName) {
+		if(clearRefIf){
+			clearRefCache(tableName.toLowerCase());
+		}
+	}
+	public int clearRefCache(String tableName){
+		CacheManager cacheManager=sqlMarkupAbstractTemplate.getCacheManager();
+		Map<String,Object> caches=cacheManager.getKeyStart(SqlMarkupAbstractTemplate.CACHE_PRE);
+		int i=0;
+		for(String cacheKey:caches.keySet()){
+			if(cacheKey.endsWith("sqlTemplate")){
+				SqlTemplate sqlTemplate=(SqlTemplate) cacheManager.get(cacheKey);
+				if(sqlTemplate.getMainSql()!=null&&sqlTemplate.getMainSql().toLowerCase().contains(tableName)){
+					i+=clear(sqlTemplate.getId());
+				}
+			}
+		}
+		return i;
 	}
 	/**
 	 * 删除数据
@@ -71,7 +100,9 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql delete:["+update.getUpateSql()+"]");
 		int[] flag = getJdbc(update.getDbId()).batchUpdate(update.getUpateSql(), update.getObjects());
-		return affectRecord(flag);
+		int affectRecord=affectRecord(flag);
+		clearRefCache(update.isClearRefIf()&&affectRecord>0,update.getTableName());
+		return affectRecord;
 	}
 	/**
 	 * 存在更新，不存在新加数据
@@ -86,6 +117,7 @@ public class DelegatedSqlMarkupAbstractTemplate {
 		if(!update.getInLog())
 		logger.debug(getClass(),"executeSql adu:["+update.getUpdateSqlForAdu(exists)+"]");
 		int flag = getJdbc(update.getDbId()).update(update.getUpdateSqlForAdu(exists),update.getObjectForAdu(exists));
+		clearRefCache(update.isClearRefIf()&&flag>0,update.getTableName());
 		return flag;
 	}
 	public <T> T queryComm(Map<String,String> params){

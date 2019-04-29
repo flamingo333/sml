@@ -6,8 +6,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.core.IfIdNotException;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.DateTools;
+import org.hw.sml.tools.MapUtils;
 /**
  * 不依赖于配置的更新操作
  * @author wen
@@ -26,11 +28,25 @@ public class Update extends Criteria {
 	
 	private String type=Constants.TYPE_INSERT;
 	
+	private boolean quot=false;
+	
+	private String quotChar="`";
+	
+	private boolean forceMapper=false;
+	
 	private List<Map<String,Object>> datas=new ArrayList<Map<String,Object>>();
 	
 	private Map<String,Object> data=new LinkedHashMap<String, Object>();
 	
 	private List<String> conditions=new ArrayList<String>();
+	
+	private static Map<String,String> tableMapping=MapUtils.newConcurrentHashMap();
+	
+	private boolean clearRefIf=false;
+	
+	public static void registerTableMapping(String key,String value){
+		tableMapping.put(key,value);
+	}
 	
 	public String getUpdateSqlForInsert(){
 		StringBuffer sb=new StringBuffer("insert into "+tableName+"(");
@@ -42,6 +58,7 @@ public class Update extends Criteria {
 			}
 			String[] fts=field.split("@");
 			String ft=fts[0];
+			ft=quotBuild(ft);
 			sb.append(ft+",");
 		}
 		sb.deleteCharAt(sb.length()-1).append(") values(");
@@ -62,6 +79,7 @@ public class Update extends Criteria {
 			if(conditions.contains(ft)){
 				continue;
 			}
+			ft=quotBuild(ft);
 			sb.append(ft+"=?,");
 		}
 		sb.deleteCharAt(sb.length()-1).append(" where 1=1");
@@ -72,6 +90,7 @@ public class Update extends Criteria {
 			String[] no=ft.split("\\.");
 			String cn=no.length==2?no[1]:no[0];
 			if(conditions.contains(ft)){
+				cn=quotBuild(cn);
 				sb.append(" and "+cn+"=?");
 			}
 		}
@@ -85,6 +104,7 @@ public class Update extends Criteria {
 			String field=entry.getKey();
 			String[] fts=field.split("@");
 			String ft=fts[0];
+			ft=quotBuild(ft);
 			sb.append(" and "+ft+"=?");
 		}
 		return sb.toString().replace("where 1=1 and", "where");
@@ -125,7 +145,9 @@ public class Update extends Criteria {
 			String[] fts=field.split("@");
 			String ft=fts[0];
 			if(conditions.contains(ft)){
-				sb.append(" and "+ft.replace("old.","")+"=?");
+				ft=ft.replace("old.","");
+				ft=quotBuild(ft);
+				sb.append(" and "+ft+"=?");
 			}
 		}
 		return sb.toString().replace("where 1=1 and", "where");
@@ -263,7 +285,10 @@ public class Update extends Criteria {
 		return tableName;
 	}
 	public void setTableName(String tableName) {
-		this.tableName = tableName;
+		if(forceMapper&&tableMapping.containsKey(tableName)){
+			throw new IfIdNotException("tableName not exists!");
+		}
+		this.tableName = MapUtils.getString(tableMapping,tableName,tableName);
 	}
 	public String getType() {
 		return type;
@@ -295,6 +320,32 @@ public class Update extends Criteria {
 	}
 	public void setConditions(List<String> conditions) {
 		this.conditions = conditions;
+	}
+
+	public void setQuot(boolean quot) {
+		this.quot = quot;
+	}
+	private String quotBuild(String ft){
+		if(quot){
+			return quotChar+ft+quotChar;
+		}
+		return ft;
+	}
+
+	public void setQuotChar(String quotChar) {
+		this.quotChar = quotChar;
+	}
+
+	public void setForceMapper(boolean forceMapper) {
+		this.forceMapper = forceMapper;
+	}
+
+	public void setClearRefIf(boolean clearRefIf) {
+		this.clearRefIf = clearRefIf;
+	}
+
+	public boolean isClearRefIf() {
+		return clearRefIf;
 	}
 	
 }

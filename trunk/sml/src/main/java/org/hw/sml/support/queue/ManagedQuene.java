@@ -434,5 +434,14 @@ public class ManagedQuene<T extends Task> {
 			return executeTaskInfo;
 		}	
 	}
+
+
+
+	public long getTaskClearTimeout() {
+		return taskClearTimeout;
+	}
+	public void setTaskClearTimeout(long taskClearTimeout) {
+		this.taskClearTimeout = taskClearTimeout;
+	}
 	
 }

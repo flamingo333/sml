@@ -5,9 +5,11 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.hw.sml.jdbc.ResultSetExtractor;
 import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
+import org.hw.sml.tools.MapUtils;
 
 public class Rset implements ResultSetExtractor<Rslt>{
 	private int limit=Integer.MAX_VALUE;
@@ -45,5 +47,4 @@ public class Rset implements ResultSetExtractor<Rslt>{
 		this.limit = limit;
 		return this;
 	}
-	
  };

@@ -18,6 +18,12 @@ public class IOUtils {
 		copy(baos, is);
 		return baos.toString(charset);
 	}
+	public static byte[] toBytes(InputStream is, String charset) throws IOException{
+		Assert.notNull(is, "inputstream is null!");
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		copy(baos, is);
+		return baos.toByteArray();
+	}
 	public static String toString(File file,String charset) throws FileNotFoundException, IOException{
 		return  toString(new FileInputStream(file),charset);
 	}

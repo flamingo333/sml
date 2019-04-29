@@ -11,11 +11,12 @@ import org.hw.sml.model.SqlTemplate;
 public class SqlMarkupTemplate extends  SqlMarkupAbstractTemplate{	
 	public SqlTemplate getSqlTemplate(String id){
 		String key=CACHE_PRE+":"+id+":sqlTemplate";
-		if(getCacheManager().get(key)==null){
-			SqlTemplate sqt= getSqlTemplateWithOutCache(id);
-			getCacheManager().set(key,sqt,cacheMinutes);
+		Object st=getCacheManager().get(key);
+		if(st==null){
+			st= getSqlTemplateWithOutCache(id);
+			getCacheManager().set(key,st,cacheMinutes);
 		}
-		SqlTemplate stp= ((SqlTemplate) getCacheManager().get(key)).clone();
+		SqlTemplate stp= ((SqlTemplate) st).clone();
 		reInitSqlTemplate(stp);
 		return stp;
 	}
@@ -40,7 +41,7 @@ public class SqlMarkupTemplate extends  SqlMarkupAbstractTemplate{
 			});
 			return sqt;
 		}catch(Exception e){
-			throw new RuntimeException("ifId:["+id+"] not exists or can't get ifInfo from datasource! detail:["+e.getMessage()+"]");
+			throw new IfIdNotException("ifId:["+id+"] not exists or can't get ifInfo from datasource! detail:["+e.getMessage()+"]");
 		}
 	}
 	

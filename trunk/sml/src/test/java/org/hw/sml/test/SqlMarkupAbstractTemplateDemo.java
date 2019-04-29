@@ -1,6 +1,5 @@
 package org.hw.sml.test;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -25,7 +24,7 @@ public class SqlMarkupAbstractTemplateDemo {
 	public static  void testQuery() throws SQLException, FileNotFoundException, IOException {
 		DefaultDataSource dataSource2=new DefaultDataSource();
 		dataSource2.setDriverClassName("oracle.jdbc.driver.OracleDriver");
-		dataSource2.setUrl("jdbc:oracle:thin:@10.221.247.43:1521/ipms");
+		dataSource2.setUrl("jdbc:oracle:thin:@10.222.23.185:1521/ipms");
 		dataSource2.setUsername("ipmsdm");
 		dataSource2.setPassword("SHipmsdm!23$");
 		DefaultDataSource dataSource = new DefaultDataSource();
@@ -43,6 +42,7 @@ public class SqlMarkupAbstractTemplateDemo {
 		st.setDss(dss);
 		st.init();
 		System.out.println(new SmlContextUtils(st).query("area-pm",""));
+		System.out.println(new SmlContextUtils(st).query("area-pm",""));
 		//new SmlContextUtils(st).query("defJt","select fa as b from DM_RE_BA_HOT where 1=1  <if test=\" '@a'=='1' \">and 1<2</if>",new Maps<String,String>().put("a","1").getMap());
 		StringBuffer sb=new StringBuffer();
 		for(int i=0;i<10000;i++){
@@ -50,8 +50,10 @@ public class SqlMarkupAbstractTemplateDemo {
 		}
 		//int i=jdbcTemplate.update("insert into hw_test2(id1,file_) values(?,?)",new Object[]{sb.substring(0,121),new FileInputStream("e:/temp/2017-09-20_18-00-45_CfgBackup-sys-cfg.zip")});
 		//System.out.println(i);
-		String sql=SmlAppContextUtils.getSmlContextUtils().queryRst("area-pm",null).getPrettySqlString();
-		System.out.println(sql);
+		for(int i=0;i<10;i++){
+			String sql=SmlAppContextUtils.getSmlContextUtils().queryRst("area-pm",null).getPrettySqlString();
+			System.out.println(sql);
+		}
 		//Map<String,Object> result= jdbcTemplate.queryForMap("select file_ from hw_test2 where id='2'");
 		//System.out.println(result);
 		

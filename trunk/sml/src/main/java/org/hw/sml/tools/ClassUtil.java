@@ -117,7 +117,7 @@ public class ClassUtil {
     	return type.equals(byte.class)||type.equals(Byte.class);
     }
     public static boolean isSingleType(Class<?> type){
-    	return type.isPrimitive()||isInt(type)||isShort(type)||isLong(type)||isFloat(type)||isByte(type)||isString(type)||isDouble(type)||isDate(type)||Number.class.isAssignableFrom(type)||isChar(type);
+    	return type.isPrimitive()||isInt(type)||isShort(type)||isLong(type)||isFloat(type)||isByte(type)||isString(type)||isDouble(type)||isDate(type)||Number.class.isAssignableFrom(type)||isChar(type)||isBoolean(type);
     }
     public static boolean isAssignableFrom(Class<?> elSrc,Class<?> clsrc){
     	if(elSrc.isPrimitive()){

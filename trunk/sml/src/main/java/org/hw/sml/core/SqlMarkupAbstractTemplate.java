@@ -64,6 +64,7 @@ public abstract class SqlMarkupAbstractTemplate extends Source implements SqlMar
 		SqlResolvers sqlResolvers=getSqlResolvers();
 		long parserStart=System.currentTimeMillis();
 		Rst rst=sqlResolvers.resolverLinks(st.getMainSql(),st.getSmlParams());
+		rst.setDbtype(getDbType(st.getDbid()));
 		long parseEnd=System.currentTimeMillis();
 		List<Object> paramsObject=rst.getParamObjects();
 		String key=String.format(CACHE_DATA,st.getId())+rst.hashCode();

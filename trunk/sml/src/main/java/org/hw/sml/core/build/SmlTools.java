@@ -1,5 +1,6 @@
 package org.hw.sml.core.build;
 
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,12 @@ public class SmlTools {
 		return rebuildParam;
 	}
 	public static boolean isEmpty(Object obj){
-		return obj==null||obj.toString().trim().length()==0;
+		return obj==null||
+				(
+					obj.getClass().isArray()&&Array.getLength(obj)==0||
+					(obj instanceof Collection)&&((Collection<?>)obj).size()==0||
+					(obj.toString().trim().length()==0)
+				);
 	}
 	public static boolean isNotEmpty(Object obj){
 		return !isEmpty(obj);

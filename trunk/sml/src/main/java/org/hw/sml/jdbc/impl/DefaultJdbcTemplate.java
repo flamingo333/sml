@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 
 import org.hw.sml.jdbc.BatchPreparedStatementSetter;
 import org.hw.sml.jdbc.Callback;
+import org.hw.sml.jdbc.CallbackCycle;
 import org.hw.sml.jdbc.ConnectionCallback;
 import org.hw.sml.jdbc.DataSourceUtils;
 import org.hw.sml.jdbc.JdbcAccessor;
@@ -26,6 +27,10 @@ import org.hw.sml.tools.LinkedCaseInsensitiveMap;
 
 public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		private boolean transactionInversion;
+		private  int queryReturnLimit=Integer.MAX_VALUE;
+		{
+			queryReturnLimit=Integer.parseInt(System.getProperty("sml.jdbc.queryreturnlimit", String.valueOf(Integer.MAX_VALUE)));
+		}
 		public DefaultJdbcTemplate(){}
 		public DefaultJdbcTemplate(DataSource dataSource){
 			super(dataSource);
@@ -279,8 +284,14 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 						}
 						rs=stmt.executeQuery();
 						int i=0;
+						if(callback instanceof CallbackCycle){
+							((CallbackCycle) callback).start();
+						}
 						while(rs.next()){
 							callback.call(rs, i++);
+						}
+						if(callback instanceof CallbackCycle){
+							((CallbackCycle) callback).end();
 						}
 						return null;
 					} catch (SQLException e) {
@@ -313,6 +324,9 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 						int i=0;
 						while(rs.next()){
 							T t=rowMapper.mapRow(rs,i++);
+							if(i>queryReturnLimit){
+								break;
+							}
 							result.add(t);
 						}
 						return result;

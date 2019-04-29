@@ -436,8 +436,11 @@ public class BeanHelper {
 	public static Object getValue(String key,boolean isEvel) throws ElException{
 		if(!isEvel)
 			return getValue(key);
-		else
-			return evelV(key);
+		else{
+			String value=getValue(key);
+			value=value==null?key:value;
+			return evelV(value);
+		}
 	}
 	public static Object getValue(String type,String key) throws IllegalArgumentException, IllegalAccessException, ElException{
 		if(type==null){

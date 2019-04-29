@@ -1,5 +1,6 @@
 package org.hw.sml.tools;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,6 +25,13 @@ public class Maps<K,V> {
 	
 	public Map<K, V> getMap() {
 		return map;
+	}
+	public static Map<String,String> newMap(String ...strs){
+		Map<String,String> result=new HashMap<String,String>();
+		for(int i=0;i<strs.length;i+=2){
+			result.put(strs[i],strs[i+1]);
+		}
+		return result;
 	}
 	
 }

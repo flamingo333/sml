@@ -11,11 +11,6 @@ public class Calculator {
     public static void main(String[] args) {
     	Calculator cal  = new Calculator();
         System.out.println(cal.calculate("((1+(23+13)/3.0+1000/10)*(100/(2-1)+2*(2*4-4)))"));
-        Stack<String> test=new Stack<String>();
-        test.push("a");
-        test.push("b");
-        System.out.println(test.peek());
-        System.out.println(test.pop());
         System.out.println("(1+(23+13)/3.0+1000/10)*(100/(2-1)+2*(2*4-4))".matches("[0-9|\\.|+|\\-|\\*|/|\\(|\\)]{2,}"));
     }
 
@@ -116,7 +111,7 @@ public class Calculator {
     }
     
     private String calculate(String firstValue,String secondValue,char currentOp) {
-    	//System.out.println(firstValue+currentOp+secondValue);
+    	System.out.println(firstValue+currentOp+secondValue);
         String result  = "";
         switch(currentOp) {
             case '+':

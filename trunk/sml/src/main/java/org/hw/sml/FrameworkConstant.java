@@ -12,9 +12,9 @@ public class FrameworkConstant {
 	public static Map<String,String> smlCfgs=new HashMap<String,String>(){
 		private static final long serialVersionUID = 7973549437067244525L;
 		{
-			put("CFG_JDBC_SQL", "select id,mainsql,rebuild_info,condition_info,cache_enabled,cache_minutes,db_id  from  DM_CO_BA_CFG_RCPT_IF where id=?");
-			put("CFG_REPORT_SQL", "select id id,rcpt_name as tablename,name description,db_id from DM_CO_BA_CFG_RCPT where id=?");
-			put("CFG_REPORT_DETAIL_SQL", "select rcpt_id as table_id,kpi_name_en as field_name,kpi_name_ch as field_name_zn,format,field_type,id as order_index,length,for_insert,for_update,for_import,for_import_update,for_query,is_query from DM_CO_BA_CFG_RCPT_DETAIL where rcpt_id=? and enabled=1 order by id");
+			put("CFG_JDBC_SQL", "select id,mainsql,rebuild_info,condition_info,cache_enabled,cache_minutes,db_id  from  dm_co_ba_cfg_rcpt_if where id=?");
+			put("CFG_REPORT_SQL", "select id id,rcpt_name as tablename,name description,db_id from dm_co_ba_cfg_rcpt where id=?");
+			put("CFG_REPORT_DETAIL_SQL", "select rcpt_id as table_id,kpi_name_en as field_name,kpi_name_ch as field_name_zn,format,field_type,id as order_index,length,for_insert,for_update,for_import,for_import_update,for_query,is_query from dm_co_ba_cfg_rcpt_detail where rcpt_id=? and enabled=1 order by id");
 			put("CFG_DEFAULT_BUILDER_CLASS", "org.hw.sml.core.build.lmaps");
 			put("AUTHKEY", "5296D518F084D2B01DC1F360BE4DBFF1");
 		}

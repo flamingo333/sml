@@ -49,7 +49,7 @@ public class Result {
 	}
 	
 	public void setPageNum(int pageNum) {
-		this.pageNum = pageNum;
+		this.page = pageNum;
 	}
 	@Override
 	public String toString() {

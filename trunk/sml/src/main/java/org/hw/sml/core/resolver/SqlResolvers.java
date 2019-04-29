@@ -7,8 +7,18 @@ import java.util.Map;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.support.el.El;
 import org.hw.sml.tools.MapUtils;
+import org.hw.sml.tools.RegexUtils;
 
 public class SqlResolvers {
+	
+	private Map<String,SqlResolver> alias=MapUtils.newHashMap();
+	{
+		alias.put("if",new IfSqlResolver());
+		alias.put("foreach",new ForeachResolver());
+		alias.put("select",new SelectSqlResolver());
+		alias.put("jdbcType",new ParamTypeResolver());
+		alias.put("param",new ParamSqlResolver());
+	}
 	
 	private El el;
 	
@@ -23,12 +33,12 @@ public class SqlResolvers {
 	}
 	public SqlResolvers init(){
 		sqlResolvers=new ArrayList<SqlResolver>();
-		sqlResolvers.add(new IfSqlResolver());
-		sqlResolvers.add(new SelectSqlResolver());
-		sqlResolvers.add(new ForeachResolver());
-		sqlResolvers.add(new ParamTypeResolver());
+		sqlResolvers.add(alias.get("if"));
+		sqlResolvers.add(alias.get("select"));
+		sqlResolvers.add(alias.get("jdbcType"));
+		sqlResolvers.add(alias.get("foreach"));
 		sqlResolvers.addAll(extResolvers);
-		sqlResolvers.add(new ParamSqlResolver());
+		sqlResolvers.add(alias.get("param"));
 		return this;
 	}
 	
@@ -40,7 +50,22 @@ public class SqlResolvers {
 	public  Rst resolverLinks(String sql,SMLParams smlParams){
 		List<Object> paramsObject=new ArrayList<Object>();
 		Map<String,Object> extInfo=MapUtils.newHashMap(); 
-		for(SqlResolver sqlResolver:sqlResolvers){
+		List<SqlResolver> srs=sqlResolvers;
+		if(sql.trim().startsWith("#resolvers")){
+			String[] sqls=sql.split("\\)#",2);
+			sql=sqls[1];
+			String[] aliass=RegexUtils.subString(sqls[0]+")","(",")").split(",");
+			srs=MapUtils.newArrayList();
+			for(String al:aliass){
+				if(!srs.contains(alias.get(al))&&alias.containsKey(al)){
+					srs.add(alias.get(al));
+				}
+			}
+			if(!srs.contains(alias.get("param"))){
+				srs.add(alias.get("param"));
+			}
+		}
+		for(SqlResolver sqlResolver:srs){
 			sqlResolver.setEl(el);
 			Rst subRst=sqlResolver.resolve(null, sql,smlParams);
 			sql=subRst.getSqlString();

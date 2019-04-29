@@ -172,7 +172,7 @@ public class SmlContextUtils {
 			List<SMLParam> lst=st.getSmlParams().getSmlParams();
 			for(SMLParam sp:lst){
 				String name=sp.getName();
-				String value=params.get(name);
+				String value=params.get(name)==null?null:String.valueOf(params.get(name));
 				if(name.equals("sql")&&SmlTools.isEmpty(value)){
 					String sql=SqlFilterHelper.createConditionSql(params);
 					if(isNotBlank(sql))

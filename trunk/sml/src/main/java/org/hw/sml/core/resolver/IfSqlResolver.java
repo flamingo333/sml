@@ -1,11 +1,14 @@
 package org.hw.sml.core.resolver;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.hw.sml.core.build.SmlTools;
 import org.hw.sml.core.resolver.exception.ParamNotConfigException;
-import org.hw.sml.core.resolver.exception.ParamNullException;
 import org.hw.sml.core.resolver.exception.TagEOFException;
 import org.hw.sml.core.resolver.exception.TagException;
 import org.hw.sml.model.SMLParam;
@@ -29,190 +32,85 @@ import org.hw.sml.tools.RegexUtils;
  *2018-11-26  isNull|isNotNull 标签引入
  */
 public class IfSqlResolver implements SqlResolver{
+	public  static String isNull="isNull";
+	public  static String isNotNull="isNotNull";
+	public  static String isEmpty="isEmpty";
+	public  static String isNotEmpty="isNotEmpty";
 	
+	final static Pattern EMPTY_NULL=Pattern.compile("<("+isNotEmpty+"\\d*|"+isEmpty+"\\d*|"+isNull+"\\d*|"+isNotNull+"\\d*)\\s+property=\"(\\w+)\">");
+	final static Pattern SMLPARAM=Pattern.compile("<smlParam\\s+name=\"(\\w+)\"\\s+value=\"(\\S+)\"/>");
+	final static Pattern IF=Pattern.compile("<(if\\d*)\\s+test=\"((?!\">).)+\">");
 	private El el;
 	public Rst resolve(String dialect, String temp,SMLParams sqlParamMaps) {
 		List<String> mathers=null;
 		Map<String,Boolean> tempMap=MapUtils.newHashMap();
 		Map<String,Object> mapParam=sqlParamMaps.getMap();
-		if(temp.contains("<smlParam")){
-			mathers=RegexUtils.matchGroup("<smlParam name=\"\\w+\" value=\"\\S+\"/>",temp);
-			for(String mather:mathers){
-				String tmt=mather;
-				if(!temp.contains(tmt)){
-					continue;
-				}
-				String name=RegexUtils.subString(tmt, "name=\"", "\" value=");
-				String value=RegexUtils.subString(tmt, "value=\"","\"/>");
-				if(value.startsWith("ref:")){
-					value=value.replaceFirst("ref:","");
-					String[] vs=value.split("\\|");
-					Map<String,Object> params=sqlParamMaps.getMap();
-					if(MapUtils.getString(params,vs[0])==null){
-						throw new ParamNotConfigException("param ["+vs[0]+"]  is not config!");
-					}
-					sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(params,vs[0]),vs));
-				}else{
-					try {
-						sqlParamMaps.add(name,SmlElContext.defaultEl().evel(value));
-					} catch (ElException e) {
-						throw new TagException(mather+" error:["+e.getMessage()+"]",e);
-					}
-				}
-				temp=temp.replace(tmt,"");
+		Matcher matcher=SMLPARAM.matcher(temp);
+		while(matcher.find()){
+			String mather=matcher.group();
+			if(!temp.contains(mather)){
+				continue;
 			}
+			String[] subGroups=RegexUtils.group2Array(matcher);
+			String name=subGroups[0];
+			String value=subGroups[1];
+			if(value.startsWith("ref:")){
+				value=value.replaceFirst("ref:","");
+				String[] vs=value.split("\\|");
+				Map<String,Object> params=sqlParamMaps.getMap();
+				if(MapUtils.getString(params,vs[0])==null){
+					throw new ParamNotConfigException("param ["+vs[0]+"]  is not config!");
+				}
+				sqlParamMaps.add(name,getRefFormatValue(MapUtils.getString(params,vs[0]),vs));
+			}else{
+				try {
+					sqlParamMaps.add(name,SmlElContext.defaultEl().evel(value));
+				} catch (ElException e) {
+					throw new TagException(mather+" error:["+e.getMessage()+"]",e);
+				}
+			}
+			temp=temp.replace(mather,"");
 			sqlParamMaps.reinit();
 		}
-		if(temp.contains("<isNotEmpty")){
-		//非空函数   \\d*用于嵌套
-			mathers=RegexUtils.matchGroup("<isNotEmpty\\d* property=\"\\w+\">",temp);
-			for(String mather:mathers){
-				String tmt=mather;
-				int start=temp.indexOf(tmt);
-				if(!temp.contains(tmt)){
-					continue;
+		matcher=EMPTY_NULL.matcher(temp);
+		while(matcher.find()){
+			String mather=matcher.group();
+			if(!temp.contains(mather)){
+				continue;
+			}
+			String[] subGroups=RegexUtils.group2Array(matcher);
+			String mark=subGroups[0];
+			String property=subGroups[1];
+			int start=temp.indexOf(mather);
+			int end=temp.indexOf("</"+mark+">",start);
+			if(end==-1){
+				throw new TagEOFException(mather+" must has end!");
+			}
+			//整个逻辑字符串 tm
+			String tm=temp.substring(start,end+("</"+mark+">").length());
+			boolean flag=false;
+			if(!tempMap.containsKey(mather)){
+				//内容
+				SMLParam sp=sqlParamMaps.getSmlParam(property);
+				if(sp==null){
+					throw new ParamNotConfigException(property+" is not config for "+mark);
 				}
-				//取标签值
-				String mark=RegexUtils.subString(tmt, "<", " property=");
-				int end=temp.indexOf("</"+mark+">",start);
-				if(end==-1){
-					throw new TagEOFException(mather+" must has end!");
-				}
-				//整个逻辑字符串 tm
-				String tm=temp.substring(start,end+("</"+mark+">").length());
-				boolean flag=false;
-				if(!tempMap.containsKey(tmt)){
-					String property=RegexUtils.subString(tm,"property=\"","\">");
-					//内容
-					SMLParam sp=sqlParamMaps.getSmlParam(property);
-					if(sp==null){
-						throw new ParamNotConfigException(property+" is not config for "+mark);
-					}
-					flag=sp!=null?(sp.getValue()!=null&&String.valueOf(sp.getValue()).length()>0):false;
-					tempMap.put(tmt,flag);
-				}else{
-					flag=tempMap.get(tmt);
-				}
-				String content=RegexUtils.subString(tm,">",("</"+mark+">"));
-				Assert.notRpeatMark(content,mark);
-				if(flag){
-					temp=temp.replace(tm, content);
-				}else{
-					temp=temp.replace(tm," ");
-				}
+				flag=(mark.startsWith(isNotEmpty)&&SmlTools.isNotEmpty(sp.getValue()))||
+					(mark.startsWith(isEmpty)&&SmlTools.isEmpty(sp.getValue()))||
+					(mark.startsWith(isNull)&&sp.getValue()==null)||
+					(mark.startsWith(isNotNull)&&sp.getValue()!=null);
+				tempMap.put(mather,flag);
+			}else{
+				flag=tempMap.get(mather);
+			}
+			String content=RegexUtils.subString(tm,">",("</"+mark+">"));
+			Assert.notRpeatMark(content,mark);
+			if(flag){
+				temp=temp.replace(tm, content);
+			}else{
+				temp=temp.replace(tm," ");
 			}
 		}
-		if(temp.contains("<isNotNull")){
-			//非空函数   \\d*用于嵌套
-				mathers=RegexUtils.matchGroup("<isNotNull\\d* property=\"\\w+\">",temp);
-				for(String mather:mathers){
-					String tmt=mather;
-					int start=temp.indexOf(tmt);
-					if(!temp.contains(tmt)){
-						continue;
-					}
-					//取标签值
-					String mark=RegexUtils.subString(tmt, "<", " property=");
-					int end=temp.indexOf("</"+mark+">",start);
-					if(end==-1){
-						throw new TagEOFException(mather+" must has end!");
-					}
-					//整个逻辑字符串 tm
-					String tm=temp.substring(start,end+("</"+mark+">").length());
-					boolean flag=false;
-					if(!tempMap.containsKey(tmt)){
-						String property=RegexUtils.subString(tm,"property=\"","\">");
-						//内容
-						SMLParam sp=sqlParamMaps.getSmlParam(property);
-						if(sp==null){
-							throw new ParamNotConfigException(property+" is not config for "+mark);
-						}
-						flag=sp!=null?(sp.getValue()!=null):false;
-						tempMap.put(tmt,flag);
-					}else{
-						flag=tempMap.get(tmt);
-					}
-					String content=RegexUtils.subString(tm,">",("</"+mark+">"));
-					Assert.notRpeatMark(content,mark);
-					if(flag){
-						temp=temp.replace(tm, content);
-					}else{
-						temp=temp.replace(tm," ");
-					}
-				}
-		}
-		if(temp.contains("<isEmpty")){
-		//空函数
-			mathers=RegexUtils.matchGroup("<isEmpty\\d* property=\"\\w+\">",temp);
-			for(String mather:mathers){
-				String tmt=mather;
-				if(!temp.contains(tmt)){
-					continue;
-				}
-				int start=temp.indexOf(tmt);
-				String mark=RegexUtils.subString(tmt, "<", " property=");
-				int end=temp.indexOf("</"+mark+">",start);
-				if(end==-1){
-					throw new TagEOFException(mather+" must has end!");
-				}
-				String tm=temp.substring(start,end+("</"+mark+">").length());
-				boolean flag=false;
-				if(!tempMap.containsKey(tmt)){
-					String property=RegexUtils.subString(tm,"property=\"","\">");
-					SMLParam sp=sqlParamMaps.getSmlParam(property);
-					if(sp==null){
-						throw new ParamNotConfigException(property+" is not config for "+mark);
-					}
-					flag=sp==null?true:(sp.getValue()==null||String.valueOf(sp.getValue()).length()==0);
-					tempMap.put(tmt,flag);
-				}else{
-					flag=tempMap.get(tmt);
-				}
-				String content=RegexUtils.subString(tm,">",("</"+mark+">"));
-				Assert.notRpeatMark(content,mark);
-				if(flag){
-					temp=temp.replace(tm, content);
-				}else{
-					temp=temp.replace(tm," ");
-				}
-			}
-		}
-		if(temp.contains("<isNull")){
-			//空函数
-				mathers=RegexUtils.matchGroup("<isNull\\d* property=\"\\w+\">",temp);
-				for(String mather:mathers){
-					String tmt=mather;
-					if(!temp.contains(tmt)){
-						continue;
-					}
-					int start=temp.indexOf(tmt);
-					String mark=RegexUtils.subString(tmt, "<", " property=");
-					int end=temp.indexOf("</"+mark+">",start);
-					if(end==-1){
-						throw new TagEOFException(mather+" must has end!");
-					}
-					String tm=temp.substring(start,end+("</"+mark+">").length());
-					boolean flag=false;
-					if(!tempMap.containsKey(tmt)){
-						String property=RegexUtils.subString(tm,"property=\"","\">");
-						SMLParam sp=sqlParamMaps.getSmlParam(property);
-						if(sp==null){
-							throw new ParamNotConfigException(property+" is not config for "+mark);
-						}
-						flag=sp==null?true:(sp.getValue()==null);
-						tempMap.put(tmt,flag);
-					}else{
-						flag=tempMap.get(tmt);
-					}
-					String content=RegexUtils.subString(tm,">",("</"+mark+">"));
-					Assert.notRpeatMark(content,mark);
-					if(flag){
-						temp=temp.replace(tm, content);
-					}else{
-						temp=temp.replace(tm," ");
-					}
-				}
-			}
 		if(temp.contains("<isEqual")){
 			//相等函数
 			mathers=RegexUtils.matchGroup("<isEqual\\d* property=\"\\w+\" compareValue=\"\\w+\">",temp);
@@ -244,42 +142,41 @@ public class IfSqlResolver implements SqlResolver{
 				}
 			}
 		}
-		if(temp.contains("<if")){
-			//最复杂函数实现 引入表达示语言实现
-			mathers=RegexUtils.matchGroup("<if\\d* test=\"\\s+\\S*\\s+\">",temp);
-			for(String mather:mathers){
-				String tmt=mather;
-				if(!temp.contains(tmt)){
-					continue;
+		matcher=IF.matcher(temp);
+		while(matcher.find()){
+			String mather=matcher.group();
+			if(!temp.contains(mather)){
+				continue;
+			}
+			String[] subGroups=RegexUtils.group2Array(matcher);
+			String mark=subGroups[0];
+			//String text=subGroups[1];
+			String text=RegexUtils.subString(mather,"test=\"","\">").trim();
+			int start=temp.indexOf(mather);
+			int end=temp.indexOf("</"+mark+">",start);
+			if(end==-1){
+				throw new TagEOFException(mather+" must has end!");
+			}
+			String tm=temp.substring(start,end+("</"+mark+">").length());
+			String content=RegexUtils.subString(tm,">",("</"+mark+">"));
+			Assert.notRpeatMark(content,mark);
+			//对text内容进行处理
+			//参数报错直接跳出，减少对数据库的压力
+			boolean flag=false;
+			if(!tempMap.containsKey(mather)){
+				try {
+					flag = el.parser(text,mapParam);
+				} catch (Exception e) {//
+					throw new TagException("jsElP["+text+"]",e);
 				}
-				int start=temp.indexOf(tmt);
-				String mark=RegexUtils.subString(tmt, "<", " test=");
-				int end=temp.indexOf("</"+mark+">",start);
-				if(end==-1){
-					throw new TagEOFException(mather+" must has end!");
-				}
-				String tm=temp.substring(start,end+("</"+mark+">").length());
-				String text=RegexUtils.subString(tm,"test=\"","\">");
-				String content=RegexUtils.subString(tm,">",("</"+mark+">"));
-				Assert.notRpeatMark(content,mark);
-				//对text内容进行处理
-				//参数报错直接跳出，减少对数据库的压力
-				boolean flag=false;
-				if(!tempMap.containsKey(tmt)){
-					try {
-						flag = el.parser(text,mapParam);
-					} catch (Exception e) {//
-						throw new TagException("jsElP["+text+"]",e);
-					}
-					tempMap.put(tmt,flag);
-				}else{
-					flag=tempMap.get(tmt);
-				}
-				if(flag){
-					temp=temp.replace(tm, content);
-				}else{
-					temp=temp.replace(tm," ");
-				}
+				tempMap.put(mather,flag);
+			}else{
+				flag=tempMap.get(mather);
+			}
+			if(flag){
+				temp=temp.replace(tm, content);
+			}else{
+				temp=temp.replace(tm," ");
 			}
 		}
 		return new Rst(temp);
@@ -313,5 +210,17 @@ public class IfSqlResolver implements SqlResolver{
 		this.el = el;
 	}
 
-
+	public static void main(String[] args) {
+		Matcher matcher=IF.matcher("<if test=\" '@a'>12&&a=\"1\" \">helloworld</if><if test=\"'@a'=1& 1=1\">helloworld</if>");
+		while(matcher.find()){
+			String tmt=matcher.group();
+			System.out.println(tmt);
+			String[] subGroups=RegexUtils.group2Array(matcher);
+			String mark=subGroups[0];
+			String text=subGroups[1];
+			System.out.println(Arrays.asList(subGroups));
+			String text1=RegexUtils.subString(tmt,"test=\"","\">");
+			System.out.println(Arrays.asList(mark,text,text1));
+		}
+	}
 }

@@ -6,11 +6,13 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.hw.sml.jdbc.JdbcTemplate;
+import org.hw.sml.model.DbType;
 import org.hw.sml.plugin.Plugin;
 import org.hw.sml.support.cache.CacheManager;
 import org.hw.sml.support.cache.DefaultCacheManager;
 import org.hw.sml.support.log.Loggers;
 import org.hw.sml.tools.ClassUtil;
+import org.hw.sml.tools.DbTools;
 
 
 
@@ -29,6 +31,8 @@ public class Source implements Plugin{
 	protected Map<String,JdbcTemplate> jts=new HashMap<String,JdbcTemplate>();
 	
 	protected Map<String,DataSource> dss=new HashMap<String,DataSource>();
+	
+	protected Map<String,DbType> dbTypes=new HashMap<String,DbType>();
 	
 	protected CacheManager cacheManager;
 	
@@ -51,6 +55,7 @@ public class Source implements Plugin{
 		if(jts.size()==0){
 			for(Map.Entry<String,DataSource> entry:dss.entrySet()){
 				jts.put(entry.getKey(),newJdbcTemplate(entry.getValue()));
+				dbTypes.put(entry.getKey(),DbTools.getDbType(entry.getValue()));
 				logger.info(getClass(),"init jdbc-template["+entry.getKey()+"].");
 			}
 			if(this.defJt==null){
@@ -65,6 +70,13 @@ public class Source implements Plugin{
 			return jt;
 		}
 		return defJt;
+	}
+	public DbType getDbType(String dbid){
+		DbType dbtype=dbTypes.get(dbid);
+		if(dbtype==null){
+			return dbTypes.get("defJt");
+		}
+		return dbtype;
 	}
 
 	public JdbcTemplate getDefJt() {

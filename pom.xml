@@ -39,29 +39,29 @@
 		<repository>
 			<id>hw-snapshots</id>
 			<name>hw-snapshots</name>
-			<url>http://117.131.58.154:28080/nexus/content/repositories/snapshots</url>
+			<url>http://eastcom.mvn:28080/nexus/content/repositories/snapshots</url>
 		</repository>
 		<repository>
 			<id>hw-releases</id>
 			<name>hw-releases</name>
-			<url>http://117.131.58.154:28080/nexus/content/repositories/releases</url>
+			<url>http://eastcom.mvn:28080/nexus/content/repositories/releases</url>
 		</repository>
 		<repository>
 			<id>hw-3dr</id>
 			<name>hw-3dr</name>
-			<url>http://117.131.58.154:28080/nexus/content/repositories/thirdparty</url>
+			<url>http://eastcom.mvn:28080/nexus/content/repositories/thirdparty</url>
 		</repository>
 	</repositories>
 	<distributionManagement>
 		<snapshotRepository>
 			<id>hw-snapshots</id>
 			<name>hw-snapshots</name>
-			<url>http://117.131.58.154:28080/nexus/content/repositories/snapshots</url>
+			<url>http://eastcom.mvn:28080/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
 		<repository>
 			<id>hw-releases</id>
 			<name>hw-releases</name>
-			<url>http://117.131.58.154:28080/nexus/content/repositories/releases</url>
+			<url>http://eastcom.mvn:28080/nexus/content/repositories/releases</url>
 		</repository>
 	</distributionManagement>
 </project>

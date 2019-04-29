@@ -1,11 +1,15 @@
 package org.hw.sml.core.resolver;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.model.DbType;
+import org.hw.sml.tools.DbTools;
+
 public class Rst{
+	
+	private DbType dbtype;
 	
 	private String sqlString;
 	
@@ -30,7 +34,12 @@ public class Rst{
 	public String getPrettySqlString(){
 		String prettySql=sqlString;
 		for(Object obj:paramObjects){
-			prettySql=prettySql.replaceFirst("\\?",obj==null?"":(obj instanceof Date?("to_date('"+(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date)obj))+"','yyyy-mm-dd hh24:mi:ss')"):((obj instanceof Number)?String.valueOf(obj):("'"+String.valueOf(obj)+"'"))));
+			prettySql=prettySql.replaceFirst("\\?",
+					obj==null?"":
+						(obj instanceof Date?
+								DbTools.getDateFormat((Date)obj, dbtype):
+								((obj instanceof Number)?String.valueOf(obj):
+										("'"+String.valueOf(obj)+"'"))));
 		}
 		return prettySql;
 	}
@@ -63,4 +72,13 @@ public class Rst{
 	public String toString(){
 		return sqlString+paramObjects;
 	}
+
+	public DbType getDbtype() {
+		return dbtype;
+	}
+
+	public void setDbtype(DbType dbtype) {
+		this.dbtype = dbtype;
+	}
+	
 }

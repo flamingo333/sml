@@ -155,9 +155,9 @@ public class SMLParam implements Serializable{
 			result=ClassUtil.convertValueToRequiredType(value2,Double.class);
 		}else if(typev.equals("number")){
 			if(!SmlTools.isEmpty(value2)&&RegexUtils.isNumber(value2)){
-				if(typev.contains(".")){
+				if(value2.contains(".")){
 					result=ClassUtil.convertValueToRequiredType(value2,Double.class);
-				}else if(typev.length()<8){
+				}else if(value2.length()<8){
 					result=ClassUtil.convertValueToRequiredType(value2,Integer.class);
 				}else{
 					result=ClassUtil.convertValueToRequiredType(value2,Number.class);
