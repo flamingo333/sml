@@ -75,7 +75,7 @@ public class SqlTemplate   implements Cloneable,Serializable{
 
 	
 	public Integer getIsCache() {
-		return isCache;
+		return isCache==null?0:isCache;
 	}
 
 	public void setIsCache(Integer isCache) {

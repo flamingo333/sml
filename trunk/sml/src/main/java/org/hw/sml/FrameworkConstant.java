@@ -6,7 +6,13 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.hw.sml.support.LoggerHelper;
+import org.hw.sml.support.conf.Conf;
+import org.hw.sml.support.conf.factory.ConfProvider;
 import org.hw.sml.tools.ClassUtil;
+import org.hw.sml.tools.DateTools;
+import org.hw.sml.tools.MapUtils;
+import org.hw.sml.tools.Resources;
+import org.hw.sml.tools.Urls;
 
 public class FrameworkConstant {
 	public static Map<String,String> smlCfgs=new HashMap<String,String>(){
@@ -21,7 +27,7 @@ public class FrameworkConstant {
 	};
 	public static String DEFAULT="default",VERSION="1.0",AUTHOR="huangwen";
 	public static String CFG_JDBC_INFO="sml.properties";
-	public static String PARAM_TOLOWERCASEFORKEY="toLowerCaseForKey",PARAM_SQLFORMAT="formatSql",PARAM_IGLOG="igLog",PARAM_QUERYTYPE="queryType",PARAM_FLUSHCACHE="FLUSHCACHE",PARAM_OPLINKS="opLinks",PARAM_ISREMOTEPRAMS="isRemoteParams",PARAM_FIELDFILTER="igFieldFilter",PARAM_SHOWSQL="showSql",PARAM_SHOWSQL_DEFAULTV="defaultValue",PARAM_RESULTMAP="resultMap",PARAM_RECACHE="RECACHE",PARAM_FLUSHCACHEKEYS="flushCacheKeys";
+	public static String PARAM_TOLOWERCASEFORKEY="toLowerCaseForKey",PARAM_TOCASEFORKEY="toCaseForKey",PARAM_SQLFORMAT="formatSql",PARAM_IGLOG="igLog",PARAM_QUERYTYPE="queryType",PARAM_FLUSHCACHE="FLUSHCACHE",PARAM_OPLINKS="opLinks",PARAM_ISREMOTEPRAMS="isRemoteParams",PARAM_FIELDFILTER="igFieldFilter",PARAM_SHOWSQL="showSql",PARAM_SHOWSQL_DEFAULTV="defaultValue",PARAM_RESULTMAP="resultMap",PARAM_RECACHE="RECACHE",PARAM_FLUSHCACHEKEYS="flushCacheKeys",PARAM_TEST="__test__";
 	public static String getSupportKey(String type){
 		return getSupportKey(DEFAULT, type);
 	}
@@ -32,20 +38,32 @@ public class FrameworkConstant {
 			return getProperty(frameworkMark+"."+type);
 		}
 	}
+	public static Properties smlConfProperties=new Properties();
 	public static Properties otherProperties=new Properties();
 	static {
 		try{
-			InputStream is=ClassUtil.getClassLoader().getResourceAsStream(System.getProperty("smlProperties",CFG_JDBC_INFO));
-			otherProperties.load(is);
+			String smlFile=System.getProperty("smlProperties",CFG_JDBC_INFO);
+			otherProperties=new Resources(smlFile).parse();
+			smlConfProperties.putAll(otherProperties);
+			String smlConf= otherProperties.getProperty("sml.conf");
+			if(smlConf!=null){
+				Urls urls=Urls.newFtpUrls(smlConf);
+				urls.getParams().put("serverAddr",urls.getHost()+":"+urls.getPort());
+				ConfProvider confProvider=ClassUtil.newInstance(MapUtils.getString(urls.getParams(),"provider","org.hw.sml.config.factory.DefaultConfProvider"));
+				Properties properties=new Properties();
+				properties.putAll(urls.getParams());
+				properties.put("smlConf",smlConf);
+				Conf conf=confProvider.createConf(urls.getSchema(),properties);
+				otherProperties.putAll(conf.getProperties());
+			}
 			reset();
 			String propertyFilesStr=otherProperties.getProperty("file-properties");
-			String profile=otherProperties.getProperty("sml.profile.active");
 			if(propertyFilesStr!=null){
 				for(String file:propertyFilesStr.split(",")){
 					String name=file;
 					InputStream ist=null;
 					try{
-						name=getName(profile,file);
+						name=getName(file);
 						ist=ClassUtil.getClassLoader().getResourceAsStream(name);
 					}catch(Exception e){
 					}finally{
@@ -58,9 +76,13 @@ public class FrameworkConstant {
 					LoggerHelper.getLogger().info(FrameworkConstant.class,"load properties--->"+name);
 				}
 			}
+			
 			sysenv();
+			//Conf
 		}catch(Exception e){
+			LoggerHelper.getLogger().error(FrameworkConstant.class,"init error["+e+"] ignore");
 		}
+		otherProperties.putAll(smlConfProperties);
 	}
 	static void reset(){
 		for(String key:smlCfgs.keySet()){
@@ -83,11 +105,25 @@ public class FrameworkConstant {
 		String result=otherProperties.getProperty(key);
 		return result==null?System.getProperty(key):result;
 	}
-	private static String getName(String profile,String name){
+	//
+	public static String getProfile(){
+		String profile=otherProperties.getProperty("sml.profile.active");
+		if(profile==null){
+			profile=System.getProperty("sml.profile.active");
+		}
+		return profile;
+	}
+	private static String getName(String name){
+		String profile=getProfile();
 		if(profile==null||profile.length()==0){
 			return name;
 		}
 		return name.substring(0,name.lastIndexOf("."))+"-"+profile+name.substring(name.lastIndexOf("."));
 	}
-	
+	public static void main(String[] args) {
+		//1574129437972
+		//1574130508929
+		System.out.println(DateTools.sdf_mis().format(DateTools.parse("1574129437972")));
+		System.out.println(DateTools.sdf_mis().format(DateTools.parse("1574130508929")));
+	}
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.hw.sml.core.RebuildParam;
+import org.hw.sml.core.resolver.Rst;
 import org.hw.sml.model.SMLParam;
 import org.hw.sml.model.SMLParams;
 import org.hw.sml.model.SqlTemplate;
@@ -26,16 +27,21 @@ public class SmlTools {
 		return st;
 	}
 	public static SMLParams toSplParams(String sqlPStr){
+		sqlPStr=sqlPStr==null?"":sqlPStr;
 		String split=",";
 		SMLParams sqlParams=new SMLParams();
 		String[] sps=sqlPStr.split("\n");
 		int i=0;
 		for(String sp:sps){
-			if(i==0&&sp.endsWith("#")){//首行配置分隔符信息
+			if(i==0&&sp.startsWith("#")){//首行配置分隔符信息
 				String tp=sp.replace("#","");
 				if(!tp.equals("")){
 					split=tp;
+					if(split.contains("|")){
+						split=split.replace("|","\\|");
+					}
 				}
+				i++;
 				continue;
 			}
 			i++;
@@ -70,6 +76,7 @@ public class SmlTools {
 	}
 	
 	public static RebuildParam toRebuildParam(String repaStr){
+		repaStr=repaStr==null?"":repaStr;
 		RebuildParam rebuildParam=new RebuildParam();
 		String[] sps=repaStr.split("\n");
 		for(int i=0;i<sps.length;i++){
@@ -125,6 +132,7 @@ public class SmlTools {
 				(
 					obj.getClass().isArray()&&Array.getLength(obj)==0||
 					(obj instanceof Collection)&&((Collection<?>)obj).size()==0||
+					(obj instanceof Rst)&&((Rst)obj).getParamObjects().size()==0||
 					(obj.toString().trim().length()==0)
 				);
 	}
@@ -153,6 +161,7 @@ public class SmlTools {
 				for(Object cl:cls){
 					sb.append(cl).append(",");
 				}
+				if(sb.length()>0)
 				result.put(key,sb.deleteCharAt(sb.length()-1).toString());
 			}else if(value.getClass().isArray()){
 				Object[] objs=(Object[]) value;
@@ -160,6 +169,7 @@ public class SmlTools {
 				for(Object cl:objs){
 					sb.append(cl).append(",");
 				}
+				if(sb.length()>0)
 				result.put(key,sb.deleteCharAt(sb.length()-1).toString());
 			}else{
 				result.put(key,String.valueOf(value));
@@ -179,5 +189,17 @@ public class SmlTools {
 		String tm=sql.substring(start,end+("</"+mark+">").length());
 		return RegexUtils.subString(tm,">",("</"+mark+">")).trim();
 	}
-	
+	public static Rst getRst(String sql,Map<String,String> params){
+		List<Object> paramObjects=MapUtils.newArrayList();
+		List<String> mathers=RegexUtils.matchGroup("#\\w+#",sql);
+		for(String mather:mathers){
+			String property=mather.substring(1, mather.length()-1);
+			sql=sql.replace(mather,"?");
+			paramObjects.add(params.get(property));
+		}
+		return new Rst(sql, paramObjects);
+	}
+	public static void main(String[] args) {
+		SmlTools.toRebuildParam("#\\|#");
+	}
 }

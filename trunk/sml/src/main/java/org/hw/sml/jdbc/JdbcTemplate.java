@@ -38,6 +38,7 @@ public interface JdbcTemplate{
 	  <T> T queryForObject(String sql,Class<T> clazz,Object... params);
 	  <T> T queryForObject(String sql,Class<T> clazz);
 	  <T> List<T> queryForList(String sql,Object[] params,Class<T> clazz);
+	  <T> List<T> queryForList(String sql,Object[] params,Class<T> clazz,int limit);
 	  <T> List<T> queryForList(String sql,Class<T> clazz,Object... params);
 	  <T> List<T> queryForList(String sql,Class<T> clazz);
 	  void setDataSource(DataSource dataSource);	

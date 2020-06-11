@@ -3,9 +3,14 @@ package org.hw.sml.model;
 import java.io.Serializable;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 
 import org.hw.sml.core.build.SmlTools;
+import org.hw.sml.core.resolver.Rst;
+import org.hw.sml.jdbc.JdbcTemplate;
+import org.hw.sml.support.SmlAppContextUtils;
 import org.hw.sml.support.el.ElException;
 import org.hw.sml.support.el.SmlElContext;
 import org.hw.sml.support.ioc.BeanHelper;
@@ -47,6 +52,8 @@ public class SMLParam implements Serializable{
 	private String split=",";
 	
 	private String id;
+	
+	private Map<String,String> doPreParams;
 	
 	public String getSplit() {
 		return split; 
@@ -137,6 +144,18 @@ public class SMLParam implements Serializable{
 					e.printStackTrace();
 				}
 				return;
+			}else if(value2.contains("select ")&&value2.contains(" from ")){
+				String[] sqls=value2.split(":",2);
+				if(sqls.length==2){
+					Rst rst=SmlTools.getRst(sqls[1],doPreParams);
+					JdbcTemplate jt=SmlAppContextUtils.getSqlMarkupAbstractTemplate().getJdbc(sqls[0]);
+					if(type.contains("array")){
+						this.value=jt.queryForList(rst.getSqlString(),toClass(),rst.getParamObjects());
+					}else{
+						this.value=jt.queryForObject(rst.getSqlString(),toClass(),rst.getParamObjects().toArray(new Object[]{}));
+					}
+					return;
+				}
 			}
 		}
 		this.value=convertValue(this.type, value2);
@@ -154,17 +173,7 @@ public class SMLParam implements Serializable{
 		}else if(typev.equals("double")){
 			result=ClassUtil.convertValueToRequiredType(value2,Double.class);
 		}else if(typev.equals("number")){
-			if(!SmlTools.isEmpty(value2)&&RegexUtils.isNumber(value2)){
-				if(value2.contains(".")){
-					result=ClassUtil.convertValueToRequiredType(value2,Double.class);
-				}else if(value2.length()<8){
-					result=ClassUtil.convertValueToRequiredType(value2,Integer.class);
-				}else{
-					result=ClassUtil.convertValueToRequiredType(value2,Number.class);
-				}
-			}else{
-				result=value2;
-			}
+			result=getNumberValue(value2);
 		}else if(typev.equals("array")){
 			result=buildStr(value2);
 		}else if(typev.equals("array-char")||typev.equals("array_char")){
@@ -183,6 +192,13 @@ public class SMLParam implements Serializable{
 				objs[i]=(typev.equals("array-time")||typev.equals("array_time"))?new Time(date.getTime()):date;
 			}
 			result=objs;
+		}else if(typev.equals("array-number")){
+			String vs[]=value2.split(split);
+			Object[] objs=new Object[vs.length];
+			for(int i=0;i<objs.length;i++){
+				String v=vs[i];
+				objs[i]=getNumberValue(v);
+			}
 		}else if(typev.equals("timestamp")||typev.equals("time")){
 			result=new Timestamp(DateTools.parse(value2).getTime());
 		}else{
@@ -216,5 +232,39 @@ public class SMLParam implements Serializable{
 	public void setId(String id) {
 		this.id = id;
 	}
+	private Object getNumberValue(String value2){
+		Object result=value2;
+		if(!SmlTools.isEmpty(value2)&&RegexUtils.isNumber(value2)){
+			if(value2.contains(".")){
+				result=ClassUtil.convertValueToRequiredType(value2,Double.class);
+			}else if(value2.length()<8){
+				result=ClassUtil.convertValueToRequiredType(value2,Integer.class);
+			}else{
+				result=ClassUtil.convertValueToRequiredType(value2,Number.class);
+			}
+		}
+		return result;
+	}
+	public  Class<?> toClass(){
+		String type=this.type.replace("array-","");
+		if(type.equals("date")){
+			return Date.class;
+		}else if(type.equals("number")){
+			return Number.class;
+		}else if(type.equals("int")){
+			return Integer.class;
+		}else if(type.equals("long")){
+			return Long.class;
+		}else if(type.equals("double")){
+			return Double.class;
+		}
+		return String.class;
+	}
+	public void setDoPreParams(Map<String, String> doPreParams) {
+		this.doPreParams = doPreParams;
+	}
 	
+	public static void main(String[] args) {
+		System.out.println(Arrays.asList("aa:aaa1".split(":")));
+	}
 }

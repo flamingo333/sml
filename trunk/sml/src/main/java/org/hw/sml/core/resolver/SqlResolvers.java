@@ -12,12 +12,16 @@ import org.hw.sml.tools.RegexUtils;
 public class SqlResolvers {
 	
 	private Map<String,SqlResolver> alias=MapUtils.newHashMap();
+	public void register(String aliasName,SqlResolver sqlResolver){
+		alias.put(aliasName,sqlResolver);
+	}
 	{
-		alias.put("if",new IfSqlResolver());
-		alias.put("foreach",new ForeachResolver());
-		alias.put("select",new SelectSqlResolver());
-		alias.put("jdbcType",new ParamTypeResolver());
-		alias.put("param",new ParamSqlResolver());
+		register("if",new IfSqlResolver());
+		register("foreach",new ForeachResolver());
+		register("select",new SelectSqlResolver());
+		register("jdbcType",new ParamTypeResolver());
+		register("param",new ParamSqlResolver());
+		register("collection",new CollectionResolver());
 	}
 	
 	private El el;
@@ -37,6 +41,7 @@ public class SqlResolvers {
 		sqlResolvers.add(alias.get("select"));
 		sqlResolvers.add(alias.get("jdbcType"));
 		sqlResolvers.add(alias.get("foreach"));
+		sqlResolvers.add(alias.get("collection"));
 		sqlResolvers.addAll(extResolvers);
 		sqlResolvers.add(alias.get("param"));
 		return this;

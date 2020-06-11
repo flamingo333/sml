@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +184,42 @@ public class ClassUtil {
     			return new Time(tv.getTime());
     		}
     		return tv;
+    	}else if(isDate(requiredType)&&(value instanceof String)){
+    		return DateTools.parse(String.valueOf(value));
+    	}else if(requiredType.isArray()&&value instanceof Collection){
+    		String typeCp=requiredType.getName();
+    		Object[] ov=((Collection) value).toArray();
+    		int size=((Collection)value).size();
+    		try {
+    			Class tp=Class.forName(typeCp.substring(2,typeCp.length()-1));
+				Object arr=Array.newInstance(tp,size);
+				for(int i=0;i<ov.length;i++){
+					Array.set(arr,i,convertValueToRequiredType(ov[i],tp));
+				}
+				return arr;
+			} catch (Exception e) {
+				return value;
+			} 
+    	}else if(requiredType.isArray()&&value instanceof String&&value.toString().startsWith("[")&&value.toString().endsWith("]")){
+    		String typeCp=requiredType.getName();
+    		String rv=value.toString();
+    		String[] ov=null;
+    		if(rv.length()==2){
+    			return new String[]{};
+    		}else{
+    			ov=rv.substring(1,rv.length()-1).split(" ,");
+    		}
+    		int size=ov.length;
+    		try {
+    			Class tp=Class.forName(typeCp.substring(2,typeCp.length()-1));
+				Object arr=Array.newInstance(tp,size);
+				for(int i=0;i<ov.length;i++){
+					Array.set(arr,i,convertValueToRequiredType(ov[i].trim(),tp));
+				}
+				return arr;
+			} catch (Exception e) {
+				return value;
+			} 
     	}else{
 			return value;
 		}
@@ -271,7 +308,7 @@ public class ClassUtil {
     public  static boolean hasClass(String classPath){
     	try{
     		Class.forName(classPath);
-    	}catch(Exception e){
+    	}catch(Throwable e){
     		return false;
     	}
     	return true;
@@ -294,6 +331,9 @@ public class ClassUtil {
     		method.setAccessible(true);
     		return	method.invoke(bean,paramValues);
     	}catch(Exception e){
+    		if(e instanceof InvocationTargetException){
+    			((InvocationTargetException)e).getTargetException().printStackTrace();
+    		}
     		try{
 	    		method=getMethod(bean.getClass(),methodName,parameterTypes);
 	    		method.setAccessible(true);
@@ -308,7 +348,7 @@ public class ClassUtil {
 					}
     				return null;
     			}else{
-    				throw new NoSuchMethodException();
+    				throw new NoSuchMethodException(e.toString());
     			}
     		}
     	}
@@ -351,4 +391,12 @@ public class ClassUtil {
     	}
     	return method;
     }
+	public static boolean existsPkgs(String[] conditionOnExistsPkgs) {
+		for(String coe:conditionOnExistsPkgs){
+			if(!hasClass(coe)){
+				return false;
+			}
+		}
+		return true;
+	}
 }

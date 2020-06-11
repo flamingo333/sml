@@ -1,11 +1,17 @@
 *.class
 .settings/*
+.idea/*/*
+.idea/*
 */*/*.settings/*
 target/*
 */*/target/*
 */*/*.classpath
 .classpath
 *.project
+*.eml
+*.iml
+
+
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

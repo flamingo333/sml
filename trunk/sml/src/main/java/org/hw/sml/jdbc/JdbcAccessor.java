@@ -12,8 +12,13 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
+
+import org.hw.sml.tools.LinkedCaseInsensitiveMap;
+import org.hw.sml.tools.MapUtils;
 
 public abstract class JdbcAccessor {
 	private String charTransCode;
@@ -58,6 +63,14 @@ public abstract class JdbcAccessor {
 				("oracle.sql.TIMESTAMP".equals(className) ||
 				"oracle.sql.TIMESTAMPTZ".equals(className))) {
 			obj = rs.getTimestamp(index);
+		}else if(className!=null&&obj instanceof ResultSet){
+			ResultSet resultSet=(ResultSet) obj;
+			List<Map<String,Object>> resultT=MapUtils.newArrayList();
+			while(resultSet.next()){
+				resultT.add(new MapRowMapper().mapRow(resultSet,0));
+			}
+			DataSourceUtils.safeClose(resultSet);
+			obj=resultT;
 		}
 		else if (className != null && className.startsWith("oracle.sql.DATE")) {
 			String metaDataClassName = rs.getMetaData().getColumnClassName(index);
@@ -91,7 +104,7 @@ public abstract class JdbcAccessor {
 		}else if (isStringValue(inValue.getClass())) {
 			String v=inValue.toString();
 			//if(v.length()<4000)
-				ps.setString(paramIndex,v);
+			ps.setString(paramIndex,v);
 			//else
 			//	ps.setClob(paramIndex,new StringReader(v));
 		}
@@ -141,5 +154,19 @@ public abstract class JdbcAccessor {
 	public void setCharTransCode(String charTransCode) {
 		this.charTransCode = charTransCode;
 	}
-	
+
+	private static  class MapRowMapper implements  RowMapper<Map<String,Object>> {
+		public Map<String, Object> mapRow(ResultSet rs, int rowNum)
+				throws SQLException {
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columnCount = rsmd.getColumnCount();
+			Map<String, Object> mapOfColValues = new LinkedCaseInsensitiveMap<Object>();
+			for (int i = 1; i <= columnCount; i++) {
+				String key = lookupColumnName(rsmd, i);
+				Object obj = getResultSetValue(rs, i);
+				mapOfColValues.put(key, obj);
+			}
+			return mapOfColValues;
+		}
+	}
 }

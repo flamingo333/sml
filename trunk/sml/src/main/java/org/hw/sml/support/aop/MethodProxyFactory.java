@@ -55,6 +55,7 @@ public class MethodProxyFactory {
    		if(lst.isEmpty()){
    			return (T)proxyTarget;
    		}
-	    return aop.newProxyInstance(proxyTarget, lst.toArray(new AbstractAspect[]{}));
+	    T obj= aop.newProxyInstance(proxyTarget, lst.toArray(new AbstractAspect[]{}));
+	    return obj;
     }
 }

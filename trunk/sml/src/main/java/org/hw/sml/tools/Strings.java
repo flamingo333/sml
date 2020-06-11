@@ -56,7 +56,18 @@ public class Strings {
 	public String toUpperCaseFirst(){
 		return elp.substring(0,1).toUpperCase()+elp.substring(1);
 	}
-	
+	public static String join(String[] strs,String join){
+		if(strs==null||strs.length==0){
+			return "";
+		}
+		StringBuffer sb=new StringBuffer();
+		for(int i=0;i<strs.length;i++){
+			sb.append(strs[i]);
+			if(i<strs.length-1)
+				sb.append(join);
+		}
+		return sb.toString();
+	}
 	public static void main(String[] args) {
 		String str="1,2,3,4,(5(,(,,,,)6,))";
 		System.out.println(Arrays.asList(new Strings(str).splitToken(',','(',')')));

@@ -9,7 +9,7 @@
    比较友好的体验。对于报表所返回的接口支持聚合函数返回图表数据。
    对配置类不需要开发，可直接进行配置达到快速使用增删改查功能的效果
 
-2. `base_url`=http://10.221.247.7:8080/services/ws/rest/query/report_query/ (现网)
+2. `base_url`=http://localhost:8080/services/ws/rest/query/report_query/ (现网)
 
 ### 后台表设计
 

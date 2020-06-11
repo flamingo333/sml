@@ -42,7 +42,7 @@ public class Test {
 	            return t;
 	        }
 	    }
-	public static void main(String[] args) throws IOException, ElException {
+	public static void main1(String[] args) throws IOException, ElException {
 		BeanHelper.start();
 		JsEngine.evel("");
 		StopWatch sw=new StopWatch("eval");
@@ -76,5 +76,9 @@ public class Test {
 				}
 			}).start();
 		}
+	}
+	
+	public static void main(String[] args) {
+
 	}
 }

@@ -7,8 +7,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.cert.CertificateException;
@@ -26,17 +29,29 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
 /**
- * httpclient  get|post
+ * httpclient  get|post|put|delete
  * @author wen
  *
  */
 public class Https {
 	public static final String METHOD_GET="GET";
 	public static final String METHOD_POST="POST";
+	public static final String METHOD_PUT="PUT";
+	public static final String METHOD_DELETE="DELETE";
 	byte[] bytes=new byte[512];
 	private boolean keepAlive=true;
 	private int readTimeout;
 	private List<ConnectionPre> connectionLinks=MapUtils.newArrayList();
+	private List<ConnectionPre> connectionAfter=MapUtils.newArrayList();
+	private Failover[] failovers;
+	private boolean bosClose=true;
+	private boolean isClose=true;
+	
+	private static ArrayJsonMapper jsonMapper;
+	public static void bindJsonMapper(ArrayJsonMapper arrayJsonMapper){
+		jsonMapper=arrayJsonMapper;
+	}
+	
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
 		return this;
@@ -45,10 +60,66 @@ public class Https {
 		connectionLinks.add(connectionPre);
 		return this;
 	}
+	public Https registerConnectionAfter(ConnectionPre connectionPre){
+		connectionAfter.add(connectionPre);
+		return this;
+	}
+	public Https failover(String ... urls){
+		failovers=new Failover[urls.length];
+		for(int i=0;i<urls.length;i++){
+			failovers[i]=new Failover(urls[i],1);
+		}
+		return this;
+	}
+	public static class Failover{
+		private String url;
+		private int retry=1;
+		private int timewait=0;
+		public Failover(String url,int retry){
+			this.url=url;
+			this.retry=retry;
+		}
+		public Failover(String url,int retry,int timewait){
+			this.url=url;
+			this.retry=retry;
+			this.timewait=timewait;
+		}
+	}
+	public Https failover(Failover ...fos){
+		List<Failover> fail=MapUtils.newArrayList();
+		for(Failover fo:fos){
+			for(int i=0;i<fo.retry;i++){
+				fail.add(fo);
+			}
+		}
+		this.failovers=fail.toArray(new Failover[0]);
+		return this;
+	}
 	public Https registerTrust(){
 		return registerConnectionPre(new Trust());
 	}
+	/**
+	 *url:  
+	 *http:// 
+	 *https://
+	 *failover:http://localhost:8080/a/b/c,http://localhost:8080/b/c/d 
+	 * 
+	 */
 	private Https(String url){
+		if(url.startsWith("failover:")){
+			url=url.replaceFirst("failover:","");
+			String[] urls=url.split(",");
+			if(urls.length>1){
+				failovers=new Failover[urls.length-1];
+			}
+			for(int i=0;i<urls.length;i++){
+				if(i==0){
+					this.url=urls[i];
+				}else{
+					failovers[i-1]=new Failover(urls[i],1);
+				}
+			}
+		}else
 		this.url=url;
 	}
 	private OutputStream bos=new ByteArrayOutputStream();
@@ -112,6 +183,12 @@ public class Https {
 		getParamer().add1(name, value);
 		return this;
 	}
+	public Https methodToPut(){
+		return method(METHOD_PUT);
+	}
+	public Https methodToDelete(){
+		return method(METHOD_DELETE);
+	}
 	public Https connectTimeout(int timeout){
 		this.connectTimeout=timeout;
 		return this;
@@ -122,7 +199,13 @@ public class Https {
 		getHeader().put("Proxy-Authorization", "Basic "+DatatypeConverter.printBase64Binary(auths.getBytes()));
 		return this;
 	}
-	private Https method(String method){
+	public Https proxy(String host,int port,String auths){
+		return proxy(new Proxy(Proxy.Type.SOCKS,new InetSocketAddress(host,port)), auths);
+	}
+	public Https proxy(String host,int port){
+		return proxy(host, port, null);
+	}
+	public Https method(String method){
 		this.method=method;
 		return this;
 	}
@@ -141,6 +224,11 @@ public class Https {
 	}
 	public Header getHeader() {
 		return header;
+	}
+	public Https retry(int retry){
+		if(retry>1)
+			this.failover(new Failover(url,retry-1));
+		return this;
 	}
 	public Https upFile(String boundary){
 		isUpload=true;
@@ -164,6 +252,9 @@ public class Https {
 		public Paramer param(String queryParamStr){this.queryParamStr=queryParamStr;return this;}
 		public Paramer add(String name,String value){
 			return add1(name,value);
+		}
+		public Map<String,Object> getParams(){
+			return params;
 		}
 		public Paramer add(String name,String[] value){
 			return add1(name,value);
@@ -201,7 +292,7 @@ public class Https {
 		}
 		private String requestCharset=charset;
 		private String responseCharset=charset;
-		private Map<String,String> header=MapUtils.newLinkedHashMap();
+		private Map<String,String> header=new LinkedCaseInsensitiveMap<String>();
 		public Header put(String name,String value){
 			if(name==null||value==null){
 				return this;
@@ -243,6 +334,14 @@ public class Https {
 	public int getResponseStatus(){
 		return responseStatus;
 	}
+	public Https bosClose(boolean bosClose){
+		this.bosClose=bosClose;
+		return this;
+	}
+	public Https isClose(boolean isClose){
+		this.isClose=isClose;
+		return this;
+	}
 	private String responseMessage;
 	public String getResponseMessage(){
 		return responseMessage;
@@ -251,8 +350,28 @@ public class Https {
 		if(qps!=null&&(this.method.equals(METHOD_GET)||body!=null)) url+=(url.contains("?")?"&":"?")+qps;
 		return this;
 	}
-	
+	static AtomicInteger urlChoose=new AtomicInteger(0);
 	public byte[] query() throws IOException{
+		byte[] bs=null;
+		try{
+			bs=this.query0();
+			return bs;
+		}catch(IOException e){
+			int urlChooseIndx=urlChoose.getAndIncrement();
+			if((e instanceof ConnectException||e instanceof SocketTimeoutException||getResponseStatus()==503)&&failovers!=null&&failovers.length>urlChooseIndx){
+				this.url=failovers[urlChooseIndx].url;
+				try {
+					Thread.sleep(failovers[urlChooseIndx].timewait);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				return query();
+			}else
+				throw e;
+		}
+	}
+	public byte[] query0() throws IOException{
+		boolean isOk=true;
 		String qps=this.paramer.builder(header.requestCharset);
 		buildUrl(qps);
 		URL realUrl = new URL(url);
@@ -273,12 +392,15 @@ public class Https {
 			}
 			conn.setDoOutput(true);
 			conn.setRequestMethod(this.method);
+			if(url.startsWith("https")&&connectionLinks.isEmpty()){
+				registerTrust();
+			}
 			for(ConnectionPre connectionPre:connectionLinks){
 				connectionPre.doConnectionBefore(conn);
 			}
-			if(this.method.equals(METHOD_POST)){
+			if(!this.method.equals(METHOD_GET)){
 				conn.setDoInput(true);
-				conn.setUseCaches(cache);
+				//conn.setUseCaches(cache);
 				out=conn.getOutputStream();
 				if(body!=null){
 					if(body instanceof String)
@@ -307,14 +429,20 @@ public class Https {
 						}
 						ds.writeBytes("--"+boundary+"--\r\n");
 						ds.writeBytes("\r\n");
-					}else
+					}else if(body instanceof InputStream){
+						IOUtils.copy(out,(InputStream)body);
+					}else{
 						out.write((byte[])body);
+					}
 				}else if(qps!=null){
 					out.write(qps.getBytes());
 				}
 				out.flush();
 			}
 			conn.connect();
+			for(ConnectionPre connectionPre:connectionAfter){
+				connectionPre.doConnectionBefore(conn);
+			}
 			if(conn.getResponseCode()==200)
 				is=conn.getInputStream();
 			else
@@ -331,23 +459,24 @@ public class Https {
 				responseHeader.put(entry.getKey(),entry.getValue().get(0));
 			}
 		}catch(IOException e){
+			isOk=!(e instanceof ConnectException||e instanceof SocketTimeoutException)&&failovers!=null;
 			throw e;
 		}finally{
-			if(conn!=null){
-				this.responseStatus=conn.getResponseCode();
-				this.responseMessage=conn.getResponseMessage();
-			}
-			if(conn!=null&&!keepAlive)
-				conn.disconnect();
-			if(out!=null)
-				out.close();
-			if(is!=null)
-				is.close();
-			if(ds!=null)
-				ds.close();
-			if(bos!=null){
-				bos.close();
-			}
+				if(conn!=null&&isOk){
+					this.responseStatus=conn.getResponseCode();
+					this.responseMessage=conn.getResponseMessage();
+				}
+				if(conn!=null&&!keepAlive&&isOk)
+					conn.disconnect();
+				if(out!=null)
+					out.close();
+				if(is!=null&&isClose)
+					is.close();
+				if(ds!=null)
+					ds.close();
+				if(bos!=null&&bosClose){
+					bos.close();
+				}
 		}
 		return (bos instanceof ByteArrayOutputStream)?((ByteArrayOutputStream)bos).toByteArray():new byte[0];
 	}
@@ -356,6 +485,10 @@ public class Https {
 		return this;
 	}
 	public Https body(byte[] requestBody){
+		this.body=requestBody;
+		return this;
+	}
+	public Https body(InputStream requestBody){
 		this.body=requestBody;
 		return this;
 	}
@@ -369,7 +502,15 @@ public class Https {
 	public String execute() throws IOException{
 		return new String(query(),header.responseCharset);
 	}
-	
+	public <T> List<T> queryForList(Class<T> clazz) throws IOException{
+		return jsonMapper.toArray(execute(),clazz);
+	}
+	public <T> T queryForObject(Class<T> clazz) throws IOException{
+		if(clazz.isAssignableFrom(String.class)){
+			return (T)execute();
+		}
+		return jsonMapper.toObj(execute(),clazz);
+	}
 	public Object getBody() {
 		return body;
 	}
@@ -428,7 +569,42 @@ public class Https {
 		public X509Certificate[] getAcceptedIssuers() {
 			return null;
 		}  
-		
-	}  
-	
+	} 
+	public static <T> T getForObject(String url,Class<T> clazz,String...urlVs) throws IOException{
+		url=buildUrl(url,urlVs);
+		return newGetHttps(url).queryForObject(clazz);
+	}
+	public static <T> T postForObject(String url,Class<T> clazz,Object requestEntity) throws IOException{
+		String requestBody=buildRequestBody(requestEntity);
+		return newPostBodyHttps(url).body(requestBody).queryForObject(clazz);
+	}
+	public static <T> List<T> getForList(String url,Class<T> clazz,String ... urlVs) throws IOException{
+		url=buildUrl(url,urlVs);
+		return newGetHttps(url).queryForList(clazz);
+	}
+	public static <T> T postForList(String url,Class<T> clazz,Object requestEntity) throws IOException{
+		String requestBody=buildRequestBody(requestEntity);
+		return newPostBodyHttps(url).body(requestBody).queryForObject(clazz);
+	}
+	private static String buildUrl(String url,String[] urlVs){
+		if(urlVs!=null){
+			for(int i=0;i<urlVs.length;i++){
+				try {
+					url=url.replace("{"+i+"}",URLEncoder.encode(urlVs[i],"utf-8"));
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return url;
+	}
+	private static String buildRequestBody(Object entity){
+		if(entity==null){
+			return null;
+		}else if(entity instanceof String){
+			return (String)entity;
+		}else{
+			return jsonMapper.toJson(entity);
+		}
+	}
 }

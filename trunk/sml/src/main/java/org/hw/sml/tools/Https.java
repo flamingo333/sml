@@ -28,6 +28,8 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
+
+import org.hw.sml.queryplugin.ArrayJsonMapper;
 /**
  * httpclient  get|post|put|delete
  * @author wen
@@ -37,7 +39,7 @@ public class Https {
 	public static final String METHOD_GET="GET";
 	public static final String METHOD_POST="POST";
 	public static final String METHOD_PUT="PUT";
-	public static final String METHOD_DELETE="POST";
+	public static final String METHOD_DELETE="DELETE";
 	byte[] bytes=new byte[512];
 	private boolean keepAlive=true;
 	private int readTimeout;
@@ -46,9 +48,21 @@ public class Https {
 	private Failover[] failovers;
 	private boolean bosClose=true;
 	private boolean isClose=true;
+	private boolean instanceFollowRedirects=true;
+	public static void allowRestrictedHeaders(boolean flag){
+		System.setProperty("sun.net.http.allowRestrictedHeaders",String.valueOf(flag));
+	}
+	private static ArrayJsonMapper jsonMapper;
+	public static void bindJsonMapper(ArrayJsonMapper arrayJsonMapper){
+		jsonMapper=arrayJsonMapper;
+	}
 	
 	public Https withReadTimeout(int readTimeout){
 		this.readTimeout=readTimeout;
+		return this;
+	}
+	public Https instanceFollowRedirects(boolean instanceFollowRedirects){
+		this.instanceFollowRedirects=instanceFollowRedirects;
 		return this;
 	}
 	public Https registerConnectionPre(ConnectionPre connectionPre){
@@ -138,7 +152,21 @@ public class Https {
 		return this;
 	}
 	public Https basicAuth(String credentials){
-		return auth("Basic",DatatypeConverter.printBase64Binary(credentials.getBytes()));
+		return auth("Basic",Base64.encode(credentials));
+	}
+	public static class Base64{
+		public static String encode(String data){
+			return encode(data.getBytes());
+		}
+		public static String encode(byte[] bytes){
+			return DatatypeConverter.printBase64Binary(bytes);
+		}
+		public static byte[] decode(String data){
+			return DatatypeConverter.parseBase64Binary(data);
+		}
+		public static String decodeString(String data){
+			return new String(decode(data));
+		}
 	}
 	public static Https newPostFormHttps(String url){
 		Https https= new Https(url).method(METHOD_POST);
@@ -191,11 +219,15 @@ public class Https {
 	public Https proxy(Proxy proxy,String auths){
 		this.proxy=proxy;
 		if(auths!=null)
-		getHeader().put("Proxy-Authorization", "Basic "+DatatypeConverter.printBase64Binary(auths.getBytes()));
+		getHeader().put("Proxy-Authorization", "Basic "+Base64.encode(auths.getBytes()));
 		return this;
 	}
 	public Https proxy(String host,int port,String auths){
 		return proxy(new Proxy(Proxy.Type.SOCKS,new InetSocketAddress(host,port)), auths);
+	}
+	public Https proxy(String socks){
+		Urls urls=Urls.newUrls(socks);
+		return proxy(urls.getHost(),urls.getPort(),urls.getPassword()==null?null:(urls.getUsername()+":"+urls.getPassword()));
 	}
 	public Https proxy(String host,int port){
 		return proxy(host, port, null);
@@ -220,6 +252,11 @@ public class Https {
 	public Header getHeader() {
 		return header;
 	}
+	public Https retry(int retry){
+		if(retry>1)
+			this.failover(new Failover(url,retry-1));
+		return this;
+	}
 	public Https upFile(String boundary){
 		isUpload=true;
 		this.boundary=boundary;
@@ -242,6 +279,9 @@ public class Https {
 		public Paramer param(String queryParamStr){this.queryParamStr=queryParamStr;return this;}
 		public Paramer add(String name,String value){
 			return add1(name,value);
+		}
+		public Map<String,Object> getParams(){
+			return params;
 		}
 		public Paramer add(String name,String[] value){
 			return add1(name,value);
@@ -345,7 +385,7 @@ public class Https {
 			return bs;
 		}catch(IOException e){
 			int urlChooseIndx=urlChoose.getAndIncrement();
-			if((e instanceof ConnectException||e instanceof SocketTimeoutException)&&failovers!=null&&failovers.length>urlChooseIndx){
+			if((e instanceof ConnectException||e instanceof SocketTimeoutException||getResponseStatus()==503)&&failovers!=null&&failovers.length>urlChooseIndx){
 				this.url=failovers[urlChooseIndx].url;
 				try {
 					Thread.sleep(failovers[urlChooseIndx].timewait);
@@ -357,7 +397,18 @@ public class Https {
 				throw e;
 		}
 	}
+	private int responseContentLength;
+	private int requestContentLength;
+	private boolean onlyIs;
+	public Https onlyIs(){
+		onlyIs=true;
+		isClose(false);
+		return this;
+	}
+	private InputStream inputStream;
+	
 	public byte[] query0() throws IOException{
+		responseContentLength=0;
 		boolean isOk=true;
 		String qps=this.paramer.builder(header.requestCharset);
 		buildUrl(qps);
@@ -370,6 +421,7 @@ public class Https {
 		DataOutputStream ds=null;
 		try{
 			conn=(HttpURLConnection) (proxy==null?realUrl.openConnection():realUrl.openConnection(proxy));
+			conn.setInstanceFollowRedirects(instanceFollowRedirects);
 			for(Map.Entry<String,String> entry:header.header.entrySet())
 				conn.addRequestProperty(entry.getKey(),entry.getValue());
 			if(connectTimeout!=0)
@@ -379,17 +431,22 @@ public class Https {
 			}
 			conn.setDoOutput(true);
 			conn.setRequestMethod(this.method);
+			if(url.startsWith("https")&&connectionLinks.isEmpty()){
+				registerTrust();
+			}
 			for(ConnectionPre connectionPre:connectionLinks){
 				connectionPre.doConnectionBefore(conn);
 			}
-			if(this.method.equals(METHOD_POST)){
+			if(!this.method.equals(METHOD_GET)&&!this.method.equals(METHOD_DELETE)){
 				conn.setDoInput(true);
-				conn.setUseCaches(cache);
+				//conn.setUseCaches(cache);
 				out=conn.getOutputStream();
 				if(body!=null){
-					if(body instanceof String)
-						out.write(body.toString().getBytes(header.requestCharset));
-					else if(isUpload&&body.getClass().isArray()&&Array.get(body,0) instanceof UpFile){
+					if(body instanceof String){
+						byte[] tb=body.toString().getBytes(header.requestCharset);
+								requestContentLength+=tb.length;
+						out.write(tb);
+					}else if(isUpload&&body.getClass().isArray()&&Array.get(body,0) instanceof UpFile){
 						ds=new DataOutputStream(out);
 						for(Map.Entry<String,Object> entry:this.paramer.params.entrySet()){
 							ds.writeBytes("--"+boundary+"\r\n");
@@ -414,9 +471,19 @@ public class Https {
 						ds.writeBytes("--"+boundary+"--\r\n");
 						ds.writeBytes("\r\n");
 					}else if(body instanceof InputStream){
-						IOUtils.copy(out,(InputStream)body);
+						requestContentLength=IOUtils.copy(out,(InputStream)body);
+					}else if(body.getClass().equals(byte[].class)){
+						byte[] tb=(byte[]) body;
+						requestContentLength=tb.length;
+						out.write(tb);
 					}else{
-						out.write((byte[])body);
+						if(jsonMapper==null){
+							throw new IllegalArgumentException("jsonMapper not inited");
+						}
+						String bodyStr=getJsonMapper().toJson(body);
+						byte[] tb=bodyStr.toString().getBytes(header.requestCharset);
+						requestContentLength+=tb.length;
+						out.write(tb);
 					}
 				}else if(qps!=null){
 					out.write(qps.getBytes());
@@ -424,6 +491,10 @@ public class Https {
 				out.flush();
 			}
 			conn.connect();
+			responseHeader=new Header(null,null);
+			for(Map.Entry<String,List<String>> entry:conn.getHeaderFields().entrySet()){
+				responseHeader.put(entry.getKey(),entry.getValue().get(0));
+			}
 			for(ConnectionPre connectionPre:connectionAfter){
 				connectionPre.doConnectionBefore(conn);
 			}
@@ -434,11 +505,15 @@ public class Https {
 			if(is==null){
 				is=conn.getInputStream();
 			}
+			if(onlyIs){
+				inputStream=is;
+				return new byte[0];
+			}
 			int temp=-1;
 			while((temp=is.read(bytes))!=-1){
+				responseContentLength+=temp;
 				bos.write(bytes,0,temp);
 			}
-			responseHeader=new Header(null,null);
 			for(Map.Entry<String,List<String>> entry:conn.getHeaderFields().entrySet()){
 				responseHeader.put(entry.getKey(),entry.getValue().get(0));
 			}
@@ -486,12 +561,44 @@ public class Https {
 	public String execute() throws IOException{
 		return new String(query(),header.responseCharset);
 	}
-	
+	public <T> List<T> queryForList(Class<T> clazz) throws IOException{
+		return jsonMapper.toArray(execute(),clazz);
+	}
+	public <T> T queryForObject(Class<T> clazz) throws IOException{
+		if(clazz.isAssignableFrom(String.class)){
+			return (T)execute();
+		}
+		return jsonMapper.toObj(execute(),clazz);
+	}
 	public Object getBody() {
 		return body;
 	}
 	public Paramer getParamer() {
 		return paramer;
+	}
+	public void call(IOUtils.Process<String> process) throws IOException{
+		onlyIs();
+		this.execute();
+		IOUtils.readLine(inputStream,"utf8", process);
+	}
+	public static abstract class DefaultProcess implements IOUtils.Process<String>{
+		@Override
+		public void process(long index, String line) {
+			if(line!=null){
+				if((line.startsWith("W")||line.startsWith("e"))){
+					byte[] bs=Base64.decode(line);
+					if(bs.length>0)
+						read(index,new String(bs));
+				}else if(line.length()>0){
+					throw new RuntimeException(line);
+				}
+			}
+		}
+		public abstract void read(long index,String obj);
+		@Override
+		public void end() {
+			
+		}
 	}
 	public static UpFile newUpFile(String name,InputStream is){
 		return new UpFile(name, is);
@@ -545,6 +652,56 @@ public class Https {
 		public X509Certificate[] getAcceptedIssuers() {
 			return null;
 		}  
-		
-	}  
+	} 
+	public static <T> T getForObject(String url,Class<T> clazz,String...urlVs) throws IOException{
+		url=buildUrl(url,urlVs);
+		return newGetHttps(url).queryForObject(clazz);
+	}
+	public static <T> T postForObject(String url,Class<T> clazz,Object requestEntity) throws IOException{
+		String requestBody=buildRequestBody(requestEntity);
+		return newPostBodyHttps(url).body(requestBody).queryForObject(clazz);
+	}
+	public static <T> List<T> getForList(String url,Class<T> clazz,String ... urlVs) throws IOException{
+		url=buildUrl(url,urlVs);
+		return newGetHttps(url).queryForList(clazz);
+	}
+	public static <T> T postForList(String url,Class<T> clazz,Object requestEntity) throws IOException{
+		String requestBody=buildRequestBody(requestEntity);
+		return newPostBodyHttps(url).body(requestBody).queryForObject(clazz);
+	}
+	private static String buildUrl(String url,String[] urlVs){
+		if(urlVs!=null){
+			for(int i=0;i<urlVs.length;i++){
+				try {
+					url=url.replace("{"+i+"}",URLEncoder.encode(urlVs[i],"utf-8"));
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return url;
+	}
+	private static String buildRequestBody(Object entity){
+		if(entity==null){
+			return null;
+		}else if(entity instanceof String){
+			return (String)entity;
+		}else{
+			return jsonMapper.toJson(entity);
+		}
+	}
+	
+	public InputStream getInputStream() {
+		return inputStream;
+	}
+
+	public int getResponseContentLength() {
+		return responseContentLength;
+	}
+	public int getRequestContentLength(){
+		return requestContentLength;
+	}
+	public static ArrayJsonMapper getJsonMapper(){
+		return jsonMapper;
+	}
 }

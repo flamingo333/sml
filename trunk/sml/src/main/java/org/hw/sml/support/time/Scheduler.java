@@ -27,9 +27,6 @@ public class Scheduler implements Plugin{
 	
 	public Scheduler(){
 		executor = Executors.newScheduledThreadPool(1);  
-		if(firstTime==null){
-			firstTime=DateTools.trunc(DateTools.addMinutes(new Date(),1),1000);
-		}
 	}
 	
 	public void cancel(){
@@ -39,6 +36,13 @@ public class Scheduler implements Plugin{
 	public void init() {
 		if(task==null){
 			return;
+		}
+		if(getDelay()<60){
+			firstTime=new Date(System.currentTimeMillis()/1000*1000);
+		}else{
+			if(firstTime==null){
+				firstTime=DateTools.trunc(DateTools.addMinutes(new Date(),1),1000);
+			}
 		}
 		task.setScheduler(this);
 	}

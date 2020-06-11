@@ -20,10 +20,17 @@ import org.hw.sml.tools.MapUtils;
  *后续通过classpath反射生成DataBuilder类实现需要数据
  */
 public class DataBuilderHelper {
+	private static Map<String,BuilderFactory> buildFactorys=MapUtils.newHashMap();
 	public static Map<Integer,String> classType=new HashMap<Integer,String>();
 	public static List<String> splitClass=new ArrayList<String>();
 	static String classPathPreFix=FrameworkConstant.getSupportKey("CFG_DEFAULT_BUILDER_CLASS");
     static AbstractDataBuilder DEFAULT=new DefaultDataBuilder();
+    public static void registerBuildFactory(String schema,BuilderFactory builderFactory){
+    	if(buildFactorys.containsKey(schema)){
+			throw new RuntimeException("conflict buildFactory exists schema["+schema+"], current is["+buildFactorys.get(schema).getClass()+"]!");
+    	}
+    	buildFactorys.put(schema,builderFactory);
+    }
 	static{
 		classType.put(0,classPathPreFix+".DefaultDataBuilder");
 		classType.put(1,classPathPreFix+".FieldDataBuilder");
@@ -58,6 +65,15 @@ public class DataBuilderHelper {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+		}else if(!buildFactorys.isEmpty()&&rebuildParam.getClasspath().contains(":")){
+			String[] cls=rebuildParam.getClasspath().split(":",2);
+			BuilderFactory builderFactory=buildFactorys.get(cls[0]);
+			if(builderFactory!=null){
+				AbstractDataBuilder at=builderFactory.getBuilder(cls[1]);
+				if(at!=null){
+					adm=at;
+				}
+			}
 		}else{
 			String rebuildPath=getClassPath(rebuildParam);
 			try {
@@ -66,8 +82,12 @@ public class DataBuilderHelper {
 				e.printStackTrace();
 			}
 		}
-		if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)))
-			datas=(List<T>) MapUtils.toLowerCaseForKey((List<Map<String,Object>>)datas);
+		if(rebuildParam.get(FrameworkConstant.PARAM_TOCASEFORKEY)!=null){
+			datas=(List<T>)MapUtils.toCaseForKey((List<Map<String,Object>>)datas,rebuildParam.get(FrameworkConstant.PARAM_TOCASEFORKEY));
+		}else{
+			if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)))
+				datas=(List<T>) MapUtils.toLowerCaseForKey((List<Map<String,Object>>)datas);
+		}
 		if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER))){
 			datas=(List<T>) MapUtils.rebuildMp((List<Map<String,Object>>)datas,rebuildParam.getOriFields(),rebuildParam.getNewFields(),true);
 		}
@@ -101,7 +121,7 @@ public class DataBuilderHelper {
 	
 	public static String getClassPath(RebuildParam rebuildParam){
 		String classpath=rebuildParam.getClasspath();
-		if(classpath!=null){
+		if(SmlTools.isNotEmpty(classpath)){
 			if(!classpath.contains(".")){
 				classpath=classPathPreFix+"."+classpath;
 			}

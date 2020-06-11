@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.core.resolver.Rst;
+import org.hw.sml.model.DbType;
 import org.hw.sml.tools.DateTools;
+import org.hw.sml.tools.DbTools;
 import org.hw.sml.tools.MapUtils;
 import org.hw.sml.tools.Maps;
 
@@ -22,7 +25,9 @@ public class SqlFilterHelper {
 		OPERATORS.put("eq","=");
 		OPERATORS.put("ne","!=");
 		OPERATORS.put("like","like");
+		OPERATORS.put("ilike","ilike");
 		OPERATORS.put("notlike","not like");
+		OPERATORS.put("notilike","not ilike");
 		OPERATORS.put("in","in");
 		OPERATORS.put("notin","not in");
 	}
@@ -33,7 +38,10 @@ public class SqlFilterHelper {
 	 * @param params
 	 * @return
 	 */
-	public static String createConditionSql(Map<String,String> params){
+	public static Rst createConditionSqlReturnRst(Map<String,String> params,DbType dbType){
+		Rst rst=new Rst();
+		rst.setDbtype(dbType);
+		List<Object> paramObjects=MapUtils.newArrayList();
 		StringBuffer sb=new StringBuffer();
 		Map<String,List<Map<String,String>>> orConditions=MapUtils.newHashMap();
 		for(Map.Entry<String,String> entry:params.entrySet()){
@@ -56,12 +64,23 @@ public class SqlFilterHelper {
 				String operator=OPERATORS.get(type);
 				if(operator.contains("in")){
 					String[] vs=value.split(",");
-					sb.append(" and "+fieldName+" "+operator+" ("+buildInStrs(type,vs)+")");
+					sb.append(" and "+fieldName+" "+operator+" ("+buildInStrsPre(type,vs)+")");
+					paramObjects.addAll(getObjects(fieldType, vs));
 				}else{
-					if(operator.contains("like"))
-						sb.append(" and "+fieldName+" "+operator+" '%"+value+"%'");
-					else
-						sb.append(" and "+fieldName+" "+operator+" "+buildV(fieldType, value)+"");
+					if(operator.contains("like")){
+						if(operator.contains("ilike")){
+							operator=operator.replace("ilike","like");
+							value=value.toLowerCase();
+							sb.append(" and lower("+fieldName+") "+operator);
+						}else{
+							sb.append(" and "+fieldName+" "+operator);
+						}
+						sb.append(" "+buildLikeValuePre(dbType));
+						paramObjects.add(value);
+					}else{
+						sb.append(" and "+fieldName+" "+operator+"?");
+						paramObjects.addAll(getObjects(fieldType,new String[]{value}));
+					}
 				}
 			}
 		}
@@ -73,27 +92,63 @@ public class SqlFilterHelper {
 				String operator=OPERATORS.get(value.get("type"));
 				if(operator.contains("in")){
 					String[] vs=value.get("value").split(",");
-					sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" ("+buildInStrs(value.get("type"),vs)+")");
+					sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" ("+buildInStrsPre(value.get("type"),vs)+")");
+					paramObjects.addAll(getObjects(value.get("type"), vs));
 				}else{
-					if(operator.contains("like"))
-						sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" '%"+value.get("value")+"%'");
-					else
-						sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" "+buildV(value.get("fieldType"), value.get("value")
-						)+"");
+					String vtype=value.get("fieldType");
+					String vt=value.get("value");
+					if(operator.contains("like")){
+						if(operator.contains("ilike")){
+							operator=operator.replace("ilike","like");
+							vt=vt.toLowerCase();
+							sb.append((i==0?"":" or lower(")+value.get("fieldName")+") "+operator+" ");
+						}else{
+							sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" ");
+						}
+						sb.append(buildLikeValuePre(dbType));
+						paramObjects.add(vt);
+					}else{
+						sb.append((i==0?"":" or ")+value.get("fieldName")+" "+operator+" ?"
+						+" ");
+						paramObjects.addAll(getObjects(vtype,new String[]{vt}));
+					}
 				}
 				i++;
 			}
 			sb.append(") ");
 		}
-		return sb.toString();
+		String sql= sb.toString();
+		rst.setSqlString(sql);
+		rst.setParamObjects(paramObjects);
+		return rst;
 	}
-	public static String buildV(String type,String value){
+	public static String buildLikeValuePre(DbType dbType){
+		if(dbType.equals(DbType.oracle)){
+			return "'%'||?||'%'";
+		}else{
+			return "concat('%',?,'%')";
+		}
+	}
+	public static String createConditionSql(Map<String,String> params,DbType dbType){
+		return createConditionSqlReturnRst(params, dbType).getPrettySqlString();
+	}
+	public static String createConditionSql(Map<String,String> params){
+		return createConditionSql(params,DbType.oracle);
+	}
+	public static String buildV(DbType dbType,String type,String value){
 		if(type.equals("date")){
-			return "to_date('"+DateTools.getFormatTime(DateTools.parse(value),"yyyy-MM-dd HH:mm:ss")+"','yyyy-mm-dd hh24:mi:ss')";
+			return DbTools.getDateFormat(DateTools.parse(value), dbType);
 		}else if(type.equals("number")){
 			return value;
 		}
 		return "'"+value+"'";
+	}
+	public static String buildInStrsPre(String type,String[] vs){
+		StringBuffer sb=new StringBuffer();
+		for(int i=0;i<vs.length;i++){
+			sb.append("?,");
+		}
+		return sb.deleteCharAt(sb.length()-1).toString();
 	}
 	public static String buildInStrs(String type,String[] vs){
 		StringBuffer sb=new StringBuffer();
@@ -102,14 +157,27 @@ public class SqlFilterHelper {
 		}
 		return sb.deleteCharAt(sb.length()-1).toString();
 	}
+	public static List<Object> getObjects(String type,String[] vs){
+		List<Object> objects=MapUtils.newArrayList();
+		for(int i=0;i<vs.length;i++){
+			if(type.equalsIgnoreCase("date")){
+				objects.add(DateTools.parse(vs[i]));
+			}else{
+				objects.add(vs[i]);
+			}
+		}
+		return objects;
+	}
 	public static void main(String[] args) {
 		Map<String,String> params=MapUtils.newHashMap();
-		params.put("condition_eq_f1","1");
+		Map<String,String> params2=MapUtils.newHashMap();
+		params.put("condition_eq_f1@date","20190809");
 		params.put("condition_eq_f2","2");
 		params.put("condition_or1eq_f3","4");
 		params.put("condition_or1notin_f4","5");
-		params.put("condition_or2like_f3","4");
+		params.put("condition_or2ilike_f3","A");
 		params.put("condition_or2like_f4","5");
-		System.out.println(createConditionSql(params));
+		params.put("condition_or2eq_f5@date","2017-09-23");
+		System.out.println(createConditionSqlReturnRst(params,DbType.oracle).getPrettySqlString());
 	}
 }

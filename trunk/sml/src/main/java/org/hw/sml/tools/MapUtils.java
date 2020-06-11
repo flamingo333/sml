@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.hw.sml.core.build.SmlTools;
 import org.hw.sml.support.el.SmlElContext;
 
 
@@ -39,6 +40,16 @@ public class MapUtils {
 	private static final MapUtils mu=new MapUtils();
 	public static MapUtils newInstance(){
 		return mu;
+	}
+	public static interface Ext{
+		public Object eval(Object value,String evalStr);
+	}
+	private static final Map<String,Ext> exts=newHashMap();
+	public static void registerExt(String schema,Ext ext){
+		if(exts.containsKey(schema)){
+			throw new RuntimeException("conflict buildFactory exists schema["+schema+"], current is["+exts.get(schema).getClass()+"]!");
+		}
+		exts.put(schema,ext);
 	}
 	private static final DecimalFormat dcmFmt = new DecimalFormat("0.00");
 	static{
@@ -237,7 +248,7 @@ public class MapUtils {
     	    				String[] ks=k.split("@");
     	    				if(ks.length>=2){
     	    					key=(K)ks[0];
-    	    					oriData.put(key,ValueHelper.rebuildMpHandlerValue(ks[1],v));
+    	    					oriData.put(key,(V)ValueHelper.rebuildMpHandlerValue(ks[1],v));
     	    				}
     	    			}else{
     	    				oriData.put(key,v);
@@ -266,7 +277,7 @@ public class MapUtils {
     				String[] ks=k.split("@");
     				if(ks.length>=2){
     					key=(K)ks[0];
-    					value=ValueHelper.rebuildMpHandlerValue(ks[1],value);
+    					value=(V) ValueHelper.rebuildMpHandlerValue(ks[1],value);
     				}
     			}
     		}
@@ -354,6 +365,15 @@ public class MapUtils {
 	public static <T> void rebuildMp(T data,Builder<T> builder){
 		builder.build(data);
 	}
+	public static String buildGrepFormat(Object[] args){
+		StringBuffer sb=new StringBuffer();
+		for(int i=0;i<args.length;i+=3){
+			if(args.length>=i+3&&SmlTools.isNotEmpty(args[i+2])){
+				sb.append("--"+args[i]+"="+args[i+1]+" "+args[i+2]+" ");
+			}
+		}
+		return sb.toString();
+	}
     public static <K,V> List<Map<K,V>> grep(List<Map<K,V>> datas,String format){
     	String thistype="this.type";
     	List<Map<K,V>> result=newArrayList();
@@ -379,7 +399,7 @@ public class MapUtils {
     			for(Map.Entry<String,String> entry:t.entrySet()){
     				if(entry.getKey().equals(thistype)) continue;
     				if(data.containsKey(entry.getKey())){
-    					String[] fs=entry.getValue().split(" ");
+    					String[] fs=entry.getValue().split(" ",2);
     					if(fs.length==2)
     					flag=ValueHelper.matcherOperater(data.get(entry.getKey()),fs[0],fs[1]);
     					if(!flag){
@@ -894,14 +914,40 @@ public class MapUtils {
 	}
 	public static <V> Double getDouble(Map<String,V> data,String k,Double defaultValue){
 		V v=get(data, k, null);
-		if(v==null){
-			return defaultValue;
-		}else{
-			return Double.parseDouble(String.valueOf(v));
-		}
+		return v==null?defaultValue:Double.parseDouble(String.valueOf(v));
 	}
 	public static <V> String getString(Map<String,V> data,String k){
 		return getString(data, k,null);
+	}
+	public static String getsString(Map<String,Object> data,String ... ks){
+		Object result=gets(data, ks);
+		return result==null?null:String.valueOf(result);
+	}
+	public static Integer getsInt(Map<String,Object> data,String ...ks){
+		String result=getsString(data,ks);
+		return result==null?null:Integer.parseInt(result);
+	}
+	public static Double getsDouble(Map<String,Object> data,String ...ks){
+		String result=getsString(data,ks);
+		return result==null?null:Double.parseDouble(result);
+	}
+	public static Float getsFloat(Map<String,Object> data,String ...ks){
+		String result=getsString(data,ks);
+		return result==null?null:Float.parseFloat(result);
+	}
+	public static Long getsLong(Map<String,Object> data,String ...ks){
+		String result=getsString(data,ks);
+		return result==null?null:Long.parseLong(result);
+	}
+	public static <V> V gets(Map<String,V> data,String ... ks){
+		V v=null;
+		for(String k:ks){
+			v=data.get(k);
+			if(v!=null){
+				break;
+			}
+		}
+		return v;
 	}
 	public static <V> String getString(Map<String,V> data,String k,String defaultValue){
 		V v=get(data, k, null);
@@ -1164,18 +1210,95 @@ public class MapUtils {
 		return new ArrayList<T>();
 	}
 	public static <V> List<Map<String,V>> toLowerCaseForKey(List<Map<String,V>> datas){
+		return toCaseForKey(datas,"lower");
+	}
+	public static <V> List<Map<String,V>> toCaseForKey(List<Map<String,V>> datas,String caseK){
 		List<Map<String,V>> result=newArrayList();
 		for(Map<String,V> data:datas){
-			result.add(toLowerCaseForKey(data));
+			result.add(toCaseForKey(data,caseK));
 		}
 		return result;
 	}
 	public static <V> Map<String,V> toLowerCaseForKey(Map<String,V> data){
+		return toCaseForKey(data,"lower");
+	}
+	public static <V> Map<String,V> toCaseForKey(Map<String,V> data,String caseK){
 		Map<String,V> result=newLinkedHashMap();
+		boolean flag=caseK.equalsIgnoreCase("lower")?true:false;
+		boolean flag2=caseK.equalsIgnoreCase("upper")?true:false;
 		for(Map.Entry<String, V> entry:data.entrySet()){
-			result.put(entry.getKey().toLowerCase(),entry.getValue());
+			String key=entry.getKey();
+			if(flag){
+				key=key.toLowerCase();
+			}else if(flag2){
+				key=key.toUpperCase();
+			}
+			result.put(key,entry.getValue());
 		}
 		return result;
+	}
+	@SuppressWarnings("rawtypes")
+	public static  List getList(Map<String,Object> obj,String ... keys){
+		return get(obj,List.class, keys);
+	}
+	@SuppressWarnings("rawtypes")
+	public static Map getMap(Map<String,Object> obj,String ... keys){
+		return get(obj,Map.class, keys);
+	}
+	@SuppressWarnings("unchecked")
+	public static <T> T getObject(Map<String,Object> obj,Class<T> clazz,String ... keys){
+		Object ori=get(obj,Object.class, keys);
+		return (T) ClassUtil.convertValueToRequiredType(ori,clazz);
+	}
+	public static String getLink(Map<String,Object> data,String linkElp){
+		return getLink(data, linkElp,"\\.");
+	}
+	@SuppressWarnings("rawtypes")
+	public static String getLink(Map<String,Object> data,String linkElp,String split){
+		Object result=data;
+		try{
+			String[] lks=linkElp.split(split);
+			for(int i=0;i<lks.length;i++){
+				String lk=lks[i];
+				if(lk.contains("[")&&lk.contains("]")){
+					String k=lk.substring(0,lk.indexOf("["));
+					String index=RegexUtils.subString(lk,"[","]");
+					List list=(List) ((Map)result).get(k);
+					if(list==null||list.isEmpty()){
+						return null;
+					}
+					int inx=Integer.parseInt(index);
+					if(inx<0){
+						inx=inx+list.size();
+					}
+					result=list.get(inx);
+				}else{
+					result=((Map)result).get(lk);
+				}
+			}
+		}catch(Exception e){
+			return null;
+		}
+		return result==null?null:String.valueOf(result);
+	}
+	@SuppressWarnings("unchecked")
+	public static <T> T get(Map<String,Object> obj,Class<T> clazz,String ... keys){
+		Map<String,Object> op=obj;
+		try{
+			for(int i =0;i<keys.length;i++){
+				if(i==keys.length-1){
+					return (T) op.get(keys[i]);
+				}else{
+					op=(Map<String, Object>) op.get(keys[i]);
+					if(op==null){
+						return null;
+					}
+				}
+			}
+		}catch(Exception e){
+			//ignore
+		}
+		return null;
 	}
 	/**
 	 * 对树的操作，简单树转复杂树
@@ -1184,6 +1307,9 @@ public class MapUtils {
 		Map<String,Map<String,Object>> dts=newHashMap();
 		Map<String,List<Map<String,Object>>> ddts=newHashMap();
 		for(Map<String,Object> data:datas){
+			if(String.valueOf(data.get(id)).equals(String.valueOf(data.get(pid)))){
+				continue;//排除子集父级一样的，防止出现错误
+			}
 			dts.put(String.valueOf(data.get(id)), data);
 			if(!ddts.containsKey(data.get(pid))){
 				ddts.put(String.valueOf(data.get(pid)),new ArrayList<Map<String,Object>>());
@@ -1218,13 +1344,19 @@ public class MapUtils {
 	}
 	public static class ValueHelper{
 		@SuppressWarnings("unchecked")
-		public static <V> V rebuildMpHandlerValue(String key,V value){
+		public static <V> Object rebuildMpHandlerValue(String key,Object value){
 	    		if(value==null)return value;
 	    		try{
-					String mark=key.substring(0,key.indexOf("("));
-					String two=key.substring(mark.length()+2,key.length()-2);
-					if(mark.equalsIgnoreCase("date")){//常规时间处理 @date('yyyy-mm-dd')
+	    			String mark=key;
+	    			String two=null;
+	    			if(key.contains("(")){
+	    				 mark=key.substring(0,key.indexOf("("));
+						 two=key.substring(mark.length()+2,key.length()-2);
+	    			}
+					if(mark.equalsIgnoreCase("date")||mark.equalsIgnoreCase("toChar")){//常规时间处理 @date('yyyy-mm-dd')
 						value=(V)DateTools.getFormatTime(DateTools.parse(String.valueOf(value)),two);
+					}else if(mark.equalsIgnoreCase("toDate")){//常规时间处理 @date('yyyy-mm-dd')
+						value=(V)DateTools.parse(String.valueOf(value));
 					}else if(mark.equalsIgnoreCase("wdate")){//@wdate('yyyyww,yyyy-ww')
 						String[] twos=two.split(",");
 						value=(V)DateTools.getFormatTime(DateTools.getFormatTime(value==null?null:String.valueOf(value),twos[0]),twos[1]);
@@ -1241,6 +1373,13 @@ public class MapUtils {
 						}
 					}else if(mark.equals("boolean")){
 						value=(V) Boolean.valueOf(String.valueOf(value));
+					}else if(mark.equals("string")){
+						if(value!=null&&value.getClass().isArray()){
+							byte[] v=(byte[]) value;
+							value=(V) new String(v);
+						}
+					}else if(exts.containsKey(mark)){
+						value=(V) exts.get(mark).eval(value,two);
 					}
 	    		}catch(Throwable t){}
 	    	return value;
@@ -1275,6 +1414,14 @@ public class MapUtils {
 			    		flag=v!=null&&(Arrays.asList(value.trim().split(",")).contains(String.valueOf(v)));
 			    	}else if(operater.equalsIgnoreCase("notIn")){
 			    		flag=v!=null&&(!Arrays.asList(value.trim().split(",")).contains(String.valueOf(v)));
+			    	}else if(operater.equalsIgnoreCase("regexp")){
+			    		flag=v!=null&&String.valueOf(v).matches(value.trim());
+			    	}else if(operater.equalsIgnoreCase("ant")){
+			    		flag=v!=null&&new AntPathMatcher().matches(value.trim(),String.valueOf(v));
+			    	}else if(operater.equalsIgnoreCase("nant")){
+			    		flag=v!=null&&!new AntPathMatcher().matches(value.trim(),String.valueOf(v));
+			    	}else if(operater.equalsIgnoreCase("nregexp")){
+			    		flag=v!=null&&!String.valueOf(v).matches(value.trim());
 			    	}
 		    	}catch(Throwable t){}
 		    	return flag;

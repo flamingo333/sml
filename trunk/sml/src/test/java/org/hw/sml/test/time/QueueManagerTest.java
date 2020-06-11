@@ -5,7 +5,7 @@ import org.hw.sml.support.queue.Task;
 import org.hw.sml.tools.ClassUtil;
 
 public class QueueManagerTest {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		ManagedQuene<Task> mq=new ManagedQuene<Task>();
 		mq.init();
 		for(int i=0;i<100;i++){
@@ -17,7 +17,8 @@ public class QueueManagerTest {
 				}
 			});
 		}
-		mq.stop("ManagedQuene-woker-0");
-		mq.stop("");
+		Thread.sleep(1000);
+		//mq.stop("ManagedQuene-woker-0");
+		//mq.stop("");
 	}
 }

@@ -31,9 +31,8 @@ public class PageDataBuilder extends AbstractDataBuilder {
 			if(count>0){
 				sqlTemplate.getSmlParams().getSmlParam(FrameworkConstant.PARAM_QUERYTYPE).setValue("select");
 				List<Map<String,Object>> data=smlContextUtils.getSqlMarkupAbstractTemplate().querySql(sqlTemplate);
-				if(rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)!=null&&rebuildParam.getExtMap().get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY).equals("true"))
-					data=MapUtils.toLowerCaseForKey(data);
-					countData=MapUtils.toLowerCaseForKey(countData);
+				data=toCase(data);
+				countData=toCase(countData);
 				if(oriFields!=null&&newFields!=null){
 					data=MapUtils.rebuildMp(data,oriFields,newFields,Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER)));
 				}
@@ -45,6 +44,7 @@ public class PageDataBuilder extends AbstractDataBuilder {
 			if(oriFields!=null&&newFields!=null){
 				datas=MapUtils.rebuildMp(datas,oriFields,newFields,Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_FIELDFILTER)));
 			}
+			datas=toCase(datas);
 			result.setDatas(datas);
 			int size=datas.size();
 			if(size<limit&&page==1){
@@ -54,10 +54,28 @@ public class PageDataBuilder extends AbstractDataBuilder {
 				List<Map<String,Object>> data=smlContextUtils.getSqlMarkupAbstractTemplate().querySql(sqlTemplate);
 				Map<String,Object> countData=data.get(0);
 				Long count=Long.parseLong(String.valueOf(countData.get(countData.keySet().iterator().next())));
-				result.setExtInfo(countData);
+				result.setExtInfo(toCase(countData));
 				result.setCount(count);
 			}
 		}
 		return result;
+	}
+	private List<Map<String,Object>> toCase(List<Map<String,Object>> datas){
+		if(rebuildParam.get(FrameworkConstant.PARAM_TOCASEFORKEY)!=null){
+			datas=MapUtils.toCaseForKey((List<Map<String,Object>>)datas,rebuildParam.get(FrameworkConstant.PARAM_TOCASEFORKEY));
+		}else{
+			if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)))
+				datas=MapUtils.toLowerCaseForKey((List<Map<String,Object>>)datas);
+		}
+		return datas;
+	}
+	private Map<String,Object> toCase(Map<String,Object> datas){
+		if(rebuildParam.get(FrameworkConstant.PARAM_TOCASEFORKEY)!=null){
+			datas=MapUtils.toCaseForKey(datas,rebuildParam.get(FrameworkConstant.PARAM_TOCASEFORKEY));
+		}else{
+			if(Boolean.valueOf(rebuildParam.get(FrameworkConstant.PARAM_TOLOWERCASEFORKEY)))
+				datas=MapUtils.toLowerCaseForKey(datas);
+		}
+		return datas;
 	}
 }

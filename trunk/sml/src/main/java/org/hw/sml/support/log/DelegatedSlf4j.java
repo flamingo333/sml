@@ -13,22 +13,23 @@ public class DelegatedSlf4j implements Loggers{
 	public void debug(Class<?> clazz, String msg) {
 		LocationAwareLogger log=getLogger(clazz);
 		if(log!=null)
-		log.log(maker, FQCN,LocationAwareLogger.DEBUG_INT, msg, null,null);
+			log.log(maker, FQCN,LocationAwareLogger.DEBUG_INT, msg, null,null);
 	}
 	public void info(Class<?> clazz, String msg) {
 		LocationAwareLogger log=getLogger(clazz);
 		if(log!=null)
-		log.log(maker, FQCN,LocationAwareLogger.INFO_INT, msg, null,null);
+			log.log(maker, FQCN,LocationAwareLogger.INFO_INT, msg, null,null);
 	}
 	public void warn(Class<?> clazz, String msg) {
 		LocationAwareLogger log=getLogger(clazz);
 		if(log!=null)
-		log.log(maker, FQCN,LocationAwareLogger.WARN_INT, msg, null,null);
+			log.log(maker, FQCN,LocationAwareLogger.WARN_INT, msg, null,null);
 	}
 	public void error(Class<?> clazz, String msg) {
 		LocationAwareLogger log=getLogger(clazz);
 		if(log!=null)
-		log.log(maker, FQCN,LocationAwareLogger.ERROR_INT, msg, null,null);
+			log.log(maker, FQCN,LocationAwareLogger.ERROR_INT, msg, null,null);
+		
 	}
 	public LocationAwareLogger getLogger(Class<?> clazz){
 		Logger loggert=LoggerFactory.getLogger(clazz);

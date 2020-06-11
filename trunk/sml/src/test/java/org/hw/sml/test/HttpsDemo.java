@@ -12,17 +12,17 @@ import org.hw.sml.tools.Https.Header;
 public class HttpsDemo {
 	public static void main(String[] args) throws Exception, ClassNotFoundException {
 		//zzzz
-		//String result=Https.newGetHttps("http://10.221.235.17:8080/INAS/sml/invoke/mdmMngService/template/System").bos(new FileOutputStream("d:/temp/t.xlsx")).execute();
+		//String result=Https.newGetHttps("http://localhost:8080/INAS/sml/invoke/mdmMngService/template/System").bos(new FileOutputStream("d:/temp/t.xlsx")).execute();
 		//上传
-		//String result=Https.newPostBodyHttps("http://10.221.247.7:1202/master/server/proxy/sms/send").charset("utf-8").body("{\"content\":\"test测试\",\"fromNumber\":\"18256075451\"}").execute();
+		//String result=Https.newPostBodyHttps("http://localhost:1202/master/server/proxy/sms/send").charset("utf-8").body("{\"content\":\"test测试\",\"fromNumber\":\"18256075451\"}").execute();
 		//System.out.println(result);
-		//String result=Https.newGetHttps("http://10.221.247.7:1202/master/status").proxy(new Proxy(Proxy.Type.SOCKS,new InetSocketAddress("10.221.18.29",1080)),null).execute();
+		//String result=Https.newGetHttps("http://localhost:1202/master/status").proxy(new Proxy(Proxy.Type.SOCKS,new InetSocketAddress("localhost",1080)),null).execute();
 		//System.out.println(result);
 		Class clazz=Class.forName("com.sun.org.apache.xerces.internal.impl.dv.util.Base64");
 		Method md= clazz.getMethod("encode", byte[].class);  
 		DatatypeConverter.printBase64Binary("helloworld".getBytes());
 		Object obj=clazz.newInstance();
-		int testSize=1000;
+		int testSize=100000;
 		StopWatch sw=new StopWatch("测试base64");
 		sw.start("反射");
 		for(int i=0;i<testSize;i++){
@@ -37,13 +37,13 @@ public class HttpsDemo {
 		System.out.println(sw.prettyPrint());
 		
 		//
-		//Https https=Https.newGetHttps("http://10.221.247.50:8161/admin/queues.jsp").basicAuth("admin:admin");
+		//Https https=Https.newGetHttps("http://localhost:8161/admin/queues.jsp").basicAuth("admin:admin");
 		//https.execute();
 		///Header header=https.getResponseHeader();
 		//header.getHeader().put("Cookie",header.getHeader().get("Set-Cookie"));
 		//header.getHeader().remove("Set-Cookie");
 		//System.out.println(header.getHeader());
-		String result=Https.newGetHttps("http://10.221.247.50:8161/admin/queues.jsp").basicAuth("admin:admin").execute();
+		String result=Https.newGetHttps("http://localhost:8161/admin/queues.jsp").basicAuth("admin:admin").execute();
 		System.out.println(result);
 	}
 }

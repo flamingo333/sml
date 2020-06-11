@@ -27,7 +27,7 @@ public class TaskModel implements Serializable{
 	/**
 	 * 是否启用
 	 */
-	private String enabled;//1、启动、0、停用
+	private String enabled="1";//1、启动、0、停用
 	
 	
 	public void init(){

@@ -10,7 +10,7 @@ public class RebuildParam implements Serializable{
 	 */
 	private static final long serialVersionUID = 7520900140116309892L;
 
-	private String classpath;
+	private String classpath="";
 	
 	private String filepath;
 	

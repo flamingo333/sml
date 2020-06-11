@@ -48,10 +48,10 @@ public class SMLParams implements Serializable{
 	}
 	public Map<String, Object> getMap() {
 		Map<String,Object> varMap=new LinkedHashMap<String, Object>();
-		for(Map.Entry<String,SMLParam> entry:this.mapParams.entrySet()){
-			varMap.put(entry.getKey(),entry.getValue().getValue());
+		for(SMLParam smlParam:smlParams){
+			varMap.put(smlParam.getName(),smlParam.getValue());
 		}
-		return varMap;
+		return MapUtils.sort(varMap);
 	}
 	public Map<String, SMLParam> getMapParams() {
 		return mapParams;

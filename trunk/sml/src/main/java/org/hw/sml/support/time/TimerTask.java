@@ -9,6 +9,7 @@ public abstract class TimerTask implements Runnable{
 	
 	private int counts=1;
 	
+	
 	private Scheduler scheduler;
 	
 	public abstract void execute();
@@ -36,13 +37,14 @@ public abstract class TimerTask implements Runnable{
 	public void repeat(){
 		long firstTime=scheduler.getFirstTime().getTime();
 		long delay=System.currentTimeMillis()-firstTime;
-		if(delay<0)
-			delay=-delay;
-		else
-			delay=scheduler.getDelay()*1000-delay%(scheduler.getDelay()*1000);
+			if(delay<0)
+				delay=-delay;
+			else
+				delay=scheduler.getDelay()*1000-delay%(scheduler.getDelay()*1000);
 		scheduler.setNextTime(new Date(System.currentTimeMillis()+delay));
 		scheduler.getExecutor().schedule(this,delay,TimeUnit.MILLISECONDS);
 	}
+	
 	
 	
 }

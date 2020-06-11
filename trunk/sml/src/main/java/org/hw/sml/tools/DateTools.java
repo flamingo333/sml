@@ -3,9 +3,11 @@ package org.hw.sml.tools;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -24,6 +26,9 @@ public class DateTools {
 	public static final long HOUR_TIME_MILLS = 60 * 60 * 1000;
 	public static Date date(){
 		return new Date();
+	}
+	public static String uuid(){
+		return UUID.randomUUID().toString();
 	}
 	public static SimpleDateFormat sdf_mi(){
 		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -149,24 +154,30 @@ public class DateTools {
 		return null;
 	}
 	public static int getYear(Date date){
-		Calendar cal=Calendar.getInstance();
-		cal.setTime(date);
-		return cal.get(Calendar.YEAR);
+		return get(date,Calendar.YEAR);
 	}
 	public static int getDay(Date date){
-		Calendar cal=Calendar.getInstance();
-		cal.setTime(date);
-		return cal.get(Calendar.DAY_OF_MONTH);
+		return get(date,Calendar.DAY_OF_MONTH);
 	}
 	public static int getDayOfWeek(Date date){
-		Calendar cal=Calendar.getInstance();
-		cal.setTime(date);
-		return cal.get(Calendar.DAY_OF_WEEK);
+		return get(date,Calendar.DAY_OF_WEEK);
 	}
 	public static int getMonth(Date date){
+		return get(date,Calendar.MONTH)+1;
+	}
+	public static int getHour(Date date){
+		return get(date,Calendar.HOUR_OF_DAY);
+	}
+	public static int getMinite(Date date){
+		return get(date,Calendar.MINUTE);
+	}
+	public static int getSecond(Date date){
+		return get(date,Calendar.SECOND);
+	}
+	public static int get(Date date,int field){
 		Calendar cal=Calendar.getInstance();
 		cal.setTime(date);
-		return cal.get(Calendar.MONTH)+1;
+		return cal.get(field);
 	}
 	/**
 	 * 
@@ -194,26 +205,12 @@ public class DateTools {
 				e.printStackTrace();
 			}
 		}
-		timestamp=trim(timestamp," ","-",":","_","年","月","日","时","分","/",".","T");
+		timestamp=trim(timestamp,' ','-',':','_','年','月','日','时','分','/','.','T','Z');
 		int length=timestamp.length();
-		
+		String format="yyyyMMddHHmmssS";
 		Date date=null;
 		try {
-			switch(length){
-				case 5:date=new SimpleDateFormat("yyyyMM").parse(timestamp);break;
-				case 6:date=new SimpleDateFormat("yyyyMM").parse(timestamp);break;
-				case 7:date=new SimpleDateFormat("yyyyMMdd").parse(timestamp);break;
-				case 8:date=new SimpleDateFormat("yyyyMMdd").parse(timestamp);break;
-				case 9:date=new SimpleDateFormat("yyyyMMddHH").parse(timestamp);break;
-				case 10:date=new SimpleDateFormat("yyyyMMddHH").parse(timestamp);break;
-				case 11:date=new SimpleDateFormat("yyyyMMddHHmm").parse(timestamp);break;
-				case 12:date=new SimpleDateFormat("yyyyMMddHHmm").parse(timestamp);break;
-				case 13:date=new SimpleDateFormat("yyyyMMddHHmmss").parse(timestamp);break;
-				case 14:date=new SimpleDateFormat("yyyyMMddHHmmss").parse(timestamp);break;
-				case 15:date=new SimpleDateFormat("yyyyMMddHHmmssS").parse(timestamp);break;
-				case 16:date=new SimpleDateFormat("yyyyMMddHHmmssS").parse(timestamp);break;
-				case 17:date=new SimpleDateFormat("yyyyMMddHHmmssS").parse(timestamp);break;
-		    }
+			return new SimpleDateFormat(format.substring(0,length)).parse(timestamp);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
@@ -234,11 +231,11 @@ public class DateTools {
 		return new SimpleDateFormat(format).format(time);
 	}
 
-	public static String trim(String datefomat,String ...strings){
-		for(String str:strings){
-			datefomat=datefomat.replace(str, "");
-		}
-		return datefomat;
+	public static String trim(String dateformat,char ...chs){
+		for(char c:chs)
+			dateformat=dateformat.replace(String.valueOf(c),"");
+		
+		return dateformat;
 	}
 	public static List<String> buildTime(Date startTime,Date endTime,String format,int minute){
 		List<String> result=new ArrayList<String>();
@@ -259,6 +256,8 @@ public class DateTools {
 		}
 	}
 	
-	
+	public static void main(String[] args) {
+		System.out.println(DateTools.parse("2045"));
+	}
 	
 }

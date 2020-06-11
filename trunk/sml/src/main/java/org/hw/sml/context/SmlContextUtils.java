@@ -23,13 +23,14 @@ import org.hw.sml.model.SqlTemplate;
 import org.hw.sml.queryplugin.JsonMapper;
 import org.hw.sml.support.cache.CacheManager;
 import org.hw.sml.support.el.El;
+import org.hw.sml.tools.DbTools;
 import org.hw.sml.tools.Https;
 import org.hw.sml.tools.MapUtils;
 
 
 
 public class SmlContextUtils {
-	
+	public static final String ROWCOUNT="_rowcount_";
 	private  SqlMarkupAbstractTemplate sqlMarkupAbstractTemplate;	
 	public  SmlContextUtils(SqlMarkupAbstractTemplate sqlMarkupAbstractTemplate){
 		this.sqlMarkupAbstractTemplate=sqlMarkupAbstractTemplate;
@@ -109,16 +110,23 @@ public class SmlContextUtils {
 		reInitSqlParam(st, getJdbc(st.getDbid()), params);
 		return sqlMarkupAbstractTemplate.getSqlResolvers().resolverLinks(st.getMainSql(), st.getSmlParams());
 	}
-	public int update(String ifId,Map<String,String> params){
+	public Map<String,Object> updateReturnMap(String ifId,Map<String,String> params){
 		if(Boolean.valueOf(params.get(FrameworkConstant.PARAM_FLUSHCACHE))){
 			clear(ifId);
 		}
 		SqlTemplate st=sqlMarkupAbstractTemplate.getSqlTemplate(ifId);
 		reInitSqlParam(st, getJdbc(st.getDbid()), params);
-		return sqlMarkupAbstractTemplate.update(st);
+		int effectSize= sqlMarkupAbstractTemplate.update(st);
+		Map<String,Object> result=MapUtils.newHashMap();
+		result.putAll(st.getSmlParams().getMap());
+		result.put("_rowcount_",effectSize);
+		return result;
+	}
+	public int update(String ifId,Map<String,String> params){
+		return (Integer) updateReturnMap(ifId,params).get(ROWCOUNT);
 	}
 	public int update(Map<String,String> params){
-		return update(params.get("ifId"), params);
+		return update(params.get("ifId"),params);
 	}
 	@SuppressWarnings("unchecked")
 	public int update(String paramsStr){
@@ -169,14 +177,23 @@ public class SmlContextUtils {
 			if(params.containsKey(FrameworkConstant.PARAM_RECACHE)){
 				st.getSmlParams().add(FrameworkConstant.PARAM_RECACHE, "false");
 			}
+			if(params.containsKey(FrameworkConstant.PARAM_TEST)){
+				st.getSmlParams().add(FrameworkConstant.PARAM_TEST,params.get(FrameworkConstant.PARAM_TEST));
+			}
 			List<SMLParam> lst=st.getSmlParams().getSmlParams();
 			for(SMLParam sp:lst){
+				sp.setDoPreParams(params);
 				String name=sp.getName();
 				String value=params.get(name)==null?null:String.valueOf(params.get(name));
 				if(name.equals("sql")&&SmlTools.isEmpty(value)){
-					String sql=SqlFilterHelper.createConditionSql(params);
+					String sql=SqlFilterHelper.createConditionSql(params,DbTools.getDbType(jdbc.getDataSource()));
 					if(isNotBlank(sql))
 						sp.setValue(sql);
+				}else if(name.equals("_sql_")&&SmlTools.isEmpty(value)){
+					Rst rst=SqlFilterHelper.createConditionSqlReturnRst(params, DbTools.getDbType(jdbc.getDataSource()));
+					sp.setValue(rst);
+				}else if(name.equals("_dbType_")){
+					sp.setValue(DbTools.getDbType(jdbc.getDataSource()));
 				}else{
 					if(isNotBlank(value)){
 						sp.handlerValue(value);

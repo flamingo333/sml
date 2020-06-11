@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.hw.sml.jdbc.JdbcTemplate;
+import org.hw.sml.jdbc.impl.DefaultJdbcTemplate;
 import org.hw.sml.model.DbType;
 import org.hw.sml.plugin.Plugin;
 import org.hw.sml.support.cache.CacheManager;
@@ -13,6 +14,7 @@ import org.hw.sml.support.cache.DefaultCacheManager;
 import org.hw.sml.support.log.Loggers;
 import org.hw.sml.tools.ClassUtil;
 import org.hw.sml.tools.DbTools;
+import org.hw.sml.tools.MapUtils;
 
 
 
@@ -28,24 +30,25 @@ public class Source implements Plugin{
 	
 	protected JdbcTemplate defJt;
 	
-	protected Map<String,JdbcTemplate> jts=new HashMap<String,JdbcTemplate>();
+	protected Map<String,JdbcTemplate> jts=MapUtils.newLinkedCaseInsensitiveMap();
 	
-	protected Map<String,DataSource> dss=new HashMap<String,DataSource>();
+	protected Map<String,DataSource> dss=MapUtils.newLinkedCaseInsensitiveMap();
 	
-	protected Map<String,DbType> dbTypes=new HashMap<String,DbType>();
+	protected Map<String,DbType> dbTypes=MapUtils.newLinkedCaseInsensitiveMap();
 	
 	protected CacheManager cacheManager;
 	
 	protected boolean transactionInversion;
 	
+	protected Map<DataSource,Boolean> doTransActionPkgs=new HashMap<DataSource, Boolean>();
+	
 	public JdbcTemplate newJdbcTemplate(DataSource dataSource){
 		JdbcTemplate jt=ClassUtil.newInstance(jdbcClassPath,JdbcTemplate.class);
-		if(transactionInversion){
-			try {
-				ClassUtil.injectFieldValue(jt,"transactionInversion",transactionInversion);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			boolean flag=doTransActionPkgs.containsKey(dataSource)?doTransActionPkgs.get(dataSource):transactionInversion;
+			ClassUtil.injectFieldValue(jt,"transactionInversion",flag);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		jt.setDataSource(dataSource);
 		return jt;
@@ -56,6 +59,9 @@ public class Source implements Plugin{
 			for(Map.Entry<String,DataSource> entry:dss.entrySet()){
 				jts.put(entry.getKey(),newJdbcTemplate(entry.getValue()));
 				dbTypes.put(entry.getKey(),DbTools.getDbType(entry.getValue()));
+				if(dbTypes.get(entry.getKey()).equals(DbType.hive)){
+					((DefaultJdbcTemplate)jts.get(entry.getKey())).setSupportCommit(false);
+				}
 				logger.info(getClass(),"init jdbc-template["+entry.getKey()+"].");
 			}
 			if(this.defJt==null){
@@ -152,4 +158,23 @@ public class Source implements Plugin{
 		dss=null;
 		jts=null;
 	}
+
+	public Map<String, DbType> getDbTypes() {
+		return dbTypes;
+	}
+
+	public void setDbTypes(Map<String, DbType> dbTypes) {
+		this.dbTypes = dbTypes;
+	}
+
+	public Map<DataSource, Boolean> getDoTransActionPkgs() {
+		return doTransActionPkgs;
+	}
+
+	public void setDoTransActionPkgs(Map<DataSource, Boolean> doTransActionPkgs) {
+		this.doTransActionPkgs = doTransActionPkgs;
+	}
+
+	
+	
 }

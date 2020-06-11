@@ -7,9 +7,9 @@ import java.util.Map;
 /**
  * 统一多参数资源连接操作
  * 按  协议://[用户名:密码@]hostip[:port]/prepath/lastpath?k=v&k=v
-//ftp://username:password@10.221.232.135:21/path/file.name?a=1&b=2&c=3&poolClass=
+//ftp://username:password@localhost:21/path/file.name?a=1&b=2&c=3&poolClass=
 //redis://password@localhost:1679/0?maxTotal=8&maxIdle=19
-//jdbc://username:password@10.221.247.43:1521/oracle?servername=ipms&maxTotal=8&maxIdle=19&poolClass=
+//jdbc://username:password@localhost:1521/oracle?servername=ipms&maxTotal=8&maxIdle=19&poolClass=
  * @author wen
  *
  */
@@ -121,11 +121,14 @@ public class Urls {
 		return params;
 	}
 	public static Urls newFtpUrls(String url){
-		Urls urls=new Urls(url);
+		Urls urls=newUrls(url);
 		if(urls.getPort()==0){
 			urls.port=21;
 		}
 		return urls;
+	}
+	public static Urls newUrls(String url){
+		return new Urls(url);
 	}
 	public static String encode(String name){
 		try {

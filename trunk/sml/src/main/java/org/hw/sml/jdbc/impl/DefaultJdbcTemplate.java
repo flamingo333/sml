@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +22,15 @@ import org.hw.sml.jdbc.JdbcTemplate;
 import org.hw.sml.jdbc.ResultSetExtractor;
 import org.hw.sml.jdbc.RowMapper;
 import org.hw.sml.jdbc.exception.SqlException;
+import org.hw.sml.model.DbType;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.ClassUtil;
+import org.hw.sml.tools.DbTools;
 import org.hw.sml.tools.LinkedCaseInsensitiveMap;
 
 public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		private boolean transactionInversion;
+		private boolean supportCommit=true;
 		private  int queryReturnLimit=Integer.MAX_VALUE;
 		{
 			queryReturnLimit=Integer.parseInt(System.getProperty("sml.jdbc.queryreturnlimit", String.valueOf(Integer.MAX_VALUE)));
@@ -193,6 +197,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 								setPreparedState(pst, i+1,params[i]);
 							}
 						}
+						checkStatement(pst);
 						rs=pst.executeQuery();
 						return rset.extractData(rs);
 					} catch (SQLException e) {
@@ -225,7 +230,10 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 			return queryForObject(sql, params, new MapRowMapper());
 		}
 		public List<Map<String,Object>> queryForList(String sql,Object... params){
-			return query(sql,params,new MapRowMapper());
+			return queryForList(queryReturnLimit,sql,params);
+		}
+		public List<Map<String,Object>> queryForList(int limit,String sql,Object... params){
+			return query(sql,params,new MapRowMapper(),limit);
 		}
 		@SuppressWarnings("unchecked")
 		public <T> T queryForObject(String sql,Object[] params,Class<T> clazz){
@@ -242,8 +250,12 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				}
 			}
 		}
+		@Override
+		public <T> List<T> queryForList(String sql, Object[] params, Class<T> clazz) {
+			return queryForList(sql, params,clazz,queryReturnLimit);
+		}
 		@SuppressWarnings("unchecked")
-		public <T> List<T> queryForList(String sql,Object[] params,final Class<T> clazz){
+		public <T> List<T> queryForList(String sql,Object[] params,final Class<T> clazz,final int limit){
 			if(ClassUtil.isSingleType(clazz)){
 				List<Map<String,Object>> trs=queryForList(sql, params);
 				List<T> result=new ArrayList<T>();
@@ -252,7 +264,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				}
 				return result;
 			}else if(Map.class.isAssignableFrom(clazz)){
-				return (List<T>) queryForList(sql, params);
+				return (List<T>) queryForList(limit,sql,params);
 			}else{
 				List<T> trs=query(sql, params,new RowMapper<T>() {
 					MapRowMapper mapper=new MapRowMapper();
@@ -271,6 +283,8 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 		}
 		public void queryForCallback(final String sql,final Object[] params,
 				final Callback callback) {
+			//statement.setFetchSize(Integer.MIN_VALUE);
+			// ((com.mysql.jdbc.Statement)stat).enableStreamingResults();
 			execute(new ConnectionCallback<Object>(){
 				public Object doInConnection(Connection conn) {
 					PreparedStatement stmt = null;
@@ -282,6 +296,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 								setPreparedState(stmt, i+1,params[i]);
 							}
 						}
+						checkStatement(stmt);
 						rs=stmt.executeQuery();
 						int i=0;
 						if(callback instanceof CallbackCycle){
@@ -308,6 +323,9 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 			queryForCallback(sql,null, callback);
 		}
 		public <T> List<T> query(final String sql,final Object[] params,final RowMapper<T> rowMapper){
+			return query(sql, params, rowMapper,queryReturnLimit);
+		}
+		public <T> List<T> query(final String sql,final Object[] params,final RowMapper<T> rowMapper,final int queryReturnLimit){
 			return execute(new ConnectionCallback<List<T>>(){
 				public List<T> doInConnection(Connection con) {
 					PreparedStatement stmt = null;
@@ -320,6 +338,7 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 								setPreparedState(stmt, i+1,params[i]);
 							}
 						}
+						checkStatement(stmt);
 						rs=stmt.executeQuery();
 						int i=0;
 						while(rs.next()){
@@ -416,12 +435,16 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 			try{
 				con=DataSourceUtils.getConnection(dataSource);
 				T t= connectionCallback.doInConnection(con);
-				if(updatetype)
+				if(updatetype&&supportCommit)
 					DataSourceUtils.commit(dataSource);
 				return t;
 			}catch(Exception  e){
-				if(updatetype)
-					DataSourceUtils.rollback(dataSource);
+				if(updatetype&&supportCommit)
+					try {
+						DataSourceUtils.rollback(dataSource);
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
 				throw new SqlException(e.getMessage());
 			}finally{
 				DataSourceUtils.releaseConnection(dataSource);
@@ -431,25 +454,27 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 			Connection con=null;
 			try{
 				con=dataSource.getConnection();
-				if(updatetype)
-				con.setAutoCommit(false);
+				if(updatetype&&supportCommit)
+					con.setAutoCommit(false);
 				T t= connectionCallback.doInConnection(con);
-				if(updatetype)
+				if(updatetype&&supportCommit)
 					con.commit();
 				return t;
 			}catch(Exception  e){
-				if(updatetype)
+				if(updatetype&&supportCommit)
 					try {
-						con.rollback();
+						if(con!=null)
+							con.rollback();
 					} catch (SQLException e1) {
 						e1.printStackTrace();
 					}
+				e.printStackTrace();
 				throw new SqlException(e.getMessage());
 			}finally{
 				safeClose(con);
 			}
 		}
-		class MapRowMapper implements  RowMapper<Map<String,Object>> {
+	    class MapRowMapper implements  RowMapper<Map<String,Object>> {
 			public Map<String, Object> mapRow(ResultSet rs, int rowNum)
 					throws SQLException {
 				ResultSetMetaData rsmd = rs.getMetaData();
@@ -462,6 +487,35 @@ public class DefaultJdbcTemplate  extends JdbcAccessor  implements JdbcTemplate{
 				}
 				return mapOfColValues;
 			}
+		}
+		public boolean isTransactionInversion() {
+			return transactionInversion;
+		}
+		public void setTransactionInversion(boolean transactionInversion) {
+			this.transactionInversion = transactionInversion;
+		}
+		public int getQueryReturnLimit() {
+			return queryReturnLimit;
+		}
+		public void setQueryReturnLimit(int queryReturnLimit) {
+			this.queryReturnLimit = queryReturnLimit;
+		}
+		public void checkStatement(Statement stat) throws SQLException{
+			DbType dbType=DbTools.getDbType(dataSource);
+			if(DbTools.isMySql(dbType)){
+				stat.setFetchSize(Integer.MIN_VALUE);
+				/*try{
+					Method method=stmt.getClass().getMethod("enableStreamingResults",null);
+					method.invoke(stmt,null);
+				}catch(Exception e){
+				}*/
+			}
+		}
+		public boolean isSupportCommit() {
+			return supportCommit;
+		}
+		public void setSupportCommit(boolean supportCommit) {
+			this.supportCommit = supportCommit;
 		}
 		
 }

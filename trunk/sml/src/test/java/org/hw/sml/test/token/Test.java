@@ -7,8 +7,13 @@ import java.sql.ResultSet;
 import java.util.Date;
 
 
+
+
+import oracle.net.ano.CryptoDataPacket;
+
 import org.hw.sml.support.log.DelegatedDefaultLog;
 import org.hw.sml.support.log.Loggers;
+import org.hw.sml.support.security.CyptoUtils;
 import org.hw.sml.support.time.StopWatch;
 import org.hw.sml.tools.ClassUtil;
 class D{
@@ -67,26 +72,6 @@ public class Test extends D{
 
 	//
 	public static void  main(String[] args) throws SecurityException, NoSuchFieldException {
-		StopWatch sw=new StopWatch("日志打印");
-		sw.start("默认");
-		Loggers loggers=new DelegatedDefaultLog();
-		loggers.debug(Test.class,"debug");
-		loggers.warn(Test.class,"warn");
-		loggers.info(Test.class,"info");
-		loggers.error(Test.class,"error");
-		sw.stop();
-		System.out.println(sw.prettyPrint());
-		Field[] fs=Test.class.getDeclaredFields();
-		
-		Field e=Test.class.getDeclaredField("e");
-		Class c=e.getType();
-		System.out.println(e);
-		System.out.println(e.getType().getName());
-		System.out.println(e.getDeclaringClass());
-		System.out.println(Modifier.toString(e.getModifiers()));
-		for(Field f:fs){
-			System.out.println(f);
-		}
-		ResultSet rs=null;
+		System.out.println(CyptoUtils.encode("47cb9f15d1dab90243b5317399f31a24","Bt2D*4d="));
 	}
 }

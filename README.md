@@ -221,7 +221,7 @@ Https.newGetHttps("http://url1").failover(Https.Failover("https://url2",5,100L))
 
 > `sqlResolvers` sql解析链，可继承SqlResolver实现其它解析指令，并注入
 
-* [SqlMarkupTemplate](https://github.com/huangwenjimmy/sml/blob/master/trunk/sml/src/main/java/org/hw/sml/core/SqlMarkupAbstractTemplate.java)    
+* [SqlMarkupTemplate](https://github.com/huangwenjimmy/sml/blob/master/trunk/sml/src/main/java/org/hw/sml/core/SqlMarkupTemplate.java)    
 
 > 接口配置来源来自数据库,继承 SqlMarkupAbstractTemplate
 

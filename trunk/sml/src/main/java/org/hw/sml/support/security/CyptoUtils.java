@@ -76,4 +76,11 @@ public class CyptoUtils {
 		}
         return b2;
     }
+    private static final String KEY="eastcom-sw.com/huangwen";
+    public static String encode(String data){
+    	return encode(KEY, data);
+    }
+    public static String decode(String data){
+    	return decode(KEY, data);
+    }
 }

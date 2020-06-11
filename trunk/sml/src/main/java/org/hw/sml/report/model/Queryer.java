@@ -22,6 +22,12 @@ public class Queryer implements Serializable{
 	
 	private ParamCriteria paramCriteria;
 	
+	private boolean isPage;
+	
+	private boolean nocache=false;
+	
+	private String toCaseForKey;
+	
 	public Queryer(){
 		paramCriteria=new ParamCriteria();
 	}
@@ -30,7 +36,20 @@ public class Queryer implements Serializable{
 		paramCriteria=new ParamCriteria();
 		paramCriteria.setRcptId(rcptId);
 	}
-	
+	private ChartParam chartParam=new ChartParam();
+	public Queryer enabledChart(List<String> groupIds){
+		paramCriteria.setChart(chartParam);
+		chartParam.setGroupid(groupIds);
+		return this;
+	}
+	public Queryer chart(String name,String op){
+		chartParam.getFuncs().put(name,op);
+		return this;
+	}
+	public Queryer intendedFields(List<String> intendedFields){
+		paramCriteria.setIntendedFields(intendedFields);
+		return this;
+	}
 	public Queryer addQuery(String name,String operator,String value){
 		Map<String,List<Operator>> conditions=paramCriteria.getConditionMap();
 		if(conditions==null){
@@ -58,6 +77,8 @@ public class Queryer implements Serializable{
 		return this;
 	}
 	public Queryer limit(int pageNo,int pageSize){
+		isPage=true;
+		paramCriteria.setPage(pageNo);
 		paramCriteria.setRowPerPage(pageSize);
 		paramCriteria.setStartIndex((pageNo-1)*pageSize+1);
 		return this;
@@ -72,5 +93,27 @@ public class Queryer implements Serializable{
 	public ParamCriteria getParamCriteria() {
 		return paramCriteria;
 	}
-
+	public boolean isPage() {
+		return isPage;
+	}
+	public void setPage(boolean isPage) {
+		this.isPage = isPage;
+	}
+	public boolean isNocache() {
+		return nocache;
+	}
+	public void setNocache(boolean nocache) {
+		this.nocache = nocache;
+	}
+	public ChartParam getChartParam() {
+		return chartParam;
+	}
+	public Queryer toCaseForKey(String value) {
+		this.toCaseForKey=value;
+		return this;
+	}
+	public String getToCaseForKey() {
+		return toCaseForKey;
+	}
+	
 }

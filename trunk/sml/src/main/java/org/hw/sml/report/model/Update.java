@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.hw.sml.core.IfIdNotException;
 import org.hw.sml.tools.Assert;
@@ -26,13 +27,38 @@ public class Update extends Criteria {
 	
 	private String tableName;
 	
+	public static Update newUpdate(){
+		return new Update();
+	}
+	public static Update newUpdate(String tableName){
+		Update update=new Update();
+		update.setTableName(tableName);
+		return update;
+	}
+	public static Update newUpdate(String tableName,List<String> conditions){
+		Update update=newUpdate(tableName);
+		update.setConditions(conditions);
+		return update;
+	}
+	public static Update newUpdate(String tableName,Map<String,Object> data){
+		Update update=newUpdate(tableName);
+		update.setData(data);
+		return update;
+	}
+	public static Update newUpdate(String tableName,List<String> conditions,Map<String,Object> data){
+		Update update=newUpdate(tableName, data);
+		update.setConditions(conditions);
+		return update;
+	}
+	
+	
 	private String type=Constants.TYPE_INSERT;
 	
 	private boolean quot=false;
 	
 	private String quotChar="`";
 	
-	private boolean forceMapper=false;
+	public static boolean forceMapper=false;
 	
 	private List<Map<String,Object>> datas=new ArrayList<Map<String,Object>>();
 	
@@ -44,11 +70,15 @@ public class Update extends Criteria {
 	
 	private boolean clearRefIf=false;
 	
+	private boolean isUpdate=false;
+	private Set<String> keys;
+	
+	
 	public static void registerTableMapping(String key,String value){
 		tableMapping.put(key,value);
 	}
 	
-	public String getUpdateSqlForInsert(){
+	public String updateSqlForInsert(){
 		StringBuffer sb=new StringBuffer("insert into "+tableName+"(");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
 			//参数绑定
@@ -68,8 +98,8 @@ public class Update extends Criteria {
 		sb.deleteCharAt(sb.length()-1).append(")");
 		return sb.toString();
 	}
-	public String getUpdateSqlForUpdate(){
-		Assert.isTrue(conditions.size()>0||!Arrays.asList(Constants.TYPE_UPDATE,Constants.TYPE_ADU).contains(type),"不允许更新全表["+tableName+"]操作");
+	public String updateSqlForUpdate(){
+		Assert.isTrue(conditions.size()>0||!isUpdate,"不允许更新全表["+tableName+"]操作");
 		StringBuffer sb=new StringBuffer("update "+tableName+" set ");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
 			//参数绑定
@@ -96,7 +126,7 @@ public class Update extends Criteria {
 		}
 		return sb.toString().replace("where 1=1 and", "where");
 	}
-	public String getUpdateSqlForDelete(){
+	public String updateSqlForDelete(){
 		StringBuffer sb=new StringBuffer("delete from "+tableName+" where 1=1");
 		Assert.isTrue(data.size()>0||!type.equals(Constants.TYPE_DELETE),"不允许删除表["+tableName+"]操作");
 		for(Map.Entry<String,Object> entry:data.entrySet()){
@@ -109,11 +139,11 @@ public class Update extends Criteria {
 		}
 		return sb.toString().replace("where 1=1 and", "where");
 	}
-	public String getUpdateSqlForAdu(boolean exists){
+	public String updateSqlForAdu(boolean exists){
 		if(exists){
-			return getUpdateSqlForUpdate();
+			return updateSqlForUpdate();
 		}else{
-			return getUpdateSqlForInsert();
+			return updateSqlForInsert();
 		}
 	}
 	public void init(){
@@ -123,16 +153,22 @@ public class Update extends Criteria {
 			if(data.size()>0)
 				datas.add(data);
 		}
+		keys=data.keySet();
+		isUpdate=Arrays.asList(Constants.TYPE_UPDATE,Constants.TYPE_ADU).contains(type);
 		assertCondigion();
+	} 
+	public Update put(String name,Object value){
+		data.put(name, value);
+		return this;
 	}
 	public String getUpateSql(){
 		init();
 		if(type.equalsIgnoreCase(Constants.TYPE_INSERT)){
-			return getUpdateSqlForInsert();
+			return updateSqlForInsert();
 		}else if(type.equalsIgnoreCase(Constants.TYPE_UPDATE)){
-			return getUpdateSqlForUpdate();
+			return updateSqlForUpdate();
 		}else if(type.equalsIgnoreCase(Constants.TYPE_DELETE)){
-			return getUpdateSqlForDelete();
+			return updateSqlForDelete();
 		}
 		return null;
 	}
@@ -172,36 +208,35 @@ public class Update extends Criteria {
 	private void assertCondigion() {
 		//Assert.notNull(tableName,"tableName must not null!");
 		boolean flag=true;
-		for(String condition:conditions){
-			boolean flag2=false;
-			for(String key:data.keySet()){
-				if(key.split("@")[0].equals(condition)){
-					flag2=true;
-					break;
+		if(isUpdate){
+			for(String condition:conditions){
+				boolean flag2=false;
+				for(String key:data.keySet()){
+					if(key.split("@")[0].equals(condition)){
+						flag2=true;
+						break;
+					}
 				}
+				flag=flag2;
+				Assert.isTrue(flag,"字段："+condition+"不存在!");
 			}
-			flag=flag2;
-			Assert.isTrue(flag,"字段："+condition+"不存在!");
 		}
-		if(!type.equals(Constants.TYPE_DELETE))
-			Assert.isTrue(data.keySet().size()>conditions.size(),"无更新字段!");
-		if(type.equals(Constants.TYPE_ADU))
-			Assert.isTrue(conditions.size()>0,"无法确认数据是否存在!");
 	}
-	public List<Object[]> getObjectsForInsert(){
+	public List<Object[]> objectsForInsert(){
 		List<Object[]> objects=new ArrayList<Object[]>();
 		for(Map<String,Object> dt:datas){
 			Object[] object=new Object[dt.size()];
 			int i=0;
-			for(Map.Entry<String,Object> entry:dt.entrySet()){
-				if(entry.getKey().startsWith("old.")){
+			for(String key:keys){
+				Object value=dt.get(key);
+				if(key.startsWith("old.")){
 					continue;
 				}
-				String[] keyInfo=entry.getKey().split("@");
-				object[i]=entry.getValue();
+				String[] keyInfo=key.split("@");
+				object[i]=value;
 				if(keyInfo.length==2){
 					//if(keyInfo[1].equals("date")){
-						object[i]=DateTools.parse(String.valueOf(entry.getValue()));
+						object[i]=DateTools.parse(String.valueOf(value));
 					/*}else if(keyInfo[1].equals("seq")){
 						object[i]=String.valueOf(System.currentTimeMillis());
 					}else if(keyInfo[1].equals("uuid")){
@@ -214,31 +249,32 @@ public class Update extends Criteria {
 		}
 		return objects;
 	}
-	public Object[] getObjectForAdu(boolean exists){
+	public Object[] objectForAdu(boolean exists){
 		if(exists){
-			return getObjectsForUpdate().get(0);
+			return objectsForUpdate().get(0);
 		}else{
-			return getObjectsForInsert().get(0);
+			return objectsForInsert().get(0);
 		}
 	}
-	public List<Object[]> getObjectsForDelete(){
+	public List<Object[]> objectsForDelete(){
 		List<Object[]> objects=new ArrayList<Object[]>();
 		for(Map<String,Object> dt:datas){
 			List<Object> object=new ArrayList<Object>();
-			for(Map.Entry<String,Object> entry:dt.entrySet()){
+			for(String key:keys){
 				//参数绑定
-				String field=entry.getKey();
+				String field=key;
+				Object value=dt.get(field);
 				String[] fts=field.split("@");
 				if(fts.length==1)
-					object.add(entry.getValue());
+					object.add(value);
 				else
-					object.add(DateTools.parse(String.valueOf(entry.getValue())));
+					object.add(DateTools.parse(String.valueOf(value)));
 			}
 			objects.add(object.toArray(new Object[]{}));
 		}
 		return objects;
 	}
-	public List<Object[]> getObjectsForUpdate(){
+	public List<Object[]> objectsForUpdate(){
 		List<Object[]> objects=new ArrayList<Object[]>();
 		for(Map<String,Object> dt:datas){
 			List<Object> object=new ArrayList<Object>();
@@ -272,11 +308,11 @@ public class Update extends Criteria {
 	}
 	public List<Object[]> getObjects(){
 		if(type.equalsIgnoreCase(Constants.TYPE_INSERT)){
-			return getObjectsForInsert();
+			return objectsForInsert();
 		}else if(type.equalsIgnoreCase(Constants.TYPE_UPDATE)){
-			return getObjectsForUpdate();
+			return objectsForUpdate();
 		}else if(type.equalsIgnoreCase(Constants.TYPE_DELETE)){
-			return getObjectsForDelete();
+			return objectsForDelete();
 		}
 		return null;
 	}
@@ -284,35 +320,40 @@ public class Update extends Criteria {
 	public String getTableName() {
 		return tableName;
 	}
-	public void setTableName(String tableName) {
+	public Update setTableName(String tableName) {
 		if(forceMapper&&tableMapping.containsKey(tableName)){
 			throw new IfIdNotException("tableName not exists!");
 		}
 		this.tableName = MapUtils.getString(tableMapping,tableName,tableName);
+		return this;
 	}
 	public String getType() {
 		return type;
 	}
-	public void setType(String type) {
+	public Update setType(String type) {
 		this.type = type;
+		return this;
 	}
 	public List<Map<String, Object>> getDatas() {
 		return datas;
 	}
-	public void setDatas(List<Map<String, Object>> datas) {
+	public Update setDatas(List<Map<String, Object>> datas) {
 		this.datas = datas;
+		return this;
 	}
 	public Map<String, Object> getData() {
 		return data;
 	}
-	public void setData(Map<String, Object> data) {
+	public Update setData(Map<String, Object> data) {
 		this.data = data;
+		return this;
 	}
 	public String getDbId() {
 		return dbId;
 	}
-	public void setDbId(String dbId) {
+	public Update setDbId(String dbId) {
 		this.dbId = dbId;
+		return this;
 	}
 	
 	public List<String> getConditions() {
@@ -336,8 +377,8 @@ public class Update extends Criteria {
 		this.quotChar = quotChar;
 	}
 
-	public void setForceMapper(boolean forceMapper) {
-		this.forceMapper = forceMapper;
+	public static void setForceMapper(boolean forceMapper) {
+		Update.forceMapper = forceMapper;
 	}
 
 	public void setClearRefIf(boolean clearRefIf) {
@@ -347,5 +388,7 @@ public class Update extends Criteria {
 	public boolean isClearRefIf() {
 		return clearRefIf;
 	}
+	
+	
 	
 }

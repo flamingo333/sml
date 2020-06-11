@@ -17,9 +17,9 @@ import org.hw.sml.tools.Assert;
 
 
 public class DataSourceUtils {
-	public static  ThreadLocal<Map<String,Connection>> connections=new InheritableThreadLocal<Map<String,Connection>>(){
-		protected Map<String, Connection> initialValue() {
-			return new HashMap<String,Connection>();
+	public static  ThreadLocal<Map<DataSource,Connection>> connections=new InheritableThreadLocal<Map<DataSource,Connection>>(){
+		protected Map<DataSource, Connection> initialValue() {
+			return new HashMap<DataSource,Connection>();
 		}
 	};
 	public static void configIsSqlLog(boolean flag){
@@ -29,60 +29,64 @@ public class DataSourceUtils {
 		configIsSqlLog(Boolean.getBoolean("sml.vm.jdbc.sql.error.log"));
 	}
 	//对事务-连接关闭的datasource注册到此集合中
-	public static ThreadLocal<Set<String>> transactionManagerKeys=new InheritableThreadLocal<Set<String>>(){
-		protected Set<String> initialValue() {
-			return new HashSet<String>();
+	public static ThreadLocal<Set<Connection>> transactionManagerKeys=new InheritableThreadLocal<Set<Connection>>(){
+		protected Set<Connection> initialValue() {
+			return new HashSet<Connection>();
 		}
 	};
 	//private static List<String> transactionManagerKeys=MapUtils.newArrayList();
-	public static void registTransactionKeys(String dataSourceKey){
-		transactionManagerKeys.get().add(dataSourceKey);
+	public static void registTransactionKeys(DataSource dataSource) throws SQLException{
+		Connection conn=getConnection(dataSource);
+		transactionManagerKeys.get().add(conn);
 	}
-	public static void removeTransactionKeys(String dataSourceKey){
-		transactionManagerKeys.get().remove(dataSourceKey);
+	public static void removeTransactionKeys(DataSource dataSource) throws SQLException{
+		Connection conn=getConnection(dataSource);
+		transactionManagerKeys.get().remove(conn);
 	}
-	public static boolean isTransaction(DataSource dataSource){
-		return transactionManagerKeys.get().contains(dataSource.toString());
+	public static boolean isTransaction(DataSource dataSource) throws SQLException{
+		Connection conn=getConnection(dataSource);
+		return transactionManagerKeys.get().contains(conn);
 	}
 	public static boolean isConnection(DataSource dataSource){
-		return connections.get().containsKey(dataSource.toString());
+		return connections.get().containsKey(dataSource);
 	}
 	public static Connection getConnection(DataSource dataSource) throws SQLException{
 		return doGetConnection(dataSource);
 	}
-	public static void commit(DataSource dataSource){
-		if(!transactionManagerKeys.get().contains(dataSource.toString()))
+	public static void commit(DataSource dataSource) throws SQLException{
+		Connection conn=getConnection(dataSource);
+		if(!transactionManagerKeys.get().contains(conn))
 		try {
-			getConnection(dataSource).commit();
+			conn.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
-	public static void rollback(DataSource dataSource){
-		if(!transactionManagerKeys.get().contains(dataSource.toString()))
+	public static void rollback(DataSource dataSource) throws SQLException{
+		Connection conn=getConnection(dataSource);
+		if(!transactionManagerKeys.get().contains(conn))
 		try {
-			getConnection(dataSource).rollback();
+			conn.rollback();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 	public static Connection doGetConnection(DataSource dataSource) throws SQLException {
 		Assert.notNull(dataSource, "No DataSource specified");
-		String key=dataSource.toString();
-		Map<String,Connection> map=connections.get();
-		if(!map.containsKey(key)){
+		Map<DataSource,Connection> map=connections.get();
+		if(!map.containsKey(dataSource)){
 			Connection con=dataSource.getConnection();
 			con.setAutoCommit(false);
-			map.put(key,con);
+			map.put(dataSource,con);
 		}
-		return map.get(key);
+		return map.get(dataSource);
 	}
 	public static void releaseConnection(DataSource dataSource) {
-		Map<String,Connection> map=connections.get();
-		String key=dataSource.toString();
+		Map<DataSource,Connection> map=connections.get();
+		Connection key=map.get(dataSource);
 		try {
-			if(map.containsKey(key)&&!transactionManagerKeys.get().contains(key)){
-				Connection con=map.remove(key);
+			if(map.containsKey(dataSource)&&!transactionManagerKeys.get().contains(key)){
+				Connection con=map.remove(dataSource);
 				if(con!=null&&!con.isClosed()){
 					safeClose(con);
 				}

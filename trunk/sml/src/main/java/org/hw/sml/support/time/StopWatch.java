@@ -54,4 +54,8 @@ public class StopWatch {
 		}
 		return sb.toString();
 	}
+	public long getTotal() {
+		return total;
+	}
+	
 }

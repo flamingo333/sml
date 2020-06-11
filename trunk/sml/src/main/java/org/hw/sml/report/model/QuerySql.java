@@ -1,13 +1,17 @@
 package org.hw.sml.report.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hw.sml.core.build.SqlFilterHelper;
+import org.hw.sml.core.resolver.Rst;
+import org.hw.sml.model.DbType;
 import org.hw.sml.tools.Assert;
 import org.hw.sml.tools.DateTools;
+import org.hw.sml.tools.MapUtils;
 /**
  * 
  * @author hw
@@ -27,8 +31,8 @@ public class QuerySql {
 	private String queryString;
 	private boolean containChart;
 	private String chartSql;
-	private Map<String,String> piKV=new LinkedHashMap<String,String>();
-	private Map<String,PiTableDetail> piMap=new HashMap<String,PiTableDetail>();
+	private Map<String,String> piKV=MapUtils.newLinkedCaseInsensitiveMap();
+	private Map<String,PiTableDetail> piMap=MapUtils.newLinkedCaseInsensitiveMap();
 	private List<Object> queryParams=new ArrayList<Object>();
 	private List<String> columnAppendString=new ArrayList<String>();
 	private List<String> columnChartString=new ArrayList<String>();
@@ -93,6 +97,7 @@ public class QuerySql {
 	private void builderQuery() {
 		this.queryString=" select "+this.columnFormatString+" from "+this.tableName;
 		this.queryString="select "+this.columnString+" from ("+this.queryString+") t where 1=1 "+this.conditionString;
+		this.queryString=this.queryString.replace("where 1=1  and","where");
 	}
 
 
@@ -122,6 +127,7 @@ public class QuerySql {
 			this.conditionString="";
 		}else{
 			StringBuffer bf=new StringBuffer();
+			Map<String,String> params=MapUtils.newLinkedCaseInsensitiveMap();
 			for(Map.Entry<String,List<Operator>> entry:map.entrySet()){
 				String field=entry.getKey();
 				for(Operator op:entry.getValue()){
@@ -132,22 +138,16 @@ public class QuerySql {
 					Assert.notNull(fieldType,"fieldType is not be null,please config it.");
 					String[] fts=fieldType.split("@");
 					String ft=fts[0].toLowerCase();
-					if(op.isLike()){
-						if(op.isIlike()){
-							bf.append(" and lower("+pit.getField()+") "+(op.getOperator().toLowerCase().replace("ilike","like"))+" '%'||?||'%'");
-							queryParams.add(op.getValue().toLowerCase());
-						}else{
-							bf.append(" and "+pit.getField()+" "+op.getOperator()+" '%'||?||'%'");
-							queryParams.add(op.getValue());
-						}
-					}else if(op.isIn()){
-						bf.append(" and "+pit.getField()+" "+op.getOperator()+" ("+buildStr(op,ft)+")");
-					}else{
-						bf.append(" and "+pit.getField()+" "+op.getOperator()+" ? ");
-							queryParams.add(handerFiledValue(op.getValue(),ft));
+					String param="condition_"+op.getOperator()+"_"+field;
+					if(ft.contains("time")||ft.contains("date")){
+						param=param+"@date";
 					}
+					params.put(param,op.getValue());
 				}
 			}
+			Rst rst=SqlFilterHelper.createConditionSqlReturnRst(params,DbType.valueOf(paramCriteria.getSqlType().toLowerCase()));
+			bf.append(rst.getSqlString());
+			queryParams.addAll(rst.getParamObjects());
 			//无奈放开最大操作给页面，危险系数直接放大
 			if(paramCriteria.getSqlAppend()!=null){
 				bf.append(paramCriteria.getSqlAppend());
@@ -159,16 +159,22 @@ public class QuerySql {
 
 	private void handlerPiTableDetails() {
 		List<String> ifs=paramCriteria==null?null:paramCriteria.getIntendedFields();
+		Map<String,String> maps=MapUtils.newLinkedCaseInsensitiveMap();
 		StringBuffer columnS=new StringBuffer();
 		StringBuffer columnSF=new StringBuffer();
 		boolean flag=ifs==null||ifs.size()==0;
+		if(!flag){
+			for(String ift:ifs){
+				maps.put(ift,ift);
+			}
+		}
 		for(int i=0;i< piTableDetails.size();i++){
 			PiTableDetail pi=piTableDetails.get(i);
 			if(this.firstField==null)
 		    this.firstField=pi.getField();
-			if((flag||ifs.contains(pi.getField()))&&pi.contain(type)){
-				columnS.append(pi.getFormat()+" as "+pi.getField() +",");
-				columnSF.append(pi.getField()+",");
+			if((flag||maps.containsKey(pi.getField()))&&pi.contain(type)){
+				columnS.append(sense(pi.getFormat())+" as "+sense(pi.getField()) +",");//
+				columnSF.append(sense(pi.getField())+",");
 				columnAppendString.add(pi.getField()+pi.getFiledReturnType(type));
 				piKV.put(pi.getField(),pi.getFieldZn());
 				
@@ -177,14 +183,24 @@ public class QuerySql {
 		this.columnFormatString=columnS.deleteCharAt(columnS.length()-1).toString();
 		this.columnString=columnSF.deleteCharAt(columnSF.length()-1).toString();
 	}
+	private String sense(String name){
+		if((!name.startsWith("`"))&&Arrays.asList("mysql","mariadb","gbase").contains(paramCriteria.getSqlType())&&Arrays.asList("describe").contains(name.toLowerCase())){
+			return "`"+name+'`';
+		}
+		return name;
+	}
 
 	
 	public String toString(){
 		//其它数据库自己可以判断
-		if(paramCriteria.getSqlType().equals("SYABASEIQ")){
+		if(paramCriteria.getSqlType().equalsIgnoreCase("SYABASEIQ")){
 			return builderIq();
-		}else if(paramCriteria.getSqlType().equals("ORACLE")){
+		}else if(paramCriteria.getSqlType().equalsIgnoreCase("ORACLE")){
 			return builderOracle();
+		}else if(paramCriteria.getSqlType().equalsIgnoreCase(DbType.mysql.name())||paramCriteria.getSqlType().equalsIgnoreCase(DbType.mariadb.name())){
+			return builderMysql();
+		}else if(paramCriteria.getSqlType().equalsIgnoreCase(DbType.postgresql.name())){
+			return builderPg();
 		}
 		return  builderIq();
 	}
@@ -194,6 +210,16 @@ public class QuerySql {
        pagingSelect.append(queryString+" order by "+orderString);
        pagingSelect.append(" ) row_ where rownum < ").append("?").append(" )  where rownum_ >= ").append("?");
        return pagingSelect.toString();
+	}
+	private String builderMysql(){
+		 StringBuilder pagingSelect = new StringBuilder();
+		 pagingSelect.append(queryString+" order by "+orderString);
+		 return pagingSelect.append(" limit ?,?").toString();
+	}
+	private String builderPg(){
+		 StringBuilder pagingSelect = new StringBuilder();
+		 pagingSelect.append(queryString+" order by "+orderString);
+		 return pagingSelect.append(" limit ? offset ?").toString();
 	}
 
 	private String builderIq(){
@@ -249,12 +275,15 @@ public class QuerySql {
 	public List<Object> getQueryParam(){
 		List<Object> objs=new ArrayList<Object>();
 		objs.addAll(this.queryParams);
-		if(paramCriteria.getSqlType().equals(Constants.TYPE_SQL_ORACLE)){
+		if(paramCriteria.getSqlType().equalsIgnoreCase(Constants.TYPE_SQL_ORACLE)){
 			objs.add(paramCriteria.getStartIndex()+paramCriteria.getRowPerPage());
 			objs.add(paramCriteria.getStartIndex());
-		}else{
-			objs.add(paramCriteria.getStartIndex());
-			objs.add(paramCriteria.getStartIndex()+paramCriteria.getRowPerPage());
+		}else if(paramCriteria.getSqlType().equalsIgnoreCase(DbType.mysql.name())||paramCriteria.getSqlType().equalsIgnoreCase(DbType.mariadb.name())){
+			objs.add(paramCriteria.getStartIndex()-1);
+			objs.add(paramCriteria.getRowPerPage());
+		}else if(paramCriteria.getSqlType().equalsIgnoreCase(DbType.postgresql.name())){
+			objs.add(paramCriteria.getRowPerPage());
+			objs.add(paramCriteria.getStartIndex()-1);
 		}
 		return objs;
 	}
@@ -323,7 +352,13 @@ public class QuerySql {
 		return columnChartString;
 	}
 
-	
+	private String buildLike(){
+		if(paramCriteria.getSqlType().equalsIgnoreCase(DbType.oracle.name())){
+			return "'%'||?||'%'";
+		}else{
+			return "concat('%',?,'%')";
+		}
+	}
 
 	
 }

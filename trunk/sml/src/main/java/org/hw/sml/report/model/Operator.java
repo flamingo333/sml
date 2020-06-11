@@ -1,6 +1,10 @@
 package org.hw.sml.report.model;
 
 import java.io.Serializable;
+import java.util.Map;
+
+import org.hw.sml.core.build.SqlFilterHelper;
+import org.hw.sml.tools.MapUtils;
 /**
  * 对比   operator 操作符  value值
  * @author hw
@@ -42,9 +46,12 @@ public class Operator  implements Serializable{
 	public String getOperator() {
 		return operator;
 	}
-	
+	private static Map<String,String> ops=MapUtils.invert(SqlFilterHelper.OPERATORS);
 	public void setOperator(String operator) {
 		this.operator = operator;
+		if(ops.containsKey(this.operator)){
+			this.operator=ops.get(operator);
+		}
 	}
 	public String getValue() {
 		return value;

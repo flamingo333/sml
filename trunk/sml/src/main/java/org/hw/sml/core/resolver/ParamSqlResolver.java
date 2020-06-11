@@ -32,8 +32,15 @@ public class ParamSqlResolver implements SqlResolver{
 			if(sp.getValue()==null){
 				throw new ParamNullException(property+" is  configed  but is null!");
 			}
-			int size=add(paramObjects,sp.getValue());
-			temp=temp.replace(mather,pad(size,"?"));
+			Object value=sp.getValue();
+			if(!(value instanceof Rst)){
+				int size=add(paramObjects,value);
+				temp=temp.replace(mather,pad(size,"?"));
+			}else{
+				Rst rst=(Rst)value;
+				temp=temp.replace(mather,rst.getSqlString());
+				paramObjects.addAll(rst.getParamObjects());
+			}
 		}
 		//用于非绑定参数的增加用于  like 或者  in 之类
 		mathers=RegexUtils.matchGroup("\\$\\w+\\$",temp);

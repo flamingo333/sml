@@ -21,6 +21,7 @@ public class ParamCriteria extends  Criteria{
 	private Map<String,List<Operator>> conditionMap=new LinkedHashMap<String,List<Operator>>();
 	private List<String> orderByFields;
 	private String orderByType;
+	private int page=1;
 	private List<String> intendedFields=new ArrayList<String>();
 	private ChartParam chart;
 	private String exportType="xlsx";//[xlsx,csv]
@@ -119,6 +120,12 @@ public class ParamCriteria extends  Criteria{
 	}
 	public void setId(String id) {
 		this.id = id;
+	}
+	public int getPage() {
+		return page;
+	}
+	public void setPage(int page) {
+		this.page = page;
 	}
 	
 }

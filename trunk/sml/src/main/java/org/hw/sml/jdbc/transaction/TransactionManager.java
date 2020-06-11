@@ -13,7 +13,7 @@ public class TransactionManager extends AbstractAspect{
 	private DataSource dataSource;
 
 	public void doBefore(Invocation invocation) throws Throwable {
-		DataSourceUtils.registTransactionKeys(dataSource.toString());
+		DataSourceUtils.registTransactionKeys(dataSource);
 	}
 	
 	public void doException(Invocation invocation) throws Throwable {
@@ -22,7 +22,7 @@ public class TransactionManager extends AbstractAspect{
 			Connection conn=DataSourceUtils.doGetConnection(dataSource);
 			conn.rollback();
 		}
-		DataSourceUtils.removeTransactionKeys(dataSource.toString());
+		DataSourceUtils.removeTransactionKeys(dataSource);
 		DataSourceUtils.releaseConnection(dataSource);
 	}
 
@@ -32,9 +32,8 @@ public class TransactionManager extends AbstractAspect{
 			Connection conn=DataSourceUtils.doGetConnection(dataSource);
 			conn.commit();
 		}
-		DataSourceUtils.removeTransactionKeys(dataSource.toString());
+		DataSourceUtils.removeTransactionKeys(dataSource);
 		DataSourceUtils.releaseConnection(dataSource);
-		
 	}
 
 	public DataSource getDataSource() {

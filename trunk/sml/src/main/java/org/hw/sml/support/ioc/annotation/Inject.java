@@ -10,4 +10,5 @@ import java.lang.annotation.Target;
 public @interface Inject {
 	 String value() default "";
 	 boolean required() default true;
+	 boolean injectByName() default true;
 }
